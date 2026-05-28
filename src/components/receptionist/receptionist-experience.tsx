@@ -26,7 +26,6 @@ import type {
   Appointment,
   AppointmentSlot,
   ChatMessage,
-  EmailEventType,
   PatientDetails,
   ReceptionAction,
 } from "@/lib/receptionist/types";
@@ -167,16 +166,6 @@ export function ReceptionistExperience() {
     };
   }, []);
 
-  async function sendEmail(type: EmailEventType, appointment: Appointment) {
-    const response = await fetch("/api/email", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type, appointment }),
-    });
-
-    await response.json();
-  }
-
   function addAssistantMessage(content: string) {
     setMessages((current) => [
       ...current,
@@ -246,9 +235,8 @@ export function ReceptionistExperience() {
       setSelectedSlot(null);
       setProposedSlots([]);
       addAssistantMessage(
-        `Perfecto, ${details.patientName}. Te he reservado el ${payload.appointment.date} a las ${payload.appointment.time}. También he enviado la confirmación a ${details.patientEmail}.`,
+        `Perfecto, ${details.patientName}. He enviado tu solicitud para el ${payload.appointment.date} a las ${payload.appointment.time}. Recepción la revisará y, cuando la confirme, recibirás el email en ${details.patientEmail}.`,
       );
-      await sendEmail("confirmation", payload.appointment);
     } catch {
       addAssistantMessage(
         "No he podido confirmar la cita ahora mismo. Prueba otra vez en unos segundos.",

@@ -3,12 +3,13 @@ import { z } from "zod";
 
 import { env } from "@/lib/env";
 import {
-  bookDemoAppointment,
-  cancelDemoAppointment,
-  getDemoAppointments,
-  moveDemoAppointment,
-  resetDemoAppointmentStore,
-} from "@/lib/receptionist/appointment-store";
+  cancelAppointmentRequest,
+  confirmAppointmentRequest,
+  createAppointmentRequest,
+  listAppointments,
+  moveAppointmentRequest,
+  resetAppointments,
+} from "@/lib/receptionist/appointment-repository";
 import type { Appointment } from "@/lib/receptionist/types";
 
 const slotSchema = z.object({
@@ -27,6 +28,10 @@ const bookingSchema = z.object({
 });
 
 const privateActionSchema = z.discriminatedUnion("action", [
+  z.object({
+    action: z.literal("confirm"),
+    appointmentId: z.string().min(1),
+  }),
   z.object({
     action: z.literal("cancel"),
     appointmentId: z.string().min(1),
@@ -63,13 +68,13 @@ export async function GET(request: Request) {
   }
 
   return NextResponse.json({
-    appointments: sortAppointments(getDemoAppointments()),
+    appointments: sortAppointments(await listAppointments()),
   });
 }
 
 export async function POST(request: Request) {
   const body = bookingSchema.parse(await request.json());
-  const appointment = bookDemoAppointment({
+  const appointment = await createAppointmentRequest({
     patientName: body.patientName,
     patientEmail: body.patientEmail,
     patientPhone: body.patientPhone,
@@ -92,19 +97,30 @@ export async function PATCH(request: Request) {
 
   if (body.action === "reset") {
     return NextResponse.json({
-      appointments: sortAppointments(resetDemoAppointmentStore()),
+      appointments: sortAppointments(await resetAppointments()),
     });
   }
 
   if (body.action === "cancel") {
     return NextResponse.json({
-      appointments: sortAppointments(cancelDemoAppointment(body.appointmentId)),
+      appointments: sortAppointments(
+        await cancelAppointmentRequest(body.appointmentId),
+      ),
+    });
+  }
+
+  if (body.action === "confirm") {
+    const result = await confirmAppointmentRequest(body.appointmentId);
+
+    return NextResponse.json({
+      appointment: result.appointment,
+      appointments: sortAppointments(result.appointments),
     });
   }
 
   return NextResponse.json({
     appointments: sortAppointments(
-      moveDemoAppointment(body.appointmentId, body.slot),
+      await moveAppointmentRequest(body.appointmentId, body.slot),
     ),
   });
 }

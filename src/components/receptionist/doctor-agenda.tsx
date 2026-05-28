@@ -33,6 +33,7 @@ type StatusFilter = Appointment["status"] | "all";
 
 const statusOptions: Array<{ label: string; value: StatusFilter }> = [
   { label: "Todas", value: "all" },
+  { label: "Pendientes", value: "pending" },
   { label: "Confirmadas", value: "confirmed" },
   { label: "Canceladas", value: "cancelled" },
 ];
@@ -164,7 +165,9 @@ function AppointmentCalendar({
                               "rounded-md border px-3 py-2 text-xs shadow-sm",
                               appointment.status === "confirmed"
                                 ? "border-sage/30 bg-sage/15"
-                                : "border-clay/30 bg-clay/10 opacity-75",
+                                : appointment.status === "pending"
+                                  ? "border-clinical/30 bg-clinical/10"
+                                  : "border-clay/30 bg-clay/10 opacity-75",
                             )}
                           >
                             <div className="flex items-start justify-between gap-2">
@@ -176,7 +179,9 @@ function AppointmentCalendar({
                                   "mt-0.5 h-2 w-2 shrink-0 rounded-full",
                                   appointment.status === "confirmed"
                                     ? "bg-sage"
-                                    : "bg-clay",
+                                    : appointment.status === "pending"
+                                      ? "bg-clinical"
+                                      : "bg-clay",
                                 )}
                               />
                             </div>
@@ -224,6 +229,10 @@ export function DoctorAgenda() {
 
   const confirmedCount = useMemo(
     () => countByStatus(appointments, "confirmed"),
+    [appointments],
+  );
+  const pendingCount = useMemo(
+    () => countByStatus(appointments, "pending"),
     [appointments],
   );
   const cancelledCount = useMemo(
@@ -316,6 +325,18 @@ export function DoctorAgenda() {
   async function handleCancel(appointment: Appointment) {
     await patchAgenda({ action: "cancel", appointmentId: appointment.id });
     await sendEmail("cancellation", { ...appointment, status: "cancelled" });
+  }
+
+  async function handleConfirm(appointment: Appointment) {
+    const updated = await patchAgenda({
+      action: "confirm",
+      appointmentId: appointment.id,
+    });
+    const confirmed = updated?.find((item) => item.id === appointment.id);
+
+    if (confirmed) {
+      await sendEmail("confirmation", confirmed);
+    }
   }
 
   async function handleMove(appointment: Appointment) {
@@ -437,15 +458,15 @@ export function DoctorAgenda() {
 
                   <div className="grid gap-3 sm:grid-cols-3">
                     <div className="border-border/70 bg-background/65 rounded-lg border p-4">
-                      <div className="text-muted-foreground flex items-center justify-between text-xs font-medium uppercase">
-                        Total
+                      <div className="text-clinical flex items-center justify-between text-xs font-medium uppercase">
+                        Pendientes
                         <CalendarCheck2 className="size-4" aria-hidden="true" />
                       </div>
                       <p className="font-display mt-3 text-4xl leading-none tabular-nums">
-                        {appointments.length}
+                        {pendingCount}
                       </p>
                       <p className="text-muted-foreground mt-2 text-xs">
-                        citas registradas
+                        necesitan confirmación humana
                       </p>
                     </div>
                     <div className="border-border/70 bg-sage/10 rounded-lg border p-4">
@@ -457,7 +478,7 @@ export function DoctorAgenda() {
                         {confirmedCount}
                       </p>
                       <p className="text-muted-foreground mt-2 text-xs">
-                        pendientes de atender
+                        agenda bloqueada
                       </p>
                     </div>
                     <div className="border-border/70 bg-clay/10 rounded-lg border p-4">
@@ -500,7 +521,7 @@ export function DoctorAgenda() {
 
                       <div className="flex flex-col gap-2">
                         <span className="text-sm font-medium">Estado</span>
-                        <div className="bg-background/70 border-border/70 grid grid-cols-3 rounded-md border p-1">
+                        <div className="bg-background/70 border-border/70 grid grid-cols-2 rounded-md border p-1 sm:grid-cols-4">
                           {statusOptions.map((option) => (
                             <button
                               key={option.value}
@@ -543,6 +564,7 @@ export function DoctorAgenda() {
             {filteredAppointments.length > 0 ? (
               <AgendaPanel
                 appointments={filteredAppointments}
+                onConfirm={handleConfirm}
                 onCancel={handleCancel}
                 onMove={handleMove}
                 onReset={handleReset}

@@ -18,7 +18,7 @@ export function isSlotAvailable(
 ) {
   return !appointments.some(
     (appointment) =>
-      appointment.status === "confirmed" &&
+      appointment.status !== "cancelled" &&
       appointment.date === slot.date &&
       appointment.time === slot.time &&
       appointment.therapistId === slot.therapistId,
@@ -59,6 +59,52 @@ export function bookAppointment(
     ...input,
     status: "confirmed",
   };
+}
+
+export function requestAppointment(
+  appointments: Appointment[],
+  input: BookingInput,
+): Appointment {
+  if (!isSlotAvailable(appointments, input)) {
+    throw new Error("Slot is not available");
+  }
+
+  return {
+    id: `apt-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    ...input,
+    status: "pending",
+  };
+}
+
+export function confirmAppointment(
+  appointments: Appointment[],
+  appointmentId: string,
+): Appointment[] {
+  const current = appointments.find(
+    (appointment) => appointment.id === appointmentId,
+  );
+
+  if (!current) {
+    throw new Error("Appointment not found");
+  }
+
+  if (current.status === "cancelled") {
+    throw new Error("Cancelled appointments cannot be confirmed");
+  }
+
+  const others = appointments.filter(
+    (appointment) => appointment.id !== appointmentId,
+  );
+
+  if (!isSlotAvailable(others, current)) {
+    throw new Error("Slot is not available");
+  }
+
+  return appointments.map((appointment) =>
+    appointment.id === appointmentId
+      ? { ...appointment, status: "confirmed" }
+      : appointment,
+  );
 }
 
 export function cancelAppointment(

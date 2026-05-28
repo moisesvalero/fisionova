@@ -1,6 +1,8 @@
 import {
   bookAppointment,
   cancelAppointment,
+  confirmAppointment,
+  requestAppointment,
   resetAgenda,
   updateAppointment,
 } from "./agenda";
@@ -25,6 +27,28 @@ export function bookDemoAppointment(input: BookingInput) {
   appointments = [...appointments, appointment];
 
   return appointment;
+}
+
+export function requestDemoAppointment(input: BookingInput) {
+  const appointment = requestAppointment(appointments, input);
+  appointments = [...appointments, appointment];
+
+  return appointment;
+}
+
+export function confirmDemoAppointment(appointmentId: string) {
+  appointments = confirmAppointment(appointments, appointmentId);
+
+  const appointment = appointments.find((item) => item.id === appointmentId);
+
+  if (!appointment) {
+    throw new Error("Appointment not found");
+  }
+
+  return {
+    appointment,
+    appointments: getDemoAppointments(),
+  };
 }
 
 export function cancelDemoAppointment(appointmentId: string) {

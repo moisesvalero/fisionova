@@ -12,7 +12,7 @@ export type Therapist = {
   specialty: string;
 };
 
-export type AppointmentStatus = "confirmed" | "cancelled";
+export type AppointmentStatus = "pending" | "confirmed" | "cancelled";
 
 export type Appointment = {
   id: string;

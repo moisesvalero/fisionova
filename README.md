@@ -11,7 +11,7 @@ El proyecto simula la experiencia completa de una clinica real:
 - Web publica con hero visual, secciones de clinica, tratamientos, equipo, contacto y politica de cookies.
 - Chat de recepcion online integrado en la landing, con apertura ampliada tipo pop-up en escritorio.
 - Recepcionista IA conectable a OpenAI mediante API Key.
-- Flujo de reserva, cambio y cancelacion de citas.
+- Flujo supervisado: la IA crea solicitudes pendientes y el humano confirma la cita desde el area privada.
 - Agenda privada para el medico protegida por PIN.
 - Calendario visual con citas precargadas para mostrar el funcionamiento.
 - Envio de emails transaccionales preparado con Resend.
@@ -36,10 +36,12 @@ El proyecto simula la experiencia completa de una clinica real:
 ## Funcionalidades tecnicas
 
 - `src/app/api/receptionist/route.ts`: endpoint de chat para procesar mensajes de recepcion y consultar huecos disponibles.
-- `src/app/api/email/route.ts`: endpoint preparado para enviar emails con Resend.
+- `src/app/api/appointments/route.ts`: solicitudes pendientes, confirmacion humana, cancelaciones y cambios.
+- `src/app/api/email/route.ts`: endpoint preparado para enviar emails con Resend solo tras confirmacion humana.
 - `src/components/receptionist/receptionist-experience.tsx`: experiencia principal de la landing, chat, modal, agenda y secciones visuales.
 - `src/components/legal/cookie-banner.tsx`: banner de consentimiento con preferencias guardadas en `localStorage`.
-- `src/app/area-clinica/page.tsx`: vista privada de agenda del medico.
+- `src/app/medico/page.tsx`: vista privada de agenda del medico.
+- `supabase/appointments.sql`: esquema opcional para usar Supabase como base de datos real.
 - `src/lib/env.ts`: contrato de variables de entorno validado con Zod.
 
 ## Arranque rapido
@@ -63,6 +65,11 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 OPENAI_API_KEY=
 OPENAI_MODEL=gpt-5.4-nano
 
+# Supabase opcional
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+
 # Area privada de agenda
 DOCTOR_DASHBOARD_PIN=1234
 
@@ -71,7 +78,17 @@ RESEND_API_KEY=
 RESEND_FROM_EMAIL=onboarding@resend.dev
 ```
 
-Sin `OPENAI_API_KEY`, la app puede seguir funcionando como demo visual, pero la respuesta IA real queda limitada. Sin `RESEND_API_KEY`, el flujo de email queda preparado pero no envia correos reales.
+Sin `OPENAI_API_KEY`, la app puede seguir funcionando como demo visual, pero la respuesta IA real queda limitada. Sin `SUPABASE_SERVICE_ROLE_KEY`, las citas usan un store demo en memoria. Sin `RESEND_API_KEY`, el flujo de email queda preparado pero no envia correos reales.
+
+## Flujo de citas
+
+1. El paciente escribe a la recepcionista IA.
+2. La IA propone huecos disponibles y recoge nombre, email y telefono.
+3. La web crea una solicitud `pending`; todavia no se envia confirmacion.
+4. El medico o recepcion entra al area privada, revisa la solicitud y pulsa `Confirmar`.
+5. La cita pasa a `confirmed` y se envia el email de confirmacion.
+
+Este enfoque evita que la IA cierre citas sensibles sin supervision humana.
 
 ## Scripts
 

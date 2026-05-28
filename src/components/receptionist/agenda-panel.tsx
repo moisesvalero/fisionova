@@ -1,6 +1,12 @@
 "use client";
 
-import { CalendarDays, RotateCcw, Shuffle, XCircle } from "lucide-react";
+import {
+  CalendarDays,
+  CheckCircle2,
+  RotateCcw,
+  Shuffle,
+  XCircle,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { therapists, treatments } from "@/lib/receptionist/demo-data";
@@ -8,6 +14,7 @@ import type { Appointment } from "@/lib/receptionist/types";
 
 type AgendaPanelProps = {
   appointments: Appointment[];
+  onConfirm: (appointment: Appointment) => void;
   onCancel: (appointment: Appointment) => void;
   onMove: (appointment: Appointment) => void;
   onReset: () => void;
@@ -29,6 +36,7 @@ function formatShortDate(date: string) {
 
 export function AgendaPanel({
   appointments,
+  onConfirm,
   onCancel,
   onMove,
   onReset,
@@ -60,7 +68,11 @@ export function AgendaPanel({
               </div>
               <span
                 className={`h-2 w-2 rounded-full ${
-                  appointment.status === "confirmed" ? "bg-sage" : "bg-clay"
+                  appointment.status === "confirmed"
+                    ? "bg-sage"
+                    : appointment.status === "pending"
+                      ? "bg-clinical"
+                      : "bg-clay"
                 }`}
                 aria-hidden="true"
               />
@@ -77,15 +89,32 @@ export function AgendaPanel({
                 className={`rounded px-2 py-0.5 text-[11px] font-medium ${
                   appointment.status === "confirmed"
                     ? "bg-sage/10 text-sage"
-                    : "bg-clay/10 text-clay"
+                    : appointment.status === "pending"
+                      ? "bg-clinical/10 text-clinical"
+                      : "bg-clay/10 text-clay"
                 }`}
               >
-                {appointment.status === "confirmed" ? "Reservada" : "Cancelada"}
+                {appointment.status === "confirmed"
+                  ? "Confirmada"
+                  : appointment.status === "pending"
+                    ? "Pendiente"
+                    : "Cancelada"}
               </span>
             </div>
 
-            {appointment.status === "confirmed" ? (
+            {appointment.status !== "cancelled" ? (
               <div className="mt-3 flex justify-end gap-2">
+                {appointment.status === "pending" ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => onConfirm(appointment)}
+                  >
+                    <CheckCircle2 className="size-4" aria-hidden="true" />
+                    Confirmar
+                  </Button>
+                ) : null}
                 <Button
                   type="button"
                   size="sm"
