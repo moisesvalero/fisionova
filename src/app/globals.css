@@ -99,6 +99,26 @@ h3 {
   animation: fade-up 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .reveal-up {
+    animation: reveal-up linear both;
+    animation-range: entry 0% cover 28%;
+    animation-timeline: view();
+  }
+}
+
 @keyframes pulse-dot {
   0%,
   100% {

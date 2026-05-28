@@ -8,13 +8,16 @@ import {
   Clock3,
   Ear,
   Mail,
+  MessageCircle,
   MapPin,
   Phone,
   Sparkles,
+  X,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
+import { Button } from "@/components/ui/button";
 import { ChatPanel } from "@/components/receptionist/chat-panel";
 import {
   clinicProfile,
@@ -37,6 +40,13 @@ const assistantGreeting: ChatMessage = {
     "Hola, soy recepción de FisioNova Clínica. Puedo ayudarte a pedir cita, cambiarla, cancelarla o resolver dudas sobre precios y tratamientos.",
 };
 
+const therapistPhotos: Record<string, string> = {
+  marta:
+    "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=900&q=82",
+  alvaro:
+    "https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=900&q=82",
+};
+
 export function ReceptionistExperience() {
   const [messages, setMessages] = useState<ChatMessage[]>([assistantGreeting]);
   const [proposedSlots, setProposedSlots] = useState<AppointmentSlot[]>([]);
@@ -45,6 +55,7 @@ export function ReceptionistExperience() {
   );
   const [pending, setPending] = useState(false);
   const [bookingPending, setBookingPending] = useState(false);
+  const [isChatModalOpen, setIsChatModalOpen] = useState(false);
 
   async function sendEmail(type: EmailEventType, appointment: Appointment) {
     const response = await fetch("/api/email", {
@@ -207,9 +218,13 @@ export function ReceptionistExperience() {
             <div className="mt-8 flex flex-wrap gap-3">
               <a
                 href="#chat"
+                onClick={(event) => {
+                  event.preventDefault();
+                  setIsChatModalOpen(true);
+                }}
                 className="bg-cream text-charcoal hover:bg-cream/90 inline-flex items-center gap-2 rounded-md px-5 py-3 text-sm font-medium transition-colors"
               >
-                Reservar cita <ArrowRight className="h-4 w-4" />
+                Chatear con recepción <MessageCircle className="h-4 w-4" />
               </a>
               <a
                 href="#treatments"
@@ -224,7 +239,33 @@ export function ReceptionistExperience() {
             id="chat"
             className="animate-fade-up flex flex-col items-center gap-4 lg:col-span-6 lg:items-end"
           >
+            <div className="glass shadow-elegant border-cream/25 hidden w-full max-w-md overflow-hidden rounded-xl border lg:block">
+              <div className="relative min-h-[360px] p-7">
+                <div className="border-border/60 bg-card/90 absolute top-6 right-6 left-10 rounded-2xl rounded-br-md border px-5 py-4 text-sm leading-relaxed">
+                  Hola, soy recepción. Dime qué te duele o cuándo quieres venir
+                  y busco una cita para ti.
+                </div>
+                <div className="bg-charcoal text-cream absolute right-10 bottom-28 left-20 rounded-2xl rounded-br-md px-5 py-4 text-sm">
+                  Quiero cita para fisioterapia deportiva esta semana.
+                </div>
+                <div className="border-border/60 bg-card absolute right-10 bottom-10 left-10 flex items-center justify-between gap-4 rounded-xl border p-3">
+                  <span className="text-muted-foreground text-sm">
+                    Recepción online preparada
+                  </span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => setIsChatModalOpen(true)}
+                  >
+                    Abrir chat
+                  </Button>
+                </div>
+              </div>
+            </div>
+
             <ChatPanel
+              className="lg:hidden"
+              inputId="receptionist-message-inline"
               messages={messages}
               pending={pending}
               proposedSlots={proposedSlots}
@@ -237,6 +278,36 @@ export function ReceptionistExperience() {
           </div>
         </div>
       </section>
+
+      {isChatModalOpen ? (
+        <div
+          className="bg-charcoal/70 fixed inset-0 z-50 flex items-center justify-center px-4 py-6 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Chat de recepción"
+        >
+          <button
+            type="button"
+            className="text-cream hover:bg-cream/10 absolute top-5 right-5 inline-flex h-11 w-11 items-center justify-center rounded-full transition-colors"
+            onClick={() => setIsChatModalOpen(false)}
+          >
+            <X className="h-5 w-5" aria-hidden="true" />
+            <span className="sr-only">Cerrar chat</span>
+          </button>
+          <ChatPanel
+            mode="modal"
+            inputId="receptionist-message-modal"
+            messages={messages}
+            pending={pending}
+            proposedSlots={proposedSlots}
+            selectedSlot={selectedSlot}
+            bookingPending={bookingPending}
+            onSubmit={handleSubmit}
+            onSelectSlot={handleSelectSlot}
+            onConfirmBooking={handleConfirmBooking}
+          />
+        </div>
+      ) : null}
 
       <AboutSection />
       <HowItWorks />
@@ -255,7 +326,7 @@ export function ReceptionistExperience() {
 function AboutSection() {
   return (
     <section id="about" className="px-6 py-24 lg:px-12 lg:py-32">
-      <div className="mx-auto grid max-w-7xl items-start gap-12 lg:grid-cols-12">
+      <div className="reveal-up mx-auto grid max-w-7xl items-start gap-12 lg:grid-cols-12">
         <div className="lg:col-span-5">
           <span className="text-sage text-xs tracking-[0.18em] uppercase">
             Quiénes somos
@@ -318,7 +389,7 @@ function HowItWorks() {
 
   return (
     <section id="how" className="bg-secondary/40 px-6 py-24 lg:px-12 lg:py-32">
-      <div className="mx-auto max-w-7xl">
+      <div className="reveal-up mx-auto max-w-7xl">
         <header className="mb-16 max-w-2xl">
           <span className="text-sage text-xs tracking-[0.18em] uppercase">
             Citas
@@ -367,7 +438,7 @@ function HowItWorks() {
 function TreatmentsSection() {
   return (
     <section id="treatments" className="px-6 py-24 lg:px-12 lg:py-32">
-      <div className="mx-auto max-w-7xl">
+      <div className="reveal-up mx-auto max-w-7xl">
         <header className="mb-16 max-w-2xl">
           <span className="text-sage text-xs tracking-[0.18em] uppercase">
             Tratamientos
@@ -409,7 +480,7 @@ function TeamSection() {
       id="team"
       className="bg-charcoal text-cream px-6 py-24 lg:px-12 lg:py-32"
     >
-      <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-12">
+      <div className="reveal-up mx-auto grid max-w-7xl gap-12 lg:grid-cols-12">
         <div className="lg:col-span-4">
           <span className="text-sage text-xs tracking-[0.18em] uppercase">
             Equipo
@@ -422,16 +493,28 @@ function TeamSection() {
           {therapists.map((therapist) => (
             <article
               key={therapist.id}
-              className="border-cream/15 bg-cream/5 rounded-xl border p-7"
+              className="group border-cream/15 bg-cream/5 overflow-hidden rounded-xl border"
             >
-              <p className="font-display text-2xl">{therapist.name}</p>
-              <p className="text-sage mt-2 text-sm font-medium">
-                {therapist.specialty}
-              </p>
-              <p className="text-cream/70 mt-4 text-sm leading-relaxed">
-                Tratamiento individual, explicación clara y seguimiento de tu
-                evolución sesión a sesión.
-              </p>
+              <div className="relative aspect-[4/3] overflow-hidden">
+                <Image
+                  src={therapistPhotos[therapist.id]}
+                  alt={`${therapist.name}, fisioterapeuta de FisioNova`}
+                  fill
+                  sizes="(min-width: 1024px) 320px, 100vw"
+                  className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                />
+                <div className="from-charcoal/70 absolute inset-0 bg-gradient-to-t via-transparent to-transparent" />
+              </div>
+              <div className="p-7">
+                <p className="font-display text-2xl">{therapist.name}</p>
+                <p className="text-sage mt-2 text-sm font-medium">
+                  {therapist.specialty}
+                </p>
+                <p className="text-cream/70 mt-4 text-sm leading-relaxed">
+                  Tratamiento individual, explicación clara y seguimiento de tu
+                  evolución sesión a sesión.
+                </p>
+              </div>
             </article>
           ))}
         </div>
@@ -443,7 +526,7 @@ function TeamSection() {
 function BookingSection() {
   return (
     <section className="px-6 py-24 lg:px-12 lg:py-32">
-      <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-12">
+      <div className="reveal-up mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-12">
         <div className="lg:col-span-6">
           <span className="text-sage text-xs tracking-[0.18em] uppercase">
             Recepción online
@@ -483,7 +566,7 @@ function BookingSection() {
 function FirstVisitSection() {
   return (
     <section className="bg-secondary/40 px-6 py-24 lg:px-12 lg:py-32">
-      <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-12">
+      <div className="reveal-up mx-auto grid max-w-7xl gap-12 lg:grid-cols-12">
         <div className="lg:col-span-5">
           <span className="text-sage text-xs tracking-[0.18em] uppercase">
             Primera visita
@@ -539,7 +622,7 @@ function ContactSection() {
       id="contact"
       className="bg-secondary/40 px-6 py-24 lg:px-12 lg:py-32"
     >
-      <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-12">
+      <div className="reveal-up mx-auto grid max-w-7xl gap-12 lg:grid-cols-12">
         <div className="lg:col-span-5">
           <span className="text-sage text-xs tracking-[0.18em] uppercase">
             Contacto
@@ -592,7 +675,7 @@ function FAQSection() {
 
   return (
     <section className="px-6 py-24 lg:px-12 lg:py-32">
-      <div className="mx-auto max-w-4xl">
+      <div className="reveal-up mx-auto max-w-4xl">
         <span className="text-sage text-xs tracking-[0.18em] uppercase">
           Dudas frecuentes
         </span>

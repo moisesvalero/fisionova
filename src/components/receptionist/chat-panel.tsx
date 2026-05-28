@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, Clock3, Send, Sparkles } from "lucide-react";
-import type { FormEvent } from "react";
+import { useEffect, useRef, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import type {
@@ -9,6 +9,7 @@ import type {
   ChatMessage,
   PatientDetails,
 } from "@/lib/receptionist/types";
+import { cn } from "@/lib/utils";
 
 type ChatPanelProps = {
   messages: ChatMessage[];
@@ -16,6 +17,9 @@ type ChatPanelProps = {
   proposedSlots: AppointmentSlot[];
   selectedSlot: AppointmentSlot | null;
   bookingPending: boolean;
+  className?: string;
+  inputId?: string;
+  mode?: "inline" | "modal";
   onSubmit: (message: string) => void;
   onSelectSlot: (slot: AppointmentSlot) => void;
   onConfirmBooking: (details: PatientDetails) => void;
@@ -33,10 +37,23 @@ export function ChatPanel({
   proposedSlots,
   selectedSlot,
   bookingPending,
+  className,
+  inputId = "receptionist-message",
+  mode = "inline",
   onSubmit,
   onSelectSlot,
   onConfirmBooking,
 }: ChatPanelProps) {
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (typeof bottomRef.current?.scrollIntoView !== "function") {
+      return;
+    }
+
+    bottomRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [messages, pending, proposedSlots.length, selectedSlot, bookingPending]);
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
@@ -65,7 +82,13 @@ export function ChatPanel({
   }
 
   return (
-    <section className="glass shadow-elegant border-border/60 w-full max-w-md overflow-hidden rounded-xl border">
+    <section
+      className={cn(
+        "glass shadow-elegant border-border/60 w-full overflow-hidden rounded-xl border",
+        mode === "modal" ? "max-w-4xl" : "max-w-md",
+        className,
+      )}
+    >
       <header className="border-border/50 flex items-center gap-3 border-b px-5 py-4">
         <div className="relative">
           <div className="bg-sage flex h-9 w-9 items-center justify-center rounded-full">
@@ -87,7 +110,14 @@ export function ChatPanel({
         </div>
       </header>
 
-      <div className="bg-background/40 max-h-[340px] min-h-[220px] space-y-3 overflow-y-auto px-5 py-5">
+      <div
+        className={cn(
+          "bg-background/40 space-y-3 overflow-y-auto px-5 py-5",
+          mode === "modal"
+            ? "max-h-[min(64vh,680px)] min-h-[420px] md:px-8 md:py-7"
+            : "max-h-[340px] min-h-[220px]",
+        )}
+      >
         {messages.map((message) => (
           <div
             key={message.id}
@@ -180,6 +210,7 @@ export function ChatPanel({
             </div>
           </div>
         ) : null}
+        <div ref={bottomRef} />
       </div>
 
       <div className="border-border/50 bg-card/85 border-t px-4 py-3.5">
@@ -194,11 +225,11 @@ export function ChatPanel({
           className="border-border/70 bg-background/80 focus-within:ring-ring/40 flex items-center gap-2 rounded-lg border px-2 py-1.5 transition-shadow focus-within:ring-2"
           onSubmit={handleSubmit}
         >
-          <label className="sr-only" htmlFor="receptionist-message">
+          <label className="sr-only" htmlFor={inputId}>
             Mensaje para recepción
           </label>
           <input
-            id="receptionist-message"
+            id={inputId}
             name="message"
             className="text-foreground placeholder:text-muted-foreground flex-1 bg-transparent px-2 py-2 text-sm outline-none"
             placeholder="Escribe un mensaje..."
