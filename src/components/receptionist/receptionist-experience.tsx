@@ -301,7 +301,7 @@ export function ReceptionistExperience() {
         </div>
       ) : null}
 
-      <AboutSection />
+      <AboutSectionBalanced />
       <ClinicGallerySection />
       <HowItWorks />
       <TreatmentsSection />
@@ -364,6 +364,77 @@ function AboutSection() {
               <div
                 key={value}
                 className="reveal-soft border-border bg-card rounded-xl border p-5"
+              >
+                <p className="font-display text-foreground text-2xl">{value}</p>
+                <p className="text-muted-foreground mt-1 text-sm">{label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+void AboutSection;
+
+function AboutSectionBalanced() {
+  const trustItems = [
+    ["+6 años", "acompañando recuperaciones"],
+    ["1 a 1", "sin tratamientos en cadena"],
+    ["Madrid", "Calle Salud 18"],
+  ];
+
+  return (
+    <section id="about" className="px-6 py-20 lg:px-12 lg:py-28">
+      <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-12">
+        <div className="relative lg:col-span-6">
+          <div className="shadow-elegant relative aspect-[5/4] overflow-hidden rounded-xl lg:aspect-[4/3]">
+            <Image
+              src={clinicPhotos.assessment}
+              alt="Sala luminosa de fisioterapia preparada para una sesión"
+              fill
+              sizes="(min-width: 1024px) 48vw, 100vw"
+              className="object-cover"
+            />
+            <div className="from-charcoal/45 absolute inset-0 bg-gradient-to-t via-transparent to-transparent" />
+          </div>
+          <div className="border-background bg-card shadow-elegant absolute right-4 bottom-4 max-w-[260px] rounded-xl border p-4 lg:right-6 lg:bottom-6">
+            <p className="text-sage text-[11px] font-medium tracking-[0.16em] uppercase">
+              Primera valoración
+            </p>
+            <p className="text-foreground mt-2 text-sm leading-relaxed">
+              Revisamos dolor, movilidad y objetivos antes de empezar el
+              tratamiento.
+            </p>
+          </div>
+        </div>
+
+        <div className="lg:col-span-6">
+          <span className="text-sage text-xs tracking-[0.18em] uppercase">
+            Quiénes somos
+          </span>
+          <h2 className="font-display mt-3 text-3xl leading-tight lg:text-5xl">
+            Una clínica tranquila para recuperarte con confianza
+          </h2>
+          <div className="text-muted-foreground mt-6 grid gap-5 text-base leading-relaxed lg:grid-cols-2">
+            <p>
+              En FisioNova trabajamos con sesiones individuales, evaluación
+              clara y planes de tratamiento que puedas entender desde el primer
+              día.
+            </p>
+            <p>
+              Nuestro objetivo es que salgas sabiendo qué te pasa, qué vamos a
+              trabajar y cómo puedes cuidarte entre sesiones.
+            </p>
+          </div>
+          <div className="mt-8 grid gap-4 sm:grid-cols-3 lg:grid-cols-2">
+            {trustItems.map(([value, label], index) => (
+              <div
+                key={value}
+                className={`reveal-soft border-border bg-card rounded-xl border p-5 ${
+                  index === 2 ? "lg:col-span-2" : ""
+                }`}
               >
                 <p className="font-display text-foreground text-2xl">{value}</p>
                 <p className="text-muted-foreground mt-1 text-sm">{label}</p>
