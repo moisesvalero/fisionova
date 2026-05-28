@@ -801,17 +801,34 @@ function FinalCTA() {
 }
 
 function Footer() {
+  function openCookieSettings() {
+    window.dispatchEvent(new Event("fisionova-open-cookie-settings"));
+  }
+
   return (
     <footer className="bg-charcoal border-cream/10 text-cream/60 border-t px-6 py-8 lg:px-12">
       <div className="mx-auto flex max-w-7xl flex-col gap-4 text-sm md:flex-row md:items-center md:justify-between">
         <p>FisioNova Clínica · Demo portfolio</p>
-        <div className="flex gap-4">
+        <div className="flex flex-wrap gap-4">
           <a href="#treatments" className="hover:text-cream transition-colors">
             Tratamientos
           </a>
           <a href="#contact" className="hover:text-cream transition-colors">
             Contacto
           </a>
+          <Link
+            href="/politica-cookies"
+            className="hover:text-cream transition-colors"
+          >
+            Cookies
+          </Link>
+          <button
+            type="button"
+            className="hover:text-cream transition-colors"
+            onClick={openCookieSettings}
+          >
+            Configurar cookies
+          </button>
           <Link href="/medico" className="hover:text-cream transition-colors">
             Área clínica
           </Link>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Lora } from "next/font/google";
 
 import { siteConfig } from "@/config/site";
+import { CookieBanner } from "@/components/legal/cookie-banner";
 import { createPageMetadata } from "@/lib/seo";
 
 import "./globals.css";
@@ -36,7 +37,10 @@ export default function RootLayout({
       lang="es"
       className={`${inter.variable} ${lora.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col">{children}</body>
+      <body className="flex min-h-full flex-col">
+        {children}
+        <CookieBanner />
+      </body>
     </html>
   );
 }
