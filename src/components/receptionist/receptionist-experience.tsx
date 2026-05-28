@@ -6,7 +6,6 @@ import {
   CalendarSearch,
   CheckCircle2,
   Ear,
-  LockKeyhole,
   Mail,
   Sparkles,
 } from "lucide-react";
@@ -130,7 +129,7 @@ export function ReceptionistExperience() {
             href="/medico"
             className="text-cream/90 hover:text-cream hidden items-center gap-1.5 text-sm transition-colors sm:inline-flex"
           >
-            Área clínica <LockKeyhole className="h-3.5 w-3.5" />
+            Área clínica
           </Link>
         </nav>
 
@@ -143,7 +142,9 @@ export function ReceptionistExperience() {
             <h1 className="font-display text-cream text-4xl leading-[1.05] sm:text-5xl lg:text-6xl">
               Fisioterapia para
               <br />
-              <span className="text-sage italic">moverte sin dolor</span>
+              <span className="text-accent italic drop-shadow-[0_2px_14px_rgba(0,0,0,0.65)]">
+                moverte sin dolor
+              </span>
             </h1>
             <p className="text-cream/80 mt-6 max-w-xl text-lg leading-relaxed">
               Tratamientos personalizados para dolor de espalda, lesiones
@@ -177,7 +178,6 @@ export function ReceptionistExperience() {
               onSubmit={handleSubmit}
               onSelectSlot={handleSelectSlot}
             />
-            <PatientPrivacyNote />
           </div>
         </div>
       </section>
@@ -186,25 +186,6 @@ export function ReceptionistExperience() {
       <TreatmentsSection />
       <BookingSection />
       <FinalCTA />
-    </div>
-  );
-}
-
-function PatientPrivacyNote() {
-  return (
-    <div className="glass shadow-elegant border-border/60 w-full max-w-md rounded-xl border px-5 py-4">
-      <div className="flex items-start gap-3">
-        <div className="bg-sage/15 mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-md">
-          <LockKeyhole className="text-sage h-4 w-4" aria-hidden="true" />
-        </div>
-        <div>
-          <p className="text-sm font-medium">Agenda privada</p>
-          <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
-            Solo verás los huecos disponibles para tu cita. La agenda completa
-            queda reservada para el equipo clínico.
-          </p>
-        </div>
-      </div>
     </div>
   );
 }
