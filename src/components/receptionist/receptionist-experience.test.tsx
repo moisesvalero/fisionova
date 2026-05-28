@@ -8,6 +8,10 @@ describe("ReceptionistExperience", () => {
     render(<ReceptionistExperience />);
 
     expect(screen.getByText("moverte sin dolor")).toBeInTheDocument();
+    expect(screen.getByText("Quiénes somos")).toBeInTheDocument();
+    expect(screen.getAllByText("Equipo").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Contacto").length).toBeGreaterThan(0);
+    expect(screen.getByText("Marta Ruiz")).toBeInTheDocument();
     expect(screen.getAllByText("Recepción online").length).toBeGreaterThan(0);
     expect(screen.queryByText("Agenda privada")).not.toBeInTheDocument();
     expect(screen.queryByText("Agenda de la clínica")).not.toBeInTheDocument();

@@ -5,15 +5,22 @@ import {
   ArrowRight,
   CalendarSearch,
   CheckCircle2,
+  Clock3,
   Ear,
   Mail,
+  MapPin,
+  Phone,
   Sparkles,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
 import { ChatPanel } from "@/components/receptionist/chat-panel";
-import { treatments } from "@/lib/receptionist/demo-data";
+import {
+  clinicProfile,
+  therapists,
+  treatments,
+} from "@/lib/receptionist/demo-data";
 import type {
   Appointment,
   AppointmentSlot,
@@ -113,7 +120,7 @@ export function ReceptionistExperience() {
         <div className="from-charcoal/60 absolute inset-0 bg-gradient-to-r via-transparent to-transparent" />
 
         <nav className="absolute inset-x-0 top-0 z-20 flex items-center justify-between px-6 py-6 lg:px-12">
-          <div className="text-cream flex items-center gap-2">
+          <a href="#" className="text-cream flex items-center gap-2">
             <div className="bg-sage flex h-7 w-7 items-center justify-center rounded-md">
               <Sparkles
                 className="text-sage-foreground h-3.5 w-3.5"
@@ -124,13 +131,27 @@ export function ReceptionistExperience() {
             <span className="font-display text-lg tracking-tight">
               FisioNova <span className="opacity-60">Clínica</span>
             </span>
+          </a>
+          <div className="text-cream/90 hidden items-center gap-6 text-sm md:flex">
+            <a href="#about" className="hover:text-cream transition-colors">
+              Clínica
+            </a>
+            <a
+              href="#treatments"
+              className="hover:text-cream transition-colors"
+            >
+              Tratamientos
+            </a>
+            <a href="#team" className="hover:text-cream transition-colors">
+              Equipo
+            </a>
+            <a href="#contact" className="hover:text-cream transition-colors">
+              Contacto
+            </a>
+            <Link href="/medico" className="hover:text-cream transition-colors">
+              Área clínica
+            </Link>
           </div>
-          <Link
-            href="/medico"
-            className="text-cream/90 hover:text-cream hidden items-center gap-1.5 text-sm transition-colors sm:inline-flex"
-          >
-            Área clínica
-          </Link>
         </nav>
 
         <div className="relative z-10 mx-auto grid min-h-screen max-w-7xl items-center gap-10 px-6 pt-32 pb-20 lg:grid-cols-12 lg:gap-8 lg:px-12 lg:pt-40 lg:pb-28">
@@ -182,11 +203,55 @@ export function ReceptionistExperience() {
         </div>
       </section>
 
+      <AboutSection />
       <HowItWorks />
       <TreatmentsSection />
+      <TeamSection />
       <BookingSection />
+      <ContactSection />
       <FinalCTA />
+      <Footer />
     </div>
+  );
+}
+
+function AboutSection() {
+  return (
+    <section id="about" className="px-6 py-24 lg:px-12 lg:py-32">
+      <div className="mx-auto grid max-w-7xl items-start gap-12 lg:grid-cols-12">
+        <div className="lg:col-span-5">
+          <span className="text-sage text-xs tracking-[0.18em] uppercase">
+            Quiénes somos
+          </span>
+          <h2 className="font-display mt-3 text-3xl leading-tight lg:text-5xl">
+            Una clínica tranquila para recuperarte con confianza
+          </h2>
+        </div>
+        <div className="text-muted-foreground space-y-6 text-lg leading-relaxed lg:col-span-7">
+          <p>
+            En FisioNova trabajamos con sesiones individuales, evaluación clara
+            y planes de tratamiento que puedas entender. Nuestro objetivo es que
+            salgas sabiendo qué te pasa, qué vamos a trabajar y cómo puedes
+            cuidarte entre sesiones.
+          </p>
+          <div className="grid gap-4 sm:grid-cols-3">
+            {[
+              ["+6 años", "acompañando recuperaciones"],
+              ["1 a 1", "sin tratamientos en cadena"],
+              ["Madrid", "Calle Salud 18"],
+            ].map(([value, label]) => (
+              <div
+                key={value}
+                className="border-border bg-card rounded-xl border p-5"
+              >
+                <p className="font-display text-foreground text-2xl">{value}</p>
+                <p className="text-muted-foreground mt-1 text-sm">{label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -215,7 +280,7 @@ function HowItWorks() {
   ];
 
   return (
-    <section id="how" className="px-6 py-24 lg:px-12 lg:py-32">
+    <section id="how" className="bg-secondary/40 px-6 py-24 lg:px-12 lg:py-32">
       <div className="mx-auto max-w-7xl">
         <header className="mb-16 max-w-2xl">
           <span className="text-sage text-xs tracking-[0.18em] uppercase">
@@ -264,10 +329,7 @@ function HowItWorks() {
 
 function TreatmentsSection() {
   return (
-    <section
-      id="treatments"
-      className="bg-secondary/40 px-6 py-24 lg:px-12 lg:py-32"
-    >
+    <section id="treatments" className="px-6 py-24 lg:px-12 lg:py-32">
       <div className="mx-auto max-w-7xl">
         <header className="mb-16 max-w-2xl">
           <span className="text-sage text-xs tracking-[0.18em] uppercase">
@@ -295,6 +357,43 @@ function TreatmentsSection() {
               </h3>
               <p className="text-muted-foreground text-sm leading-relaxed">
                 {treatment.description}
+              </p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function TeamSection() {
+  return (
+    <section
+      id="team"
+      className="bg-charcoal text-cream px-6 py-24 lg:px-12 lg:py-32"
+    >
+      <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-12">
+        <div className="lg:col-span-4">
+          <span className="text-sage text-xs tracking-[0.18em] uppercase">
+            Equipo
+          </span>
+          <h2 className="font-display mt-3 text-3xl leading-tight lg:text-5xl">
+            Fisios que escuchan antes de tratar
+          </h2>
+        </div>
+        <div className="grid gap-5 md:grid-cols-2 lg:col-span-8">
+          {therapists.map((therapist) => (
+            <article
+              key={therapist.id}
+              className="border-cream/15 bg-cream/5 rounded-xl border p-7"
+            >
+              <p className="font-display text-2xl">{therapist.name}</p>
+              <p className="text-sage mt-2 text-sm font-medium">
+                {therapist.specialty}
+              </p>
+              <p className="text-cream/70 mt-4 text-sm leading-relaxed">
+                Tratamiento individual, explicación clara y seguimiento de tu
+                evolución sesión a sesión.
               </p>
             </article>
           ))}
@@ -344,6 +443,51 @@ function BookingSection() {
   );
 }
 
+function ContactSection() {
+  const contactItems = [
+    { icon: MapPin, label: "Dirección", value: clinicProfile.address },
+    { icon: Phone, label: "Teléfono", value: clinicProfile.phone },
+    { icon: Mail, label: "Email", value: clinicProfile.email },
+    { icon: Clock3, label: "Horario", value: clinicProfile.openingHours },
+  ];
+
+  return (
+    <section
+      id="contact"
+      className="bg-secondary/40 px-6 py-24 lg:px-12 lg:py-32"
+    >
+      <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-12">
+        <div className="lg:col-span-5">
+          <span className="text-sage text-xs tracking-[0.18em] uppercase">
+            Contacto
+          </span>
+          <h2 className="font-display mt-3 text-3xl leading-tight lg:text-5xl">
+            Estamos en el centro de Madrid
+          </h2>
+          <p className="text-muted-foreground mt-4 text-lg leading-relaxed">
+            Ven con ropa cómoda y, si tienes pruebas médicas recientes, tráelas.
+            Si no sabes qué tratamiento pedir, recepción te orienta.
+          </p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:col-span-7">
+          {contactItems.map((item) => (
+            <div
+              key={item.label}
+              className="border-border bg-card rounded-xl border p-6"
+            >
+              <item.icon className="text-sage h-5 w-5" aria-hidden="true" />
+              <p className="text-muted-foreground mt-4 text-xs tracking-[0.16em] uppercase">
+                {item.label}
+              </p>
+              <p className="mt-2 text-sm font-medium">{item.value}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function FinalCTA() {
   return (
     <section
@@ -366,5 +510,26 @@ function FinalCTA() {
         </a>
       </div>
     </section>
+  );
+}
+
+function Footer() {
+  return (
+    <footer className="bg-charcoal border-cream/10 text-cream/60 border-t px-6 py-8 lg:px-12">
+      <div className="mx-auto flex max-w-7xl flex-col gap-4 text-sm md:flex-row md:items-center md:justify-between">
+        <p>FisioNova Clínica · Demo portfolio</p>
+        <div className="flex gap-4">
+          <a href="#treatments" className="hover:text-cream transition-colors">
+            Tratamientos
+          </a>
+          <a href="#contact" className="hover:text-cream transition-colors">
+            Contacto
+          </a>
+          <Link href="/medico" className="hover:text-cream transition-colors">
+            Área clínica
+          </Link>
+        </div>
+      </div>
+    </footer>
   );
 }
