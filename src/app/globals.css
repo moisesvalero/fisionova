@@ -129,6 +129,53 @@ h3 {
   animation: fade-up 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 
+@keyframes hero-media-in {
+  from {
+    opacity: 0;
+    transform: scale(1.045);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes hero-rise {
+  from {
+    opacity: 0;
+    transform: translateY(26px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes hero-chat-in {
+  from {
+    opacity: 0;
+    transform: translateY(34px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes float-soft {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
 @keyframes reveal-up {
   from {
     opacity: 0;
@@ -142,6 +189,47 @@ h3 {
 }
 
 @media (prefers-reduced-motion: no-preference) {
+  .hero-media {
+    animation: hero-media-in 1.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .hero-overlay {
+    animation: fade-up 1s cubic-bezier(0.16, 1, 0.3, 1) 0.12s both;
+  }
+
+  .hero-nav {
+    animation: hero-rise 0.75s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+  }
+
+  .hero-kicker,
+  .hero-title,
+  .hero-text,
+  .hero-actions {
+    animation: hero-rise 0.85s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .hero-kicker {
+    animation-delay: 0.18s;
+  }
+
+  .hero-title {
+    animation-delay: 0.28s;
+  }
+
+  .hero-text {
+    animation-delay: 0.42s;
+  }
+
+  .hero-actions {
+    animation-delay: 0.56s;
+  }
+
+  .hero-chat {
+    animation:
+      hero-chat-in 0.95s cubic-bezier(0.16, 1, 0.3, 1) 0.48s both,
+      float-soft 6s ease-in-out 1.7s infinite;
+  }
+
   .reveal-up {
     animation: reveal-up linear both;
     animation-range: entry 0% cover 28%;
@@ -152,6 +240,30 @@ h3 {
     animation: reveal-up linear both;
     animation-range: entry 8% cover 32%;
     animation-timeline: view();
+  }
+
+  .reveal-soft {
+    animation: reveal-up linear both;
+    animation-range: entry 0% cover 22%;
+    animation-timeline: view();
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-media,
+  .hero-overlay,
+  .hero-nav,
+  .hero-kicker,
+  .hero-title,
+  .hero-text,
+  .hero-actions,
+  .hero-chat,
+  .reveal-up,
+  .reveal-up-delayed,
+  .reveal-soft,
+  .animate-fade-up,
+  .animate-pulse-dot {
+    animation: none;
   }
 }
 

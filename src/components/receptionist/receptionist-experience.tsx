@@ -171,12 +171,12 @@ export function ReceptionistExperience() {
           fill
           priority
           sizes="100vw"
-          className="object-cover"
+          className="hero-media object-cover"
         />
-        <div className="from-charcoal/70 via-charcoal/40 to-charcoal/80 absolute inset-0 bg-gradient-to-b" />
-        <div className="from-charcoal/60 absolute inset-0 bg-gradient-to-r via-transparent to-transparent" />
+        <div className="hero-overlay from-charcoal/70 via-charcoal/40 to-charcoal/80 absolute inset-0 bg-gradient-to-b" />
+        <div className="hero-overlay from-charcoal/60 absolute inset-0 bg-gradient-to-r via-transparent to-transparent" />
 
-        <nav className="border-cream/10 bg-charcoal/55 fixed inset-x-0 top-0 z-40 flex items-center justify-between border-b px-6 py-4 backdrop-blur-xl lg:px-12">
+        <nav className="hero-nav border-cream/10 bg-charcoal/55 fixed inset-x-0 top-0 z-40 flex items-center justify-between border-b px-6 py-4 backdrop-blur-xl lg:px-12">
           <a href="#" className="text-cream flex items-center gap-2">
             <div className="bg-sage flex h-7 w-7 items-center justify-center rounded-md">
               <Sparkles
@@ -217,25 +217,25 @@ export function ReceptionistExperience() {
           </div>
         </nav>
 
-        <div className="relative z-10 mx-auto grid min-h-screen max-w-7xl items-center gap-10 px-6 pt-32 pb-20 lg:grid-cols-12 lg:gap-8 lg:px-12 lg:pt-40 lg:pb-28">
-          <div className="animate-fade-up text-cream lg:col-span-6">
-            <div className="text-cream/70 mb-6 inline-flex items-center gap-2 text-xs tracking-[0.18em] uppercase">
+        <div className="relative z-10 mx-auto grid min-h-screen max-w-7xl items-center gap-8 px-6 pt-28 pb-14 sm:gap-10 sm:pt-32 sm:pb-20 lg:grid-cols-12 lg:gap-8 lg:px-12 lg:pt-40 lg:pb-28">
+          <div className="hero-copy text-cream lg:col-span-6">
+            <div className="hero-kicker text-cream/70 mb-6 inline-flex items-center gap-2 text-xs tracking-[0.18em] uppercase">
               <span className="animate-pulse-dot bg-sage h-1.5 w-1.5 rounded-full" />
               Fisioterapia en Madrid · cita online
             </div>
-            <h1 className="font-display text-cream text-4xl leading-[1.05] sm:text-5xl lg:text-6xl">
+            <h1 className="hero-title font-display text-cream text-4xl leading-[1.05] sm:text-5xl lg:text-6xl">
               Fisioterapia para
               <br />
               <span className="text-accent italic drop-shadow-[0_2px_14px_rgba(0,0,0,0.65)]">
                 moverte sin dolor
               </span>
             </h1>
-            <p className="text-cream/80 mt-6 max-w-xl text-lg leading-relaxed">
+            <p className="hero-text text-cream/80 mt-6 max-w-xl text-lg leading-relaxed">
               Tratamientos personalizados para dolor de espalda, lesiones
               deportivas y recuperación funcional. Reserva tu cita hablando con
               recepción, sin llamadas ni formularios largos.
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="hero-actions mt-8 flex flex-wrap gap-3">
               <a
                 href="#chat"
                 className="bg-cream text-charcoal hover:bg-cream/90 inline-flex items-center gap-2 rounded-md px-5 py-3 text-sm font-medium transition-colors"
@@ -253,7 +253,7 @@ export function ReceptionistExperience() {
 
           <div
             id="chat"
-            className="animate-fade-up flex flex-col items-center gap-4 lg:col-span-6 lg:items-end"
+            className="hero-chat flex flex-col items-center gap-4 lg:col-span-6 lg:items-end"
           >
             <ChatPanel
               inputId="receptionist-message-inline"
@@ -363,7 +363,7 @@ function AboutSection() {
             ].map(([value, label]) => (
               <div
                 key={value}
-                className="border-border bg-card rounded-xl border p-5"
+                className="reveal-soft border-border bg-card rounded-xl border p-5"
               >
                 <p className="font-display text-foreground text-2xl">{value}</p>
                 <p className="text-muted-foreground mt-1 text-sm">{label}</p>
@@ -473,7 +473,7 @@ function HowItWorks() {
           {steps.map((step, index) => (
             <li
               key={step.title}
-              className="group bg-background hover:bg-secondary/40 relative flex flex-col gap-4 p-8 transition-colors lg:p-10"
+              className="reveal-soft group bg-background hover:bg-secondary/40 relative flex flex-col gap-4 p-8 transition-colors lg:p-10"
             >
               <div className="flex items-center justify-between">
                 <div className="bg-sage/15 flex h-11 w-11 items-center justify-center rounded-md">
@@ -521,7 +521,7 @@ function TreatmentsSection() {
           {treatments.map((treatment) => (
             <article
               key={treatment.id}
-              className="premium-card border-border bg-card hover:border-sage/40 group overflow-hidden rounded-xl border transition-colors"
+              className="reveal-soft premium-card border-border bg-card hover:border-sage/40 group overflow-hidden rounded-xl border transition-colors"
             >
               <div className="relative aspect-[5/4] overflow-hidden">
                 <Image
@@ -571,7 +571,7 @@ function TeamSection() {
           {therapists.map((therapist) => (
             <article
               key={therapist.id}
-              className="group border-cream/15 bg-cream/5 overflow-hidden rounded-xl border"
+              className="reveal-soft group border-cream/15 bg-cream/5 overflow-hidden rounded-xl border"
             >
               <div className="relative aspect-[4/3] overflow-hidden">
                 <Image
@@ -670,7 +670,7 @@ function FirstVisitSection() {
           ].map(([title, text], index) => (
             <article
               key={title}
-              className="border-border bg-card rounded-xl border p-6"
+              className="reveal-soft border-border bg-card rounded-xl border p-6"
             >
               <span className="font-display text-sage text-3xl">
                 0{index + 1}
@@ -717,7 +717,7 @@ function ContactSection() {
           {contactItems.map((item) => (
             <div
               key={item.label}
-              className="border-border bg-card rounded-xl border p-6"
+              className="reveal-soft border-border bg-card rounded-xl border p-6"
             >
               <item.icon className="text-sage h-5 w-5" aria-hidden="true" />
               <p className="text-muted-foreground mt-4 text-xs tracking-[0.16em] uppercase">
@@ -762,7 +762,7 @@ function FAQSection() {
         </h2>
         <div className="border-border bg-card mt-10 divide-y rounded-xl border">
           {faqs.map((faq) => (
-            <article key={faq.question} className="p-6">
+            <article key={faq.question} className="reveal-soft p-6">
               <h3 className="text-base font-medium">{faq.question}</h3>
               <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
                 {faq.answer}

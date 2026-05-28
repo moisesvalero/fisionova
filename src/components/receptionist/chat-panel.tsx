@@ -117,7 +117,7 @@ export function ChatPanel({
           "bg-background/40 space-y-3 overflow-y-auto px-5 py-5",
           mode === "modal"
             ? "max-h-[min(64vh,680px)] min-h-[420px] md:px-8 md:py-7"
-            : "max-h-[340px] min-h-[220px]",
+            : "max-h-[260px] min-h-[180px] sm:max-h-[340px] sm:min-h-[220px]",
         )}
       >
         {messages.map((message) => (
