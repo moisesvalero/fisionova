@@ -9,9 +9,7 @@ import type { AppointmentSlot, ChatMessage } from "@/lib/receptionist/types";
 type ChatPanelProps = {
   messages: ChatMessage[];
   pending: boolean;
-  quickPrompts: string[];
   proposedSlots: AppointmentSlot[];
-  onPrompt: (message: string) => void;
   onSubmit: (message: string) => void;
   onSelectSlot: (slot: AppointmentSlot) => void;
 };
@@ -19,9 +17,7 @@ type ChatPanelProps = {
 export function ChatPanel({
   messages,
   pending,
-  quickPrompts,
   proposedSlots,
-  onPrompt,
   onSubmit,
   onSelectSlot,
 }: ChatPanelProps) {
@@ -99,23 +95,12 @@ export function ChatPanel({
       </div>
 
       <div className="border-border/50 bg-card/80 border-t px-3 py-3">
-        <div className="flex flex-wrap gap-2">
-          {quickPrompts.map((prompt) => (
-            <Button
-              key={prompt}
-              type="button"
-              size="sm"
-              variant="secondary"
-              className="bg-secondary/70 text-secondary-foreground hover:bg-secondary h-8 text-xs"
-              onClick={() => onPrompt(prompt)}
-            >
-              {prompt}
-            </Button>
-          ))}
-        </div>
-
-        <form className="mt-3 flex items-center gap-2" onSubmit={handleSubmit}>
+        <form className="flex items-center gap-2" onSubmit={handleSubmit}>
+          <label className="sr-only" htmlFor="receptionist-message">
+            Mensaje para la recepcionista IA
+          </label>
           <input
+            id="receptionist-message"
             name="message"
             className="text-foreground placeholder:text-muted-foreground flex-1 bg-transparent px-3 py-2 text-sm outline-none"
             placeholder="Escribe un mensaje..."
@@ -128,7 +113,9 @@ export function ChatPanel({
             disabled={pending}
           >
             <Send className="size-4" aria-hidden="true" />
-            <span className="sr-only">Enviar</span>
+            <span className="sr-only">
+              {pending ? "Enviando mensaje" : "Enviar mensaje"}
+            </span>
           </Button>
         </form>
       </div>

@@ -20,7 +20,6 @@ import {
   resetAgenda,
   updateAppointment,
 } from "@/lib/receptionist/agenda";
-import { quickPrompts } from "@/lib/receptionist/demo-data";
 import type {
   Appointment,
   AppointmentSlot,
@@ -305,9 +304,7 @@ export function ReceptionistExperience() {
             <ChatPanel
               messages={messages}
               pending={pending}
-              quickPrompts={quickPrompts}
               proposedSlots={proposedSlots}
-              onPrompt={handleSubmit}
               onSubmit={handleSubmit}
               onSelectSlot={handleSelectSlot}
             />
