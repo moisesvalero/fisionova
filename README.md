@@ -1,223 +1,134 @@
-# Next Agent Template
+# FisioNova Clinica - Recepcionista IA
 
-Plantilla Next.js para crear webs y web apps simples trabajando con agentes de IA. Viene con TypeScript, App Router, Tailwind CSS, ESLint, Prettier, tests, validacion de entorno, headers de seguridad y una guia `AGENTS.md` lista para Codex, Claude, Cursor u otros agentes.
+Demo publica para portfolio tecnico: una web app de una clinica de fisioterapia ficticia con recepcionista IA, reserva de citas, agenda privada para el medico y confirmaciones por email.
 
-![Captura de la plantilla](docs/images/home-screenshot.png)
+![Captura de FisioNova Clinica](docs/images/home-screenshot.png)
+
+## Demo
+
+El proyecto simula la experiencia completa de una clinica real:
+
+- Web publica con hero visual, secciones de clinica, tratamientos, equipo, contacto y politica de cookies.
+- Chat de recepcion online integrado en la landing, con apertura ampliada tipo pop-up en escritorio.
+- Recepcionista IA conectable a OpenAI mediante API Key.
+- Flujo de reserva, cambio y cancelacion de citas.
+- Agenda privada para el medico protegida por PIN.
+- Calendario visual con citas precargadas para mostrar el funcionamiento.
+- Envio de emails transaccionales preparado con Resend.
+- Banner y pagina de politica de cookies.
+- Responsive y efectos de aparicion para una presentacion mas premium.
+
+> La clinica es ficticia. El objetivo es mostrar una prueba tecnica realista para portfolio, no vender un producto final en produccion.
 
 ## Stack
 
 - Next.js 16 con App Router.
 - React 19 y TypeScript estricto.
 - Tailwind CSS 4.
-- ESLint 9 con reglas de Next y seguridad.
-- Prettier con ordenacion de clases Tailwind.
+- ESLint 9 y Prettier con plugin de Tailwind.
 - Vitest, jsdom y Testing Library.
 - Zod para validar variables de entorno.
-- shadcn-style components con `components.json`, `cn()` y `Button`.
-- Supabase y Sanity preconfigurados como integraciones opcionales.
-- SEO/AEO/GEO base con metadata, sitemap, robots, manifest, Open Graph dinamico, `llms.txt` y JSON-LD.
+- OpenAI API para la recepcionista IA.
+- Resend para emails de confirmacion y cancelacion.
+- Componentes tipo shadcn con `components.json`, `cn()` y `Button`.
+- SEO base con metadata, sitemap, robots, manifest, Open Graph dinamico, `llms.txt` y JSON-LD.
+
+## Funcionalidades tecnicas
+
+- `src/app/api/receptionist/route.ts`: endpoint de chat para procesar mensajes de recepcion y consultar huecos disponibles.
+- `src/app/api/email/route.ts`: endpoint preparado para enviar emails con Resend.
+- `src/components/receptionist/receptionist-experience.tsx`: experiencia principal de la landing, chat, modal, agenda y secciones visuales.
+- `src/components/legal/cookie-banner.tsx`: banner de consentimiento con preferencias guardadas en `localStorage`.
+- `src/app/area-clinica/page.tsx`: vista privada de agenda del medico.
+- `src/lib/env.ts`: contrato de variables de entorno validado con Zod.
 
 ## Arranque rapido
 
 ```bash
 npm install
-npm run agent:skills
+cp .env.example .env.local
 npm run dev
 ```
 
 Abre `http://localhost:3000`.
 
-## Trabajar con agentes
+## Variables de entorno
 
-1. Clona esta plantilla para cada proyecto nuevo.
-2. Abre la carpeta con tu agente favorito.
-3. Pidele que lea `AGENTS.md` antes de modificar codigo.
-4. Ejecuta `npm run agent:skills` si quieres que `npx autoskills` detecte skills utiles para el proyecto.
-5. Antes de cerrar una tarea, pide siempre `npm run verify`.
+Copia `.env.example` a `.env.local` y rellena solo lo que necesites para la demo.
+
+```env
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# OpenAI
+OPENAI_API_KEY=
+OPENAI_MODEL=gpt-5.4-nano
+
+# Area privada de agenda
+DOCTOR_DASHBOARD_PIN=1234
+
+# Resend
+RESEND_API_KEY=
+RESEND_FROM_EMAIL=onboarding@resend.dev
+```
+
+Sin `OPENAI_API_KEY`, la app puede seguir funcionando como demo visual, pero la respuesta IA real queda limitada. Sin `RESEND_API_KEY`, el flujo de email queda preparado pero no envia correos reales.
 
 ## Scripts
 
 ```bash
-npm run dev           # servidor local
-npm run build         # build de produccion
-npm run start         # servir build
-npm run lint          # ESLint
-npm run lint:fix      # ESLint con fixes
-npm run ui:add        # anadir componentes con shadcn
-npm run check         # TypeScript sin emitir archivos
-npm run format        # formatear con Prettier
-npm run format:check  # comprobar formato
-npm test              # tests unitarios
-npm run test:watch    # tests en modo watch
-npm run audit         # auditoria de vulnerabilidades high+
-npm run verify        # formato, lint, tipos, tests, build y audit
-npm run agent:skills  # npx autoskills
-npm run agent:impeccable # instala la skill Impeccable en el harness detectado
-npm run design:audit  # detecta patrones visuales flojos con Impeccable
-```
-
-## Herramientas opcionales para diseno con agentes
-
-### Impeccable
-
-[Impeccable](https://impeccable.style/) es una skill para que el agente disene, critique, pula y audite interfaces con mejor criterio visual. Vale la pena para esta plantilla porque vive cerca del codigo, funciona con Codex/Cursor/Claude/Gemini y permite comandos como audit, polish, typeset o colorize.
-
-Instalacion recomendada en cada proyecto clonado:
-
-```bash
-npm run agent:impeccable
-```
-
-Auditoria visual rapida:
-
-```bash
-npm run design:audit
-```
-
-### Windframe MCP
-
-[Windframe MCP](https://windframe.dev/mcp) conecta tu agente a sistemas de diseno, componentes y tokens Tailwind. Es util cuando quieres que el agente genere UI con estilos tipo Linear, ShadCN, Notion o Enterprise sin inventarse valores.
-
-No va como dependencia fija de esta plantilla porque requiere cuenta/OAuth y se configura en el cliente MCP del agente, no dentro de Next.js. Usalo cuando el proyecto necesite una direccion visual mas concreta:
-
-```bash
-# Ejemplo Claude Code
-claude mcp add --transport http windframe-mcp https://mcp.windframe.dev/mcp
+npm run dev              # servidor local
+npm run build            # build de produccion
+npm run start            # servir build
+npm run lint             # ESLint
+npm run lint:fix         # ESLint con fixes
+npm run check            # TypeScript sin emitir archivos
+npm run format           # formatear con Prettier
+npm run format:check     # comprobar formato
+npm test                 # tests unitarios
+npm run test:watch       # tests en modo watch
+npm run audit            # auditoria de vulnerabilidades high+
+npm run verify           # formato, lint, tipos, tests, build y audit
+npm run design:audit     # auditoria visual con Impeccable
+npm run agent:skills     # instalar/actualizar skills del agente
 ```
 
 ## Estructura
 
 ```text
 src/
-  app/             # rutas, layouts, sitemap, robots y estilos globales
-  components/      # componentes reutilizables, UI y SEO
+  app/             # rutas, layouts, APIs, sitemap, robots y estilos globales
+  components/      # componentes reutilizables, UI, legal y experiencia principal
   config/          # configuracion del sitio
-  lib/             # utilidades, env, SEO, servicios y Supabase
-  sanity/          # cliente y queries de Sanity
+  lib/             # utilidades, env, SEO, servicios y helpers
+  sanity/          # integracion opcional heredada de la plantilla base
   test/            # setup de tests
 ```
 
-## SEO, AEO y GEO
+## Notas de portfolio
 
-La plantilla trae una base razonable para buscadores clasicos y motores de respuesta:
+Este proyecto esta pensado para ensenar:
 
-- `src/config/site.ts`: nombre, descripcion, URL, locale y keywords.
-- `src/lib/seo.ts`: helper `createPageMetadata()` y JSON-LD.
-- `src/components/seo/json-ld.tsx`: inserta datos estructurados de forma segura.
-- `src/app/sitemap.ts`: genera `/sitemap.xml`.
-- `src/app/robots.ts`: genera `/robots.txt`.
-- `src/app/manifest.ts`: genera `/manifest.webmanifest`.
-- `src/app/opengraph-image.tsx`: genera la imagen social por defecto.
-- `src/app/llms.txt/route.ts`: publica `/llms.txt` para agentes y motores de respuesta.
+- Integracion de IA en una experiencia web realista.
+- Diseno de producto para un negocio local, no una landing generica.
+- Separacion entre web publica y area privada.
+- Manejo de variables de entorno y servicios externos opcionales.
+- Cuidado visual, responsive, accesibilidad basica, SEO y verificacion automatizada.
 
-Para cada proyecto, cambia primero `src/config/site.ts` y `NEXT_PUBLIC_APP_URL`. Luego usa `createPageMetadata()` en paginas concretas cuando necesites title, description o canonical propios.
+## Verificacion
 
-## UI con shadcn
-
-No se instala shadcn como caja cerrada. La plantilla deja la base compatible:
-
-- `components.json` para que el CLI de shadcn sepa donde poner componentes.
-- `src/lib/utils.ts` con `cn()`.
-- `src/components/ui/button.tsx` como primer componente.
-- Variables de color en `src/app/globals.css`.
-
-Puedes anadir componentes con:
+Antes de publicar o entregar cambios:
 
 ```bash
-npx shadcn@latest add card input textarea form
+npm run format:check
+npm run lint
+npm run check
+npm test
+npm run build
+npm run design:audit
 ```
 
-## Supabase
-
-Supabase queda preparado para auth, base de datos y storage sin obligarte a crear cuenta desde el dia uno.
-
-Archivos:
-
-- `src/lib/supabase/browser.ts`: cliente para componentes cliente.
-- `src/lib/supabase/server.ts`: cliente para Server Components, Route Handlers y Server Actions.
-- `src/lib/services.ts`: detecta si Supabase esta configurado.
-
-Variables:
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-```
-
-Uso en cliente:
-
-```tsx
-"use client";
-
-import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
-
-const supabase = createSupabaseBrowserClient();
-```
-
-Uso en servidor:
-
-```tsx
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-
-const supabase = await createSupabaseServerClient();
-```
-
-## Sanity
-
-Sanity queda preparado como CMS headless opcional para blogs, landing pages, portfolios o contenido editable.
-
-Archivos:
-
-- `src/sanity/client.ts`: cliente Sanity.
-- `src/sanity/queries.ts`: query de ejemplo para posts.
-- `src/lib/services.ts`: detecta si Sanity esta configurado.
-
-Variables:
-
-```env
-NEXT_PUBLIC_SANITY_PROJECT_ID=
-NEXT_PUBLIC_SANITY_DATASET=production
-SANITY_API_READ_TOKEN=
-```
-
-Uso:
-
-```ts
-import { createSanityClient } from "@/sanity/client";
-import { latestPostsQuery } from "@/sanity/queries";
-
-const posts = await createSanityClient().fetch(latestPostsQuery);
-```
-
-## Variables de entorno
-
-Copia `.env.example` a `.env.local`:
+O una pasada completa:
 
 ```bash
-cp .env.example .env.local
-```
-
-El contrato de entorno vive en `src/lib/env.ts`. Anade ahi cada variable nueva para fallar pronto si falta o tiene mal formato. Supabase y Sanity son opcionales: si faltan sus variables, la app sigue funcionando.
-
-## Seguridad incluida
-
-- `poweredByHeader: false`.
-- Headers base: `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`.
-- HSTS solo en produccion.
-- `.env*` ignorado por Git.
-- `npm audit --audit-level=high` en la verificacion completa.
-- Dependabot para npm y GitHub Actions.
-
-## Crear un proyecto desde esta plantilla
-
-Cuando la subas a GitHub, puedes usarla como template o clonarla:
-
-```bash
-git clone <tu-repo> mi-proyecto
-cd mi-proyecto
-npm install
-npm run agent:skills
 npm run verify
 ```
-
-Despues cambia `name`, `metadata`, textos de la home y variables de entorno segun el proyecto.
