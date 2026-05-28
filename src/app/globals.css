@@ -47,7 +47,7 @@
   --color-clay: var(--clay);
   --color-clinical: var(--clinical);
   --font-sans: var(--font-inter);
-  --font-display: var(--font-fraunces);
+  --font-display: var(--font-lora);
 }
 
 body {
@@ -60,14 +60,14 @@ body {
 h1,
 h2,
 h3 {
-  font-family: var(--font-fraunces), Georgia, serif;
-  font-weight: 400;
+  font-family: var(--font-lora), Georgia, serif;
+  font-weight: 500;
   letter-spacing: 0;
 }
 
 @layer utilities {
   .font-display {
-    font-family: var(--font-fraunces), Georgia, serif;
+    font-family: var(--font-lora), Georgia, serif;
   }
 
   .glass {
