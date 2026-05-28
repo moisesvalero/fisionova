@@ -45,6 +45,22 @@ const therapistPhotos: Record<string, string> = {
     "https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=900&q=82",
 };
 
+const clinicPhotos = {
+  assessment: "/images/clinic-hero.jpg",
+  movement:
+    "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=900&q=82",
+  room: "https://images.unsplash.com/photo-1519823551278-64ac92734fb1?auto=format&fit=crop&w=900&q=82",
+};
+
+const treatmentPhotos: Record<string, string> = {
+  general:
+    "https://images.unsplash.com/photo-1519823551278-64ac92734fb1?auto=format&fit=crop&w=900&q=82",
+  sports:
+    "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=900&q=82",
+  postural:
+    "https://images.unsplash.com/photo-1600881333168-2ef49b341f30?auto=format&fit=crop&w=900&q=82",
+};
+
 export function ReceptionistExperience() {
   const [messages, setMessages] = useState<ChatMessage[]>([assistantGreeting]);
   const [proposedSlots, setProposedSlots] = useState<AppointmentSlot[]>([]);
@@ -160,7 +176,7 @@ export function ReceptionistExperience() {
         <div className="from-charcoal/70 via-charcoal/40 to-charcoal/80 absolute inset-0 bg-gradient-to-b" />
         <div className="from-charcoal/60 absolute inset-0 bg-gradient-to-r via-transparent to-transparent" />
 
-        <nav className="absolute inset-x-0 top-0 z-20 flex items-center justify-between px-6 py-6 lg:px-12">
+        <nav className="border-cream/10 bg-charcoal/55 fixed inset-x-0 top-0 z-40 flex items-center justify-between border-b px-6 py-4 backdrop-blur-xl lg:px-12">
           <a href="#" className="text-cream flex items-center gap-2">
             <div className="bg-sage flex h-7 w-7 items-center justify-center rounded-md">
               <Sparkles
@@ -192,6 +208,12 @@ export function ReceptionistExperience() {
             <Link href="/medico" className="hover:text-cream transition-colors">
               Área clínica
             </Link>
+            <a
+              href="#chat"
+              className="bg-cream text-charcoal hover:bg-sage hover:text-sage-foreground rounded-md px-3.5 py-2 text-xs font-medium transition-colors"
+            >
+              Reservar
+            </a>
           </div>
         </nav>
 
@@ -280,6 +302,7 @@ export function ReceptionistExperience() {
       ) : null}
 
       <AboutSection />
+      <ClinicGallerySection />
       <HowItWorks />
       <TreatmentsSection />
       <TeamSection />
@@ -304,6 +327,26 @@ function AboutSection() {
           <h2 className="font-display mt-3 text-3xl leading-tight lg:text-5xl">
             Una clínica tranquila para recuperarte con confianza
           </h2>
+          <div className="reveal-up-delayed relative mt-10 hidden min-h-[420px] lg:block">
+            <div className="shadow-elegant relative h-[340px] overflow-hidden rounded-xl">
+              <Image
+                src={clinicPhotos.assessment}
+                alt="Fisioterapeuta valorando la movilidad de una paciente"
+                fill
+                sizes="420px"
+                className="object-cover"
+              />
+            </div>
+            <div className="border-background bg-background shadow-elegant absolute right-0 bottom-0 h-44 w-56 overflow-hidden rounded-xl border-8">
+              <Image
+                src={clinicPhotos.room}
+                alt="Cabina luminosa de fisioterapia"
+                fill
+                sizes="224px"
+                className="object-cover"
+              />
+            </div>
+          </div>
         </div>
         <div className="text-muted-foreground space-y-6 text-lg leading-relaxed lg:col-span-7">
           <p>
@@ -326,6 +369,59 @@ function AboutSection() {
                 <p className="text-muted-foreground mt-1 text-sm">{label}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ClinicGallerySection() {
+  return (
+    <section className="bg-charcoal text-cream overflow-hidden px-6 py-20 lg:px-12 lg:py-28">
+      <div className="reveal-up mx-auto grid max-w-7xl items-end gap-8 lg:grid-cols-12">
+        <div className="lg:col-span-4">
+          <span className="text-sage text-xs tracking-[0.18em] uppercase">
+            Espacio
+          </span>
+          <h2 className="font-display mt-3 text-3xl leading-tight lg:text-5xl">
+            Luz, calma y movimiento guiado
+          </h2>
+          <p className="text-cream/70 mt-5 text-sm leading-relaxed">
+            Un entorno pensado para valorar, tratar y entrenar sin prisas.
+          </p>
+        </div>
+        <div className="grid gap-4 lg:col-span-8 lg:grid-cols-5">
+          <div className="premium-photo relative min-h-[360px] overflow-hidden rounded-xl lg:col-span-3">
+            <Image
+              src={clinicPhotos.movement}
+              alt="Sesión de movimiento terapéutico en una clínica luminosa"
+              fill
+              sizes="(min-width: 1024px) 52vw, 100vw"
+              className="object-cover"
+            />
+          </div>
+          <div className="grid gap-4 lg:col-span-2">
+            {[clinicPhotos.room, clinicPhotos.assessment].map(
+              (photo, index) => (
+                <div
+                  key={photo}
+                  className="premium-photo relative min-h-[170px] overflow-hidden rounded-xl"
+                >
+                  <Image
+                    src={photo}
+                    alt={
+                      index === 0
+                        ? "Sala privada preparada para fisioterapia"
+                        : "Valoración personalizada de fisioterapia"
+                    }
+                    fill
+                    sizes="(min-width: 1024px) 22vw, 100vw"
+                    className="object-cover"
+                  />
+                </div>
+              ),
+            )}
           </div>
         </div>
       </div>
@@ -425,17 +521,29 @@ function TreatmentsSection() {
           {treatments.map((treatment) => (
             <article
               key={treatment.id}
-              className="border-border bg-card hover:border-sage/40 rounded-xl border p-8 transition-colors"
+              className="premium-card border-border bg-card hover:border-sage/40 group overflow-hidden rounded-xl border transition-colors"
             >
-              <span className="text-clay text-[11px] font-medium tracking-widest uppercase">
-                {treatment.durationMinutes} min · {treatment.price} €
-              </span>
-              <h3 className="font-display mt-4 mb-3 text-2xl">
-                {treatment.name}
-              </h3>
-              <p className="text-muted-foreground text-sm leading-relaxed">
-                {treatment.description}
-              </p>
+              <div className="relative aspect-[5/4] overflow-hidden">
+                <Image
+                  src={treatmentPhotos[treatment.id]}
+                  alt={`Tratamiento de ${treatment.name.toLowerCase()}`}
+                  fill
+                  sizes="(min-width: 768px) 33vw, 100vw"
+                  className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                />
+                <div className="from-charcoal/45 absolute inset-0 bg-gradient-to-t via-transparent to-transparent" />
+              </div>
+              <div className="p-7">
+                <span className="text-clay text-[11px] font-medium tracking-widest uppercase">
+                  {treatment.durationMinutes} min · {treatment.price} €
+                </span>
+                <h3 className="font-display mt-4 mb-3 text-2xl">
+                  {treatment.name}
+                </h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  {treatment.description}
+                </p>
+              </div>
             </article>
           ))}
         </div>
