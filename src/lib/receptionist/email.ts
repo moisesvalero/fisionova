@@ -7,11 +7,12 @@ export function buildAppointmentEmail(
 ) {
   const treatment = treatments.find((item) => item.id === appointment.treatmentId);
   const therapist = therapists.find((item) => item.id === appointment.therapistId);
-  const typeText = {
-    confirmation: "confirmada",
-    modification: "modificada",
-    cancellation: "cancelada",
-  }[type];
+  const typeText =
+    type === "confirmation"
+      ? "confirmada"
+      : type === "modification"
+        ? "modificada"
+        : "cancelada";
 
   return {
     subject: `Tu cita ha sido ${typeText} - ${clinicProfile.name}`,

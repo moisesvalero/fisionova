@@ -1,20 +1,19 @@
 export const siteConfig = {
-  name: "Next Agent Template",
-  shortName: "Agent Template",
+  name: "FisioNova IA",
+  shortName: "FisioNova",
   description:
-    "Plantilla Next.js moderna para crear webs y web apps con agentes de IA.",
+    "Demo de recepcionista IA para una clinica de fisioterapia con agenda funcional y confirmaciones por email.",
   url: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
   locale: "es_ES",
   creator: "moisesvalero",
   keywords: [
+    "recepcionista IA",
+    "fisioterapia",
+    "agenda online",
+    "OpenAI",
+    "Resend",
     "Next.js",
     "React",
     "TypeScript",
-    "AI agents",
-    "Supabase",
-    "Sanity",
-    "SEO",
-    "AEO",
-    "GEO",
   ],
 };

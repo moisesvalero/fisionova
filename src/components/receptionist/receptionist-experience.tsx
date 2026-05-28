@@ -65,17 +65,14 @@ function createDemoAppointment(slot: AppointmentSlot, appointments: Appointment[
 
 export function ReceptionistExperience() {
   const [appointments, setAppointments] = useState<Appointment[]>(() =>
-    resetAgenda(),
+    readStorage(AGENDA_STORAGE_KEY, resetAgenda()),
   );
-  const [emails, setEmails] = useState<EmailLogItem[]>([]);
+  const [emails, setEmails] = useState<EmailLogItem[]>(() =>
+    readStorage(EMAIL_STORAGE_KEY, []),
+  );
   const [messages, setMessages] = useState<ChatMessage[]>([assistantGreeting]);
   const [proposedSlots, setProposedSlots] = useState<AppointmentSlot[]>([]);
   const [pending, setPending] = useState(false);
-
-  useEffect(() => {
-    setAppointments(readStorage(AGENDA_STORAGE_KEY, resetAgenda()));
-    setEmails(readStorage(EMAIL_STORAGE_KEY, []));
-  }, []);
 
   useEffect(() => {
     window.localStorage.setItem(AGENDA_STORAGE_KEY, JSON.stringify(appointments));
