@@ -50,7 +50,10 @@ function readStorage<T>(key: string, fallback: T): T {
   }
 }
 
-function createDemoAppointment(slot: AppointmentSlot, appointments: Appointment[]) {
+function createDemoAppointment(
+  slot: AppointmentSlot,
+  appointments: Appointment[],
+) {
   return bookAppointment(appointments, {
     patientName: "Visitante Portfolio",
     patientEmail: "visitante@example.com",
@@ -75,7 +78,10 @@ export function ReceptionistExperience() {
   const [pending, setPending] = useState(false);
 
   useEffect(() => {
-    window.localStorage.setItem(AGENDA_STORAGE_KEY, JSON.stringify(appointments));
+    window.localStorage.setItem(
+      AGENDA_STORAGE_KEY,
+      JSON.stringify(appointments),
+    );
   }, [appointments]);
 
   useEffect(() => {
@@ -182,7 +188,9 @@ export function ReceptionistExperience() {
     });
 
     if (!slot) {
-      addAssistantMessage("No veo huecos libres para mover esa cita ahora mismo.");
+      addAssistantMessage(
+        "No veo huecos libres para mover esa cita ahora mismo.",
+      );
       return;
     }
 

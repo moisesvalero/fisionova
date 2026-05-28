@@ -76,10 +76,7 @@ export function updateAppointment(
   appointments: Appointment[],
   appointmentId: string,
   changes: Partial<
-    Pick<
-      Appointment,
-      "date" | "time" | "therapistId" | "treatmentId" | "notes"
-    >
+    Pick<Appointment, "date" | "time" | "therapistId" | "treatmentId" | "notes">
   >,
 ): Appointment[] {
   const current = appointments.find(

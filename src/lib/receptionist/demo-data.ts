@@ -36,7 +36,11 @@ export const treatments: Treatment[] = [
 
 export const therapists: Therapist[] = [
   { id: "marta", name: "Marta Ruiz", specialty: "Fisioterapia deportiva" },
-  { id: "alvaro", name: "Alvaro Marin", specialty: "Dolor de espalda y postura" },
+  {
+    id: "alvaro",
+    name: "Alvaro Marin",
+    specialty: "Dolor de espalda y postura",
+  },
 ];
 
 export const availableTimes = [

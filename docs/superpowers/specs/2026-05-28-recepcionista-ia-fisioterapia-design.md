@@ -177,4 +177,3 @@ Antes de cerrar la implementacion se ejecutaran las comprobaciones disponibles d
 - Multi-clinica real.
 - Voz en tiempo real.
 - Recordatorios automaticos programados.
-

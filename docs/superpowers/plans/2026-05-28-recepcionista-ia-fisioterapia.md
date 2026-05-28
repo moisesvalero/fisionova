@@ -156,7 +156,8 @@ export const treatments: Treatment[] = [
     name: "Fisioterapia general",
     durationMinutes: 50,
     price: 45,
-    description: "Dolor muscular, contracturas, movilidad y recuperacion funcional.",
+    description:
+      "Dolor muscular, contracturas, movilidad y recuperacion funcional.",
   },
   {
     id: "sports",
@@ -176,12 +177,29 @@ export const treatments: Treatment[] = [
 
 export const therapists: Therapist[] = [
   { id: "marta", name: "Marta Ruiz", specialty: "Fisioterapia deportiva" },
-  { id: "alvaro", name: "Alvaro Marin", specialty: "Dolor de espalda y postura" },
+  {
+    id: "alvaro",
+    name: "Alvaro Marin",
+    specialty: "Dolor de espalda y postura",
+  },
 ];
 
-export const availableTimes = ["09:30", "10:30", "12:00", "16:30", "17:30", "18:30"];
+export const availableTimes = [
+  "09:30",
+  "10:30",
+  "12:00",
+  "16:30",
+  "17:30",
+  "18:30",
+];
 
-export const demoDates = ["2026-06-01", "2026-06-02", "2026-06-03", "2026-06-04", "2026-06-05"];
+export const demoDates = [
+  "2026-06-01",
+  "2026-06-02",
+  "2026-06-03",
+  "2026-06-04",
+  "2026-06-05",
+];
 
 export const seedAppointments: Appointment[] = [
   {
@@ -320,7 +338,12 @@ Expected: FAIL because `src/lib/receptionist/agenda.ts` does not exist yet.
 Create `src/lib/receptionist/agenda.ts`:
 
 ```ts
-import { availableTimes, demoDates, seedAppointments, therapists } from "./demo-data";
+import {
+  availableTimes,
+  demoDates,
+  seedAppointments,
+  therapists,
+} from "./demo-data";
 import type { Appointment, AppointmentSlot } from "./types";
 
 type BookingInput = Omit<Appointment, "id" | "status">;
@@ -392,16 +415,22 @@ export function cancelAppointment(
 export function updateAppointment(
   appointments: Appointment[],
   appointmentId: string,
-  changes: Partial<Pick<Appointment, "date" | "time" | "therapistId" | "treatmentId" | "notes">>,
+  changes: Partial<
+    Pick<Appointment, "date" | "time" | "therapistId" | "treatmentId" | "notes">
+  >,
 ): Appointment[] {
-  const current = appointments.find((appointment) => appointment.id === appointmentId);
+  const current = appointments.find(
+    (appointment) => appointment.id === appointmentId,
+  );
 
   if (!current) {
     throw new Error("Appointment not found");
   }
 
   const next = { ...current, ...changes, status: "confirmed" as const };
-  const others = appointments.filter((appointment) => appointment.id !== appointmentId);
+  const others = appointments.filter(
+    (appointment) => appointment.id !== appointmentId,
+  );
 
   if (!isSlotAvailable(others, next)) {
     throw new Error("Slot is not available");
@@ -449,14 +478,20 @@ import { getFallbackReceptionAction } from "./fallback";
 
 describe("fallback receptionist", () => {
   it("answers treatment prices", () => {
-    const action = getFallbackReceptionAction("cuanto cuesta la fisioterapia deportiva?", seedAppointments);
+    const action = getFallbackReceptionAction(
+      "cuanto cuesta la fisioterapia deportiva?",
+      seedAppointments,
+    );
 
     expect(action.type).toBe("reply");
     expect(action.message).toContain("50");
   });
 
   it("proposes slots for appointment requests", () => {
-    const action = getFallbackReceptionAction("quiero cita el viernes por la tarde", seedAppointments);
+    const action = getFallbackReceptionAction(
+      "quiero cita el viernes por la tarde",
+      seedAppointments,
+    );
 
     expect(action.type).toBe("propose_slots");
     if (action.type === "propose_slots") {
@@ -487,9 +522,16 @@ Create `src/lib/receptionist/email.ts`:
 import { clinicProfile, therapists, treatments } from "./demo-data";
 import type { Appointment, EmailEventType } from "./types";
 
-export function buildAppointmentEmail(type: EmailEventType, appointment: Appointment) {
-  const treatment = treatments.find((item) => item.id === appointment.treatmentId);
-  const therapist = therapists.find((item) => item.id === appointment.therapistId);
+export function buildAppointmentEmail(
+  type: EmailEventType,
+  appointment: Appointment,
+) {
+  const treatment = treatments.find(
+    (item) => item.id === appointment.treatmentId,
+  );
+  const therapist = therapists.find(
+    (item) => item.id === appointment.therapistId,
+  );
   const typeText = {
     confirmation: "confirmada",
     modification: "modificada",
@@ -535,8 +577,14 @@ export function getFallbackReceptionAction(
 ): ReceptionAction {
   const text = normalize(message);
 
-  if (text.includes("precio") || text.includes("cuanto cuesta") || text.includes("tarifa")) {
-    const prices = treatments.map((item) => `${item.name}: ${item.price} euros`).join(", ");
+  if (
+    text.includes("precio") ||
+    text.includes("cuanto cuesta") ||
+    text.includes("tarifa")
+  ) {
+    const prices = treatments
+      .map((item) => `${item.name}: ${item.price} euros`)
+      .join(", ");
     return {
       type: "reply",
       message: `Claro. Estas son nuestras tarifas principales: ${prices}.`,
@@ -550,7 +598,11 @@ export function getFallbackReceptionAction(
     };
   }
 
-  if (text.includes("donde") || text.includes("ubicacion") || text.includes("direccion")) {
+  if (
+    text.includes("donde") ||
+    text.includes("ubicacion") ||
+    text.includes("direccion")
+  ) {
     return {
       type: "reply",
       message: `Estamos en ${clinicProfile.address}. Tambien puedes llamarnos al ${clinicProfile.phone}.`,
@@ -565,7 +617,11 @@ export function getFallbackReceptionAction(
     };
   }
 
-  if (text.includes("cita") || text.includes("reserv") || text.includes("hueco")) {
+  if (
+    text.includes("cita") ||
+    text.includes("reserv") ||
+    text.includes("hueco")
+  ) {
     const treatmentId = text.includes("deport") ? "sports" : "general";
     const slots = findAvailableSlots(appointments, { treatmentId });
 

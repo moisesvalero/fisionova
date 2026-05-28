@@ -43,7 +43,9 @@ export function ChatPanel({
       <header className="border-border flex items-center justify-between border-b p-4">
         <div>
           <p className="text-sm font-semibold">Recepcionista IA</p>
-          <p className="text-xs text-zinc-500">Atencion calida en tiempo real</p>
+          <p className="text-xs text-zinc-500">
+            Atencion calida en tiempo real
+          </p>
         </div>
         <Bot className="text-primary size-5" aria-hidden="true" />
       </header>

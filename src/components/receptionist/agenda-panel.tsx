@@ -60,12 +60,17 @@ export function AgendaPanel({
                     : "bg-zinc-200 text-zinc-600"
                 }`}
               >
-                {appointment.status === "confirmed" ? "Confirmada" : "Cancelada"}
+                {appointment.status === "confirmed"
+                  ? "Confirmada"
+                  : "Cancelada"}
               </span>
             </div>
 
             <p className="flex items-center gap-2 text-sm text-zinc-600">
-              <CalendarDays className="text-primary size-4" aria-hidden="true" />
+              <CalendarDays
+                className="text-primary size-4"
+                aria-hidden="true"
+              />
               {appointment.date} a las {appointment.time}
             </p>
 

@@ -5,8 +5,12 @@ export function buildAppointmentEmail(
   type: EmailEventType,
   appointment: Appointment,
 ) {
-  const treatment = treatments.find((item) => item.id === appointment.treatmentId);
-  const therapist = therapists.find((item) => item.id === appointment.therapistId);
+  const treatment = treatments.find(
+    (item) => item.id === appointment.treatmentId,
+  );
+  const therapist = therapists.find(
+    (item) => item.id === appointment.therapistId,
+  );
   const typeText =
     type === "confirmation"
       ? "confirmada"

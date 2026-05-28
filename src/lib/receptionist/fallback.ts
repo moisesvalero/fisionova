@@ -67,7 +67,11 @@ export function getFallbackReceptionAction(
     };
   }
 
-  if (text.includes("cita") || text.includes("reserv") || text.includes("hueco")) {
+  if (
+    text.includes("cita") ||
+    text.includes("reserv") ||
+    text.includes("hueco")
+  ) {
     const treatmentId = text.includes("deport") ? "sports" : "general";
     const slots = findAvailableSlots(appointments, { treatmentId });
 
