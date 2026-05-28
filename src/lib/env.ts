@@ -7,6 +7,10 @@ const envSchema = z.object({
   NEXT_PUBLIC_SANITY_PROJECT_ID: z.string().min(1).optional(),
   NEXT_PUBLIC_SANITY_DATASET: z.string().min(1).optional(),
   SANITY_API_READ_TOKEN: z.string().min(1).optional(),
+  OPENAI_API_KEY: z.string().min(1).optional(),
+  OPENAI_MODEL: z.string().min(1).default("gpt-5.4-nano"),
+  RESEND_API_KEY: z.string().min(1).optional(),
+  RESEND_FROM_EMAIL: z.email().optional(),
 });
 
 export const env = envSchema.parse({
@@ -16,4 +20,8 @@ export const env = envSchema.parse({
   NEXT_PUBLIC_SANITY_PROJECT_ID: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID,
   NEXT_PUBLIC_SANITY_DATASET: process.env.NEXT_PUBLIC_SANITY_DATASET,
   SANITY_API_READ_TOKEN: process.env.SANITY_API_READ_TOKEN,
+  OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+  OPENAI_MODEL: process.env.OPENAI_MODEL,
+  RESEND_API_KEY: process.env.RESEND_API_KEY,
+  RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL,
 });
