@@ -4,14 +4,21 @@ import { Check, Clock3, Send, Sparkles } from "lucide-react";
 import type { FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
-import type { AppointmentSlot, ChatMessage } from "@/lib/receptionist/types";
+import type {
+  AppointmentSlot,
+  ChatMessage,
+  PatientDetails,
+} from "@/lib/receptionist/types";
 
 type ChatPanelProps = {
   messages: ChatMessage[];
   pending: boolean;
   proposedSlots: AppointmentSlot[];
+  selectedSlot: AppointmentSlot | null;
+  bookingPending: boolean;
   onSubmit: (message: string) => void;
   onSelectSlot: (slot: AppointmentSlot) => void;
+  onConfirmBooking: (details: PatientDetails) => void;
 };
 
 function formatShortDate(date: string) {
@@ -24,8 +31,11 @@ export function ChatPanel({
   messages,
   pending,
   proposedSlots,
+  selectedSlot,
+  bookingPending,
   onSubmit,
   onSelectSlot,
+  onConfirmBooking,
 }: ChatPanelProps) {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -38,6 +48,20 @@ export function ChatPanel({
 
     event.currentTarget.reset();
     onSubmit(message);
+  }
+
+  function handleBookingSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const patientName = String(formData.get("patientName") ?? "").trim();
+    const patientEmail = String(formData.get("patientEmail") ?? "").trim();
+    const patientPhone = String(formData.get("patientPhone") ?? "").trim();
+
+    if (!patientName || !patientEmail || !patientPhone) {
+      return;
+    }
+
+    onConfirmBooking({ patientName, patientEmail, patientPhone });
   }
 
   return (
@@ -93,10 +117,59 @@ export function ChatPanel({
                 onClick={() => onSelectSlot(slot)}
               >
                 <Check className="h-3.5 w-3.5" strokeWidth={2.5} />
-                Confirmar {formatShortDate(slot.date)} · {slot.time}
+                Elegir {formatShortDate(slot.date)} · {slot.time}
               </button>
             ))}
           </div>
+        ) : null}
+
+        {selectedSlot ? (
+          <form
+            className="animate-fade-up border-border/60 bg-card grid gap-3 rounded-2xl rounded-bl-md border p-4"
+            onSubmit={handleBookingSubmit}
+          >
+            <div>
+              <p className="text-sm font-medium">Datos para confirmar</p>
+              <p className="text-muted-foreground mt-1 text-xs">
+                {formatShortDate(selectedSlot.date)} · {selectedSlot.time}
+              </p>
+            </div>
+            <label className="grid gap-1.5 text-xs font-medium">
+              Nombre
+              <input
+                name="patientName"
+                className="border-border bg-background focus:ring-ring/40 rounded-md border px-3 py-2 text-sm font-normal outline-none focus:ring-2"
+                placeholder="Tu nombre"
+                disabled={bookingPending}
+                required
+              />
+            </label>
+            <label className="grid gap-1.5 text-xs font-medium">
+              Email
+              <input
+                name="patientEmail"
+                type="email"
+                className="border-border bg-background focus:ring-ring/40 rounded-md border px-3 py-2 text-sm font-normal outline-none focus:ring-2"
+                placeholder="tu@email.com"
+                disabled={bookingPending}
+                required
+              />
+            </label>
+            <label className="grid gap-1.5 text-xs font-medium">
+              Teléfono
+              <input
+                name="patientPhone"
+                type="tel"
+                className="border-border bg-background focus:ring-ring/40 rounded-md border px-3 py-2 text-sm font-normal outline-none focus:ring-2"
+                placeholder="600 000 000"
+                disabled={bookingPending}
+                required
+              />
+            </label>
+            <Button type="submit" size="sm" disabled={bookingPending}>
+              {bookingPending ? "Confirmando..." : "Confirmar cita"}
+            </Button>
+          </form>
         ) : null}
 
         {pending ? (

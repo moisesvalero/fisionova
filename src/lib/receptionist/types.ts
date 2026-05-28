@@ -35,6 +35,12 @@ export type AppointmentSlot = {
   treatmentId: string;
 };
 
+export type PatientDetails = {
+  patientName: string;
+  patientEmail: string;
+  patientPhone: string;
+};
+
 export type ChatMessage = {
   id: string;
   role: "assistant" | "user";

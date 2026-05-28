@@ -46,4 +46,38 @@ describe("/api/appointments", () => {
       expect.arrayContaining([expect.objectContaining({ time: "09:30" })]),
     );
   });
+
+  it("uses patient details supplied by the public booking flow", async () => {
+    resetDemoAppointmentStore();
+
+    const response = await POST(
+      new Request("http://localhost/api/appointments", {
+        method: "POST",
+        body: JSON.stringify({
+          patientName: "María López",
+          patientEmail: "maria@example.com",
+          patientPhone: "611 222 333",
+          slot: {
+            date: "2026-06-01",
+            time: "10:30",
+            therapistId: "marta",
+            treatmentId: "general",
+          },
+        }),
+      }),
+    );
+    const payload = (await response.json()) as {
+      appointment: {
+        patientName: string;
+        patientEmail: string;
+        patientPhone: string;
+      };
+    };
+
+    expect(payload.appointment).toMatchObject({
+      patientName: "María López",
+      patientEmail: "maria@example.com",
+      patientPhone: "611 222 333",
+    });
+  });
 });

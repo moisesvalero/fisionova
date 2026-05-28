@@ -26,6 +26,7 @@ import type {
   AppointmentSlot,
   ChatMessage,
   EmailEventType,
+  PatientDetails,
   ReceptionAction,
 } from "@/lib/receptionist/types";
 
@@ -39,7 +40,11 @@ const assistantGreeting: ChatMessage = {
 export function ReceptionistExperience() {
   const [messages, setMessages] = useState<ChatMessage[]>([assistantGreeting]);
   const [proposedSlots, setProposedSlots] = useState<AppointmentSlot[]>([]);
+  const [selectedSlot, setSelectedSlot] = useState<AppointmentSlot | null>(
+    null,
+  );
   const [pending, setPending] = useState(false);
+  const [bookingPending, setBookingPending] = useState(false);
 
   async function sendEmail(type: EmailEventType, appointment: Appointment) {
     const response = await fetch("/api/email", {
@@ -78,6 +83,7 @@ export function ReceptionistExperience() {
       const payload = (await response.json()) as { action: ReceptionAction };
 
       addAssistantMessage(payload.action.message);
+      setSelectedSlot(null);
       setProposedSlots(
         payload.action.type === "propose_slots" ? payload.action.slots : [],
       );
@@ -90,19 +96,45 @@ export function ReceptionistExperience() {
     }
   }
 
-  async function handleSelectSlot(slot: AppointmentSlot) {
-    const response = await fetch("/api/appointments", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ slot }),
-    });
-    const payload = (await response.json()) as { appointment: Appointment };
-
+  function handleSelectSlot(slot: AppointmentSlot) {
+    setSelectedSlot(slot);
     setProposedSlots([]);
     addAssistantMessage(
-      `Perfecto, te he reservado el ${payload.appointment.date} a las ${payload.appointment.time}. También he preparado el email de confirmación.`,
+      `Perfecto. Para reservar el ${slot.date} a las ${slot.time}, necesito tu nombre, email y teléfono.`,
     );
-    await sendEmail("confirmation", payload.appointment);
+  }
+
+  async function handleConfirmBooking(details: PatientDetails) {
+    if (!selectedSlot) {
+      return;
+    }
+
+    setBookingPending(true);
+
+    try {
+      const response = await fetch("/api/appointments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slot: selectedSlot,
+          ...details,
+        }),
+      });
+      const payload = (await response.json()) as { appointment: Appointment };
+
+      setSelectedSlot(null);
+      setProposedSlots([]);
+      addAssistantMessage(
+        `Perfecto, ${details.patientName}. Te he reservado el ${payload.appointment.date} a las ${payload.appointment.time}. También he enviado la confirmación a ${details.patientEmail}.`,
+      );
+      await sendEmail("confirmation", payload.appointment);
+    } catch {
+      addAssistantMessage(
+        "No he podido confirmar la cita ahora mismo. Prueba otra vez en unos segundos.",
+      );
+    } finally {
+      setBookingPending(false);
+    }
   }
 
   return (
@@ -196,8 +228,11 @@ export function ReceptionistExperience() {
               messages={messages}
               pending={pending}
               proposedSlots={proposedSlots}
+              selectedSlot={selectedSlot}
+              bookingPending={bookingPending}
               onSubmit={handleSubmit}
               onSelectSlot={handleSelectSlot}
+              onConfirmBooking={handleConfirmBooking}
             />
           </div>
         </div>
@@ -208,7 +243,9 @@ export function ReceptionistExperience() {
       <TreatmentsSection />
       <TeamSection />
       <BookingSection />
+      <FirstVisitSection />
       <ContactSection />
+      <FAQSection />
       <FinalCTA />
       <Footer />
     </div>
@@ -443,6 +480,52 @@ function BookingSection() {
   );
 }
 
+function FirstVisitSection() {
+  return (
+    <section className="bg-secondary/40 px-6 py-24 lg:px-12 lg:py-32">
+      <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-12">
+        <div className="lg:col-span-5">
+          <span className="text-sage text-xs tracking-[0.18em] uppercase">
+            Primera visita
+          </span>
+          <h2 className="font-display mt-3 text-3xl leading-tight lg:text-5xl">
+            Llegas, valoramos y sales con un plan claro
+          </h2>
+        </div>
+        <div className="grid gap-4 md:grid-cols-3 lg:col-span-7">
+          {[
+            [
+              "Valoración",
+              "Revisamos tu dolor, movilidad, historial y objetivos.",
+            ],
+            [
+              "Tratamiento",
+              "Empezamos con terapia manual, ejercicio o educación según tu caso.",
+            ],
+            [
+              "Plan en casa",
+              "Te llevas pautas sencillas para avanzar entre sesiones.",
+            ],
+          ].map(([title, text], index) => (
+            <article
+              key={title}
+              className="border-border bg-card rounded-xl border p-6"
+            >
+              <span className="font-display text-sage text-3xl">
+                0{index + 1}
+              </span>
+              <h3 className="mt-5 text-lg font-medium">{title}</h3>
+              <p className="text-muted-foreground mt-3 text-sm leading-relaxed">
+                {text}
+              </p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function ContactSection() {
   const contactItems = [
     { icon: MapPin, label: "Dirección", value: clinicProfile.address },
@@ -481,6 +564,49 @@ function ContactSection() {
               </p>
               <p className="mt-2 text-sm font-medium">{item.value}</p>
             </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function FAQSection() {
+  const faqs = [
+    {
+      question: "¿Necesito diagnóstico médico para venir?",
+      answer:
+        "No siempre. Si tienes pruebas o informes, tráelos; si no, empezamos con una valoración fisioterapéutica.",
+    },
+    {
+      question: "¿Puedo cambiar o cancelar una cita?",
+      answer:
+        "Sí. Desde recepción online puedes pedir cambios y el equipo lo gestiona desde el área clínica.",
+    },
+    {
+      question: "¿Cuánto dura una sesión?",
+      answer:
+        "La mayoría de sesiones duran 50 minutos. Reeducación postural dura 60 minutos.",
+    },
+  ];
+
+  return (
+    <section className="px-6 py-24 lg:px-12 lg:py-32">
+      <div className="mx-auto max-w-4xl">
+        <span className="text-sage text-xs tracking-[0.18em] uppercase">
+          Dudas frecuentes
+        </span>
+        <h2 className="font-display mt-3 text-3xl leading-tight lg:text-5xl">
+          Antes de venir
+        </h2>
+        <div className="border-border bg-card mt-10 divide-y rounded-xl border">
+          {faqs.map((faq) => (
+            <article key={faq.question} className="p-6">
+              <h3 className="text-base font-medium">{faq.question}</h3>
+              <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+                {faq.answer}
+              </p>
+            </article>
           ))}
         </div>
       </div>
