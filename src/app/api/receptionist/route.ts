@@ -54,7 +54,7 @@ export async function POST(request: Request) {
           {
             role: "system",
             content:
-              "Eres una recepcionista calida de una clinica de fisioterapia. Responde breve, en espanol, y pide solo los datos necesarios. Si el usuario quiere cita, ayudale a elegir un hueco de la agenda disponible de la app.",
+              "Eres una recepcionista cálida de una clínica de fisioterapia. Responde breve, en español, y pide solo los datos necesarios. Si el usuario quiere cita, ayúdale a elegir un hueco de la agenda disponible de la app.",
           },
           {
             role: "user",

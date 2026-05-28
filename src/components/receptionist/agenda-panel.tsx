@@ -21,6 +21,12 @@ function resolveTherapist(id: string) {
   return therapists.find((therapist) => therapist.id === id)?.name ?? id;
 }
 
+function formatShortDate(date: string) {
+  const [, month, day] = date.split("-");
+
+  return month && day ? `${day}/${month}` : date;
+}
+
 export function AgendaPanel({
   appointments,
   onCancel,
@@ -32,7 +38,7 @@ export function AgendaPanel({
       <header className="border-border/50 flex items-center justify-between border-b px-5 py-4">
         <div className="flex items-center gap-2">
           <CalendarDays className="text-muted-foreground h-4 w-4" />
-          <span className="text-sm font-medium">Agenda de la clinica</span>
+          <span className="text-sm font-medium">Agenda de la clínica</span>
         </div>
         <Button type="button" size="icon" variant="ghost" onClick={onReset}>
           <RotateCcw className="size-4" aria-hidden="true" />
@@ -43,10 +49,15 @@ export function AgendaPanel({
       <ul className="divide-border/50 divide-y">
         {appointments.map((appointment) => (
           <li key={appointment.id} className="px-5 py-3.5">
-            <div className="grid grid-cols-[56px_8px_1fr_auto] items-center gap-4">
-              <span className="font-display text-foreground w-14 text-lg tabular-nums">
-                {appointment.time}
-              </span>
+            <div className="grid grid-cols-[64px_8px_1fr_auto] items-center gap-4">
+              <div className="w-16">
+                <span className="font-display text-foreground block text-lg leading-none tabular-nums">
+                  {appointment.time}
+                </span>
+                <span className="text-muted-foreground mt-1 block text-[10px] tabular-nums">
+                  {formatShortDate(appointment.date)}
+                </span>
+              </div>
               <span
                 className={`h-2 w-2 rounded-full ${
                   appointment.status === "confirmed" ? "bg-sage" : "bg-clay"

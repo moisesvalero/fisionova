@@ -177,7 +177,7 @@ export function ReceptionistExperience() {
     setAppointments((current) => [...current, appointment]);
     setProposedSlots([]);
     addAssistantMessage(
-      `Perfecto, te he reservado el ${appointment.date} a las ${appointment.time}. Tambien he preparado el email de confirmacion.`,
+      `Perfecto, te he reservado el ${appointment.date} a las ${appointment.time}. También he preparado el email de confirmación.`,
     );
     await sendEmail("confirmation", appointment);
   }
@@ -274,12 +274,12 @@ export function ReceptionistExperience() {
             <h1 className="font-display text-cream text-4xl leading-[1.05] sm:text-5xl lg:text-6xl">
               Tu recepcionista IA
               <br />
-              <span className="text-sage italic">para clinicas</span> de
+              <span className="text-sage italic">para clínicas</span> de
               fisioterapia
             </h1>
             <p className="text-cream/80 mt-6 max-w-xl text-lg leading-relaxed">
               Atiende pacientes, busca huecos en la agenda, confirma citas y
-              envia emails automaticamente. Trabaja contigo, no en lugar de ti.
+              envía emails automáticamente. Trabaja contigo, no en lugar de ti.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <a
@@ -292,7 +292,7 @@ export function ReceptionistExperience() {
                 href="#how"
                 className="border-cream/30 text-cream hover:bg-cream/10 inline-flex items-center gap-2 rounded-md border px-5 py-3 text-sm font-medium transition-colors"
               >
-                Como funciona
+                Cómo funciona
               </a>
             </div>
           </div>
@@ -337,9 +337,9 @@ export function ReceptionistExperience() {
             </p>
             <ul className="mt-8 space-y-3 text-sm">
               {[
-                "Multiples profesionales y tratamientos",
+                "Múltiples profesionales y tratamientos",
                 "Citas persistentes en el navegador",
-                "Confirmaciones automaticas por email",
+                "Confirmaciones automáticas por email",
               ].map((feature) => (
                 <li key={feature} className="flex items-center gap-3">
                   <CheckCircle2
@@ -389,8 +389,8 @@ function HowItWorks() {
     },
     {
       icon: Mail,
-      title: "Envia email",
-      text: "Manda confirmacion o cancelacion automaticamente.",
+      title: "Envía email",
+      text: "Manda confirmación o cancelación automáticamente.",
     },
   ];
 
@@ -402,10 +402,10 @@ function HowItWorks() {
             Flujo
           </span>
           <h2 className="font-display mt-3 text-3xl leading-tight lg:text-5xl">
-            Como trabaja la recepcionista
+            Cómo trabaja la recepcionista
           </h2>
           <p className="text-muted-foreground mt-4 text-lg">
-            Cuatro pasos, una conversacion. Sin formularios, sin esperas.
+            Cuatro pasos, una conversación. Sin formularios, sin esperas.
           </p>
         </header>
 
@@ -445,8 +445,8 @@ function AutomationSection() {
   const items = [
     {
       tag: "OpenAI",
-      title: "Conversacion natural",
-      text: "Modelos de lenguaje para entender peticiones reales de pacientes en espanol.",
+      title: "Conversación natural",
+      text: "Modelos de lenguaje para entender peticiones reales de pacientes en español.",
     },
     {
       tag: "Demo mode",
@@ -465,10 +465,10 @@ function AutomationSection() {
       <div className="mx-auto max-w-7xl">
         <header className="mb-16 max-w-2xl">
           <span className="text-sage text-xs tracking-[0.18em] uppercase">
-            Tecnologia
+            Tecnología
           </span>
           <h2 className="font-display mt-3 text-3xl leading-tight lg:text-5xl">
-            Automatizacion con IA
+            Automatización con IA
           </h2>
         </header>
         <div className="grid gap-6 md:grid-cols-3">
@@ -504,7 +504,7 @@ function FinalCTA() {
           <span className="text-sage italic">ahora</span>
         </h2>
         <p className="text-cream/70 mt-6 text-lg">
-          Habla con FisioNova IA como lo haria un paciente real.
+          Habla con FisioNova IA como lo haría un paciente real.
         </p>
         <a
           href="#chat"

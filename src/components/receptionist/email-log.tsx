@@ -20,7 +20,7 @@ export function EmailLog({ emails }: EmailLogProps) {
       <div className="space-y-3 px-5 py-5">
         {emails.length === 0 ? (
           <p className="text-sm leading-6 text-zinc-500">
-            Los emails apareceran aqui al confirmar, modificar o cancelar citas.
+            Los emails aparecerán aquí al confirmar, modificar o cancelar citas.
           </p>
         ) : (
           emails.map((email) => (

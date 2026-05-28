@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Send, Sparkles } from "lucide-react";
+import { Check, Clock3, Send, Sparkles } from "lucide-react";
 import type { FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,12 @@ type ChatPanelProps = {
   onSubmit: (message: string) => void;
   onSelectSlot: (slot: AppointmentSlot) => void;
 };
+
+function formatShortDate(date: string) {
+  const [, month, day] = date.split("-");
+
+  return month && day ? `${day}/${month}` : date;
+}
 
 export function ChatPanel({
   messages,
@@ -52,12 +58,12 @@ export function ChatPanel({
             Recepcionista IA
           </p>
           <p className="text-muted-foreground text-xs">
-            En linea, responde al instante
+            En línea, responde al instante
           </p>
         </div>
       </header>
 
-      <div className="bg-background/40 max-h-[340px] space-y-3 overflow-y-auto px-5 py-5">
+      <div className="bg-background/40 max-h-[340px] min-h-[220px] space-y-3 overflow-y-auto px-5 py-5">
         {messages.map((message) => (
           <div
             key={message.id}
@@ -87,22 +93,41 @@ export function ChatPanel({
                 onClick={() => onSelectSlot(slot)}
               >
                 <Check className="h-3.5 w-3.5" strokeWidth={2.5} />
-                Confirmar {slot.time}
+                Confirmar {formatShortDate(slot.date)} · {slot.time}
               </button>
             ))}
           </div>
         ) : null}
+
+        {pending ? (
+          <div className="animate-fade-up flex justify-start">
+            <div className="border-border/60 bg-card text-muted-foreground inline-flex max-w-[85%] items-center gap-2 rounded-2xl rounded-bl-md border px-4 py-2.5 text-sm">
+              <span className="animate-pulse-dot bg-sage h-2 w-2 rounded-full" />
+              Buscando huecos disponibles...
+            </div>
+          </div>
+        ) : null}
       </div>
 
-      <div className="border-border/50 bg-card/80 border-t px-3 py-3">
-        <form className="flex items-center gap-2" onSubmit={handleSubmit}>
+      <div className="border-border/50 bg-card/85 border-t px-4 py-3.5">
+        <div className="text-muted-foreground mb-3 flex items-center justify-between gap-3 text-[11px]">
+          <span className="inline-flex items-center gap-1.5">
+            <Clock3 className="h-3.5 w-3.5" aria-hidden="true" />
+            Agenda en tiempo real
+          </span>
+          <span>Confirmación por email</span>
+        </div>
+        <form
+          className="border-border/70 bg-background/80 focus-within:ring-ring/40 flex items-center gap-2 rounded-lg border px-2 py-1.5 transition-shadow focus-within:ring-2"
+          onSubmit={handleSubmit}
+        >
           <label className="sr-only" htmlFor="receptionist-message">
             Mensaje para la recepcionista IA
           </label>
           <input
             id="receptionist-message"
             name="message"
-            className="text-foreground placeholder:text-muted-foreground flex-1 bg-transparent px-3 py-2 text-sm outline-none"
+            className="text-foreground placeholder:text-muted-foreground flex-1 bg-transparent px-2 py-2 text-sm outline-none"
             placeholder="Escribe un mensaje..."
             disabled={pending}
           />

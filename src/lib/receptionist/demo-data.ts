@@ -1,7 +1,7 @@
 import type { Appointment, Therapist, Treatment } from "./types";
 
 export const clinicProfile = {
-  name: "FisioNova Clinica",
+  name: "FisioNova Clínica",
   tagline: "Fisioterapia cercana para volver a moverte con confianza.",
   address: "Calle Salud 18, Madrid",
   phone: "910 123 456",
@@ -16,21 +16,21 @@ export const treatments: Treatment[] = [
     durationMinutes: 50,
     price: 45,
     description:
-      "Dolor muscular, contracturas, movilidad y recuperacion funcional.",
+      "Dolor muscular, contracturas, movilidad y recuperación funcional.",
   },
   {
     id: "sports",
     name: "Fisioterapia deportiva",
     durationMinutes: 50,
     price: 50,
-    description: "Prevencion y recuperacion de lesiones deportivas.",
+    description: "Prevención y recuperación de lesiones deportivas.",
   },
   {
     id: "postural",
-    name: "Reeducacion postural",
+    name: "Reeducación postural",
     durationMinutes: 60,
     price: 55,
-    description: "Trabajo guiado para espalda, cuello y habitos posturales.",
+    description: "Trabajo guiado para espalda, cuello y hábitos posturales.",
   },
 ];
 
@@ -38,7 +38,7 @@ export const therapists: Therapist[] = [
   { id: "marta", name: "Marta Ruiz", specialty: "Fisioterapia deportiva" },
   {
     id: "alvaro",
-    name: "Alvaro Marin",
+    name: "Álvaro Marín",
     specialty: "Dolor de espalda y postura",
   },
 ];
@@ -63,7 +63,7 @@ export const demoDates = [
 export const seedAppointments: Appointment[] = [
   {
     id: "apt-demo-1",
-    patientName: "Laura Gomez",
+    patientName: "Laura Gómez",
     patientEmail: "laura@example.com",
     patientPhone: "600 111 222",
     treatmentId: "sports",
@@ -73,11 +73,4 @@ export const seedAppointments: Appointment[] = [
     status: "confirmed",
     notes: "Molestia en rodilla derecha.",
   },
-];
-
-export const quickPrompts = [
-  "Quiero cita el viernes por la tarde",
-  "Cuanto cuesta la fisioterapia deportiva?",
-  "Necesito cambiar mi cita",
-  "Donde esta la clinica?",
 ];

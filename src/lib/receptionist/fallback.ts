@@ -44,7 +44,7 @@ export function getFallbackReceptionAction(
   ) {
     return {
       type: "reply",
-      message: `Estamos en ${clinicProfile.address}. Tambien puedes llamarnos al ${clinicProfile.phone}.`,
+      message: `Estamos en ${clinicProfile.address}. También puedes llamarnos al ${clinicProfile.phone}.`,
     };
   }
 
@@ -63,7 +63,7 @@ export function getFallbackReceptionAction(
     return {
       type: "reply",
       message:
-        "Puedo ayudarte a cancelar una cita. Selecciona una cita en la agenda y usa cancelar; te preparo tambien el email de cancelacion.",
+        "Puedo ayudarte a cancelar una cita. Selecciona una cita en la agenda y usa cancelar; te preparo también el email de cancelación.",
     };
   }
 
@@ -78,7 +78,7 @@ export function getFallbackReceptionAction(
     return {
       type: "propose_slots",
       message:
-        "Tengo estos huecos disponibles. Elige uno y te preparo la confirmacion con tus datos.",
+        "Tengo estos huecos disponibles. Elige uno y te preparo la confirmación con tus datos.",
       slots,
     };
   }
@@ -86,6 +86,6 @@ export function getFallbackReceptionAction(
   return {
     type: "reply",
     message:
-      "Soy la recepcionista virtual de FisioNova. Puedo ayudarte con citas, precios, tratamientos, horarios y ubicacion.",
+      "Soy la recepcionista virtual de FisioNova. Puedo ayudarte con citas, precios, tratamientos, horarios y ubicación.",
   };
 }
