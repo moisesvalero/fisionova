@@ -28,60 +28,58 @@ export function AgendaPanel({
   onReset,
 }: AgendaPanelProps) {
   return (
-    <section className="bg-card overflow-hidden rounded-lg border border-zinc-200 shadow-[0_18px_60px_rgba(24,35,38,0.12)]">
-      <header className="flex items-center justify-between gap-3 border-b border-zinc-200 bg-[linear-gradient(180deg,oklch(0.995_0.006_78),oklch(0.96_0.014_78))] p-5">
-        <div>
-          <p className="text-sm font-semibold tracking-tight">
-            Agenda de la clinica
-          </p>
-          <p className="text-xs text-zinc-500">
-            Citas visibles y persistentes en esta demo
-          </p>
+    <section className="glass shadow-elegant border-border/60 w-full overflow-hidden rounded-xl border">
+      <header className="border-border/50 flex items-center justify-between border-b px-5 py-4">
+        <div className="flex items-center gap-2">
+          <CalendarDays className="text-muted-foreground h-4 w-4" />
+          <span className="text-sm font-medium">Agenda de la clinica</span>
         </div>
-        <Button type="button" size="icon" variant="outline" onClick={onReset}>
+        <Button type="button" size="icon" variant="ghost" onClick={onReset}>
           <RotateCcw className="size-4" aria-hidden="true" />
           <span className="sr-only">Restablecer demo</span>
         </Button>
       </header>
 
-      <div className="divide-y divide-zinc-200">
+      <ul className="divide-border/50 divide-y">
         {appointments.map((appointment) => (
-          <article key={appointment.id} className="space-y-4 p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="font-medium">{appointment.patientName}</p>
-                <p className="text-sm text-zinc-600">
+          <li key={appointment.id} className="px-5 py-3.5">
+            <div className="grid grid-cols-[56px_8px_1fr_auto] items-center gap-4">
+              <span className="font-display text-foreground w-14 text-lg tabular-nums">
+                {appointment.time}
+              </span>
+              <span
+                className={`h-2 w-2 rounded-full ${
+                  appointment.status === "confirmed" ? "bg-sage" : "bg-clay"
+                }`}
+                aria-hidden="true"
+              />
+              <div className="min-w-0">
+                <p className="text-foreground truncate text-sm">
+                  {appointment.patientName}
+                </p>
+                <p className="text-muted-foreground truncate text-xs">
                   {resolveTreatment(appointment.treatmentId)} con{" "}
                   {resolveTherapist(appointment.therapistId)}
                 </p>
               </div>
               <span
-                className={`rounded-md px-2.5 py-1 text-xs font-semibold ${
+                className={`rounded px-2 py-0.5 text-[11px] font-medium ${
                   appointment.status === "confirmed"
-                    ? "bg-accent text-accent-foreground"
-                    : "bg-zinc-200 text-zinc-600"
+                    ? "bg-sage/10 text-sage"
+                    : "bg-clay/10 text-clay"
                 }`}
               >
-                {appointment.status === "confirmed"
-                  ? "Confirmada"
-                  : "Cancelada"}
+                {appointment.status === "confirmed" ? "Reservada" : "Cancelada"}
               </span>
             </div>
 
-            <p className="bg-muted flex items-center gap-2 rounded-md px-3 py-2 text-sm text-zinc-700">
-              <CalendarDays
-                className="text-primary size-4"
-                aria-hidden="true"
-              />
-              {appointment.date} a las {appointment.time}
-            </p>
-
             {appointment.status === "confirmed" ? (
-              <div className="flex gap-2">
+              <div className="mt-3 flex justify-end gap-2">
                 <Button
                   type="button"
                   size="sm"
-                  variant="outline"
+                  variant="ghost"
+                  className="h-8"
                   onClick={() => onMove(appointment)}
                 >
                   <Shuffle className="size-4" aria-hidden="true" />
@@ -91,6 +89,7 @@ export function AgendaPanel({
                   type="button"
                   size="sm"
                   variant="ghost"
+                  className="h-8"
                   onClick={() => onCancel(appointment)}
                 >
                   <XCircle className="size-4" aria-hidden="true" />
@@ -98,9 +97,9 @@ export function AgendaPanel({
                 </Button>
               </div>
             ) : null}
-          </article>
+          </li>
         ))}
-      </div>
+      </ul>
     </section>
   );
 }

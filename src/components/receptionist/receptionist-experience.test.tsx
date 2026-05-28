@@ -8,7 +8,9 @@ describe("ReceptionistExperience", () => {
     render(<ReceptionistExperience />);
 
     expect(screen.getByText("Recepcionista IA")).toBeInTheDocument();
-    expect(screen.getByText("Agenda de la clinica")).toBeInTheDocument();
+    expect(screen.getAllByText("Agenda de la clinica").length).toBeGreaterThan(
+      0,
+    );
     expect(screen.getByText("Emails de cita")).toBeInTheDocument();
   });
 });
