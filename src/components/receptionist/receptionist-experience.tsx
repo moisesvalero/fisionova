@@ -68,14 +68,19 @@ function createDemoAppointment(
 
 export function ReceptionistExperience() {
   const [appointments, setAppointments] = useState<Appointment[]>(() =>
-    readStorage(AGENDA_STORAGE_KEY, resetAgenda()),
+    resetAgenda(),
   );
-  const [emails, setEmails] = useState<EmailLogItem[]>(() =>
-    readStorage(EMAIL_STORAGE_KEY, []),
-  );
+  const [emails, setEmails] = useState<EmailLogItem[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([assistantGreeting]);
   const [proposedSlots, setProposedSlots] = useState<AppointmentSlot[]>([]);
   const [pending, setPending] = useState(false);
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      setAppointments(readStorage(AGENDA_STORAGE_KEY, resetAgenda()));
+      setEmails(readStorage(EMAIL_STORAGE_KEY, []));
+    });
+  }, []);
 
   useEffect(() => {
     window.localStorage.setItem(
@@ -219,29 +224,32 @@ export function ReceptionistExperience() {
   }
 
   return (
-    <div className="mx-auto grid w-full max-w-7xl gap-8 px-6 py-8 sm:px-10 lg:grid-cols-[1fr_420px]">
-      <div className="space-y-8">
+    <div className="min-h-screen bg-[linear-gradient(180deg,oklch(0.975_0.012_78),oklch(0.935_0.026_78))]">
+      <div className="mx-auto w-full max-w-7xl space-y-7 px-5 py-5 sm:px-8 lg:px-10">
         <ClinicOverview />
-        <ChatPanel
-          messages={messages}
-          pending={pending}
-          quickPrompts={quickPrompts}
-          proposedSlots={proposedSlots}
-          onPrompt={handleSubmit}
-          onSubmit={handleSubmit}
-          onSelectSlot={handleSelectSlot}
-        />
-      </div>
 
-      <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
-        <AgendaPanel
-          appointments={sortedAppointments}
-          onCancel={handleCancel}
-          onMove={handleMove}
-          onReset={handleReset}
-        />
-        <EmailLog emails={emails} />
-      </aside>
+        <div className="grid gap-7 lg:grid-cols-[minmax(0,1fr)_430px]">
+          <ChatPanel
+            messages={messages}
+            pending={pending}
+            quickPrompts={quickPrompts}
+            proposedSlots={proposedSlots}
+            onPrompt={handleSubmit}
+            onSubmit={handleSubmit}
+            onSelectSlot={handleSelectSlot}
+          />
+
+          <aside className="space-y-5 lg:sticky lg:top-5 lg:self-start">
+            <AgendaPanel
+              appointments={sortedAppointments}
+              onCancel={handleCancel}
+              onMove={handleMove}
+              onReset={handleReset}
+            />
+            <EmailLog emails={emails} />
+          </aside>
+        </div>
+      </div>
     </div>
   );
 }

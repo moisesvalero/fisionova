@@ -28,10 +28,12 @@ export function AgendaPanel({
   onReset,
 }: AgendaPanelProps) {
   return (
-    <section className="border-border bg-card rounded-lg border shadow-sm">
-      <header className="border-border flex items-center justify-between gap-3 border-b p-4">
+    <section className="bg-card overflow-hidden rounded-lg border border-zinc-200 shadow-[0_18px_60px_rgba(24,35,38,0.12)]">
+      <header className="flex items-center justify-between gap-3 border-b border-zinc-200 bg-[linear-gradient(180deg,oklch(0.995_0.006_78),oklch(0.96_0.014_78))] p-5">
         <div>
-          <p className="text-sm font-semibold">Agenda de la clinica</p>
+          <p className="text-sm font-semibold tracking-tight">
+            Agenda de la clinica
+          </p>
           <p className="text-xs text-zinc-500">
             Citas visibles y persistentes en esta demo
           </p>
@@ -42,9 +44,9 @@ export function AgendaPanel({
         </Button>
       </header>
 
-      <div className="divide-border divide-y">
+      <div className="divide-y divide-zinc-200">
         {appointments.map((appointment) => (
-          <article key={appointment.id} className="space-y-3 p-4">
+          <article key={appointment.id} className="space-y-4 p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="font-medium">{appointment.patientName}</p>
@@ -54,7 +56,7 @@ export function AgendaPanel({
                 </p>
               </div>
               <span
-                className={`rounded-md px-2 py-1 text-xs font-medium ${
+                className={`rounded-md px-2.5 py-1 text-xs font-semibold ${
                   appointment.status === "confirmed"
                     ? "bg-accent text-accent-foreground"
                     : "bg-zinc-200 text-zinc-600"
@@ -66,7 +68,7 @@ export function AgendaPanel({
               </span>
             </div>
 
-            <p className="flex items-center gap-2 text-sm text-zinc-600">
+            <p className="bg-muted flex items-center gap-2 rounded-md px-3 py-2 text-sm text-zinc-700">
               <CalendarDays
                 className="text-primary size-4"
                 aria-hidden="true"
