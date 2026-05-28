@@ -17,6 +17,12 @@ import { AgendaPanel } from "@/components/receptionist/agenda-panel";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { findAvailableSlots } from "@/lib/receptionist/agenda";
+import {
+  availableTimes,
+  demoDates,
+  therapists,
+  treatments,
+} from "@/lib/receptionist/demo-data";
 import type { Appointment, EmailEventType } from "@/lib/receptionist/types";
 
 type AppointmentsPayload = {
@@ -57,6 +63,146 @@ function countByStatus(
 ) {
   return appointments.filter((appointment) => appointment.status === status)
     .length;
+}
+
+function resolveTreatment(id: string) {
+  return treatments.find((treatment) => treatment.id === id)?.name ?? id;
+}
+
+function resolveTherapist(id: string) {
+  return therapists.find((therapist) => therapist.id === id)?.name ?? id;
+}
+
+function AppointmentCalendar({
+  appointments,
+  selectedDay,
+}: {
+  appointments: Appointment[];
+  selectedDay: string;
+}) {
+  const days = selectedDay === "all" ? demoDates : [selectedDay];
+  const appointmentsBySlot = useMemo(() => {
+    const grouped = new Map<string, Appointment[]>();
+
+    for (const appointment of appointments) {
+      const key = `${appointment.date}-${appointment.time}`;
+      grouped.set(key, [...(grouped.get(key) ?? []), appointment]);
+    }
+
+    return grouped;
+  }, [appointments]);
+
+  return (
+    <section className="glass shadow-elegant border-border/60 overflow-hidden rounded-xl border">
+      <header className="border-border/60 flex flex-col gap-2 border-b px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="text-muted-foreground inline-flex items-center gap-2 text-xs font-medium tracking-[0.16em] uppercase">
+            <CalendarCheck2 className="size-4" aria-hidden="true" />
+            Calendario semanal
+          </div>
+          <h2 className="font-display mt-2 text-3xl leading-tight">
+            Vista tipo Google Calendar
+          </h2>
+        </div>
+        <p className="text-muted-foreground text-sm">
+          Horas bloqueadas, pacientes y profesional asignado.
+        </p>
+      </header>
+
+      <div className="overflow-x-auto">
+        <div className="min-w-[920px]">
+          <div
+            className="border-border/60 grid border-b"
+            style={{
+              gridTemplateColumns: `88px repeat(${days.length}, minmax(160px, 1fr))`,
+            }}
+          >
+            <div className="bg-background/70 border-border/60 text-muted-foreground border-r px-4 py-3 text-xs font-medium tracking-[0.14em] uppercase">
+              Hora
+            </div>
+            {days.map((day) => (
+              <div
+                key={day}
+                className="bg-background/70 border-border/60 border-r px-4 py-3 last:border-r-0"
+              >
+                <p className="font-display text-xl capitalize">
+                  {formatAppointmentDate(day)}
+                </p>
+                <p className="text-muted-foreground mt-1 text-xs tabular-nums">
+                  {day}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {availableTimes.map((time) => (
+            <div
+              key={time}
+              className="border-border/50 grid min-h-32 border-b last:border-b-0"
+              style={{
+                gridTemplateColumns: `88px repeat(${days.length}, minmax(160px, 1fr))`,
+              }}
+            >
+              <div className="bg-background/45 border-border/60 text-muted-foreground border-r px-4 py-4 text-sm font-medium tabular-nums">
+                {time}
+              </div>
+              {days.map((day) => {
+                const slotAppointments =
+                  appointmentsBySlot.get(`${day}-${time}`) ?? [];
+
+                return (
+                  <div
+                    key={`${day}-${time}`}
+                    className="border-border/50 bg-background/25 min-h-32 border-r p-2 last:border-r-0"
+                  >
+                    {slotAppointments.length > 0 ? (
+                      <div className="space-y-2">
+                        {slotAppointments.map((appointment) => (
+                          <div
+                            key={appointment.id}
+                            className={cn(
+                              "rounded-md border px-3 py-2 text-xs shadow-sm",
+                              appointment.status === "confirmed"
+                                ? "border-sage/30 bg-sage/15"
+                                : "border-clay/30 bg-clay/10 opacity-75",
+                            )}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <p className="leading-snug font-medium">
+                                {appointment.patientName}
+                              </p>
+                              <span
+                                className={cn(
+                                  "mt-0.5 h-2 w-2 shrink-0 rounded-full",
+                                  appointment.status === "confirmed"
+                                    ? "bg-sage"
+                                    : "bg-clay",
+                                )}
+                              />
+                            </div>
+                            <p className="text-muted-foreground mt-1 truncate">
+                              {resolveTreatment(appointment.treatmentId)}
+                            </p>
+                            <p className="text-muted-foreground mt-1 truncate">
+                              {resolveTherapist(appointment.therapistId)}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="border-border/50 text-muted-foreground/70 flex h-full min-h-28 items-center justify-center rounded-md border border-dashed text-xs">
+                        Libre
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
 }
 
 async function sendEmail(type: EmailEventType, appointment: Appointment) {
@@ -388,6 +534,11 @@ export function DoctorAgenda() {
                 </div>
               </div>
             </div>
+
+            <AppointmentCalendar
+              appointments={filteredAppointments}
+              selectedDay={dayFilter}
+            />
 
             {filteredAppointments.length > 0 ? (
               <AgendaPanel
