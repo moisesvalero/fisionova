@@ -55,7 +55,7 @@ export function ChatPanel({
         </div>
         <div className="flex-1">
           <p className="text-foreground text-sm font-medium">
-            Recepcionista IA
+            Recepción online
           </p>
           <p className="text-muted-foreground text-xs">
             En línea, responde al instante
@@ -122,7 +122,7 @@ export function ChatPanel({
           onSubmit={handleSubmit}
         >
           <label className="sr-only" htmlFor="receptionist-message">
-            Mensaje para la recepcionista IA
+            Mensaje para recepción
           </label>
           <input
             id="receptionist-message"

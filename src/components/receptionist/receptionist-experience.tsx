@@ -1,112 +1,39 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import {
   ArrowRight,
   CalendarSearch,
   CheckCircle2,
   Ear,
+  LockKeyhole,
   Mail,
   Sparkles,
 } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 
-import { AgendaPanel } from "@/components/receptionist/agenda-panel";
 import { ChatPanel } from "@/components/receptionist/chat-panel";
-import { EmailLog } from "@/components/receptionist/email-log";
-import {
-  bookAppointment,
-  findAvailableSlots,
-  resetAgenda,
-  updateAppointment,
-} from "@/lib/receptionist/agenda";
+import { treatments } from "@/lib/receptionist/demo-data";
 import type {
   Appointment,
   AppointmentSlot,
   ChatMessage,
   EmailEventType,
-  EmailLogItem,
   ReceptionAction,
 } from "@/lib/receptionist/types";
-
-const AGENDA_STORAGE_KEY = "fisionova-agenda";
-const EMAIL_STORAGE_KEY = "fisionova-email-log";
 
 const assistantGreeting: ChatMessage = {
   id: "assistant-greeting",
   role: "assistant",
   content:
-    "Hola, soy la recepcionista IA de FisioNova. Puedo ayudarte a pedir cita, cambiarla, cancelarla o resolver dudas sobre precios y tratamientos.",
+    "Hola, soy recepción de FisioNova Clínica. Puedo ayudarte a pedir cita, cambiarla, cancelarla o resolver dudas sobre precios y tratamientos.",
 };
 
-function readStorage<T>(key: string, fallback: T): T {
-  if (typeof window === "undefined") {
-    return fallback;
-  }
-
-  const value = window.localStorage.getItem(key);
-
-  if (!value) {
-    return fallback;
-  }
-
-  try {
-    return JSON.parse(value) as T;
-  } catch {
-    return fallback;
-  }
-}
-
-function createDemoAppointment(
-  slot: AppointmentSlot,
-  appointments: Appointment[],
-) {
-  return bookAppointment(appointments, {
-    patientName: "Visitante Portfolio",
-    patientEmail: "visitante@example.com",
-    patientPhone: "600 000 000",
-    treatmentId: slot.treatmentId,
-    therapistId: slot.therapistId,
-    date: slot.date,
-    time: slot.time,
-    notes: "Cita creada desde la demo de recepcionista IA.",
-  });
-}
-
 export function ReceptionistExperience() {
-  const [appointments, setAppointments] = useState<Appointment[]>(() =>
-    resetAgenda(),
-  );
-  const [emails, setEmails] = useState<EmailLogItem[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([assistantGreeting]);
   const [proposedSlots, setProposedSlots] = useState<AppointmentSlot[]>([]);
   const [pending, setPending] = useState(false);
-
-  useEffect(() => {
-    queueMicrotask(() => {
-      setAppointments(readStorage(AGENDA_STORAGE_KEY, resetAgenda()));
-      setEmails(readStorage(EMAIL_STORAGE_KEY, []));
-    });
-  }, []);
-
-  useEffect(() => {
-    window.localStorage.setItem(
-      AGENDA_STORAGE_KEY,
-      JSON.stringify(appointments),
-    );
-  }, [appointments]);
-
-  useEffect(() => {
-    window.localStorage.setItem(EMAIL_STORAGE_KEY, JSON.stringify(emails));
-  }, [emails]);
-
-  const sortedAppointments = useMemo(
-    () =>
-      [...appointments].sort((a, b) =>
-        `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`),
-      ),
-    [appointments],
-  );
 
   async function sendEmail(type: EmailEventType, appointment: Appointment) {
     const response = await fetch("/api/email", {
@@ -114,23 +41,8 @@ export function ReceptionistExperience() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ type, appointment }),
     });
-    const payload = (await response.json()) as {
-      status: EmailLogItem["status"];
-      email: Pick<EmailLogItem, "subject" | "body">;
-    };
 
-    setEmails((current) => [
-      {
-        id: `email-${Date.now()}`,
-        type,
-        recipient: appointment.patientEmail,
-        subject: payload.email.subject,
-        body: payload.email.body,
-        status: payload.status,
-        createdAt: new Date().toISOString(),
-      },
-      ...current,
-    ]);
+    await response.json();
   }
 
   function addAssistantMessage(content: string) {
@@ -155,7 +67,7 @@ export function ReceptionistExperience() {
       const response = await fetch("/api/receptionist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, appointments }),
+        body: JSON.stringify({ message }),
       });
       const payload = (await response.json()) as { action: ReceptionAction };
 
@@ -165,7 +77,7 @@ export function ReceptionistExperience() {
       );
     } catch {
       addAssistantMessage(
-        "Ahora mismo no puedo conectar con la IA, pero la demo local sigue funcionando. Prueba con pedir cita o consultar precios.",
+        "Ahora mismo no puedo conectar con recepción, pero puedo seguir ayudándote en modo demo. Prueba con pedir cita o consultar precios.",
       );
     } finally {
       setPending(false);
@@ -173,61 +85,18 @@ export function ReceptionistExperience() {
   }
 
   async function handleSelectSlot(slot: AppointmentSlot) {
-    const appointment = createDemoAppointment(slot, appointments);
-    setAppointments((current) => [...current, appointment]);
+    const response = await fetch("/api/appointments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slot }),
+    });
+    const payload = (await response.json()) as { appointment: Appointment };
+
     setProposedSlots([]);
     addAssistantMessage(
-      `Perfecto, te he reservado el ${appointment.date} a las ${appointment.time}. También he preparado el email de confirmación.`,
+      `Perfecto, te he reservado el ${payload.appointment.date} a las ${payload.appointment.time}. También he preparado el email de confirmación.`,
     );
-    await sendEmail("confirmation", appointment);
-  }
-
-  async function handleCancel(appointment: Appointment) {
-    setAppointments((current) =>
-      current.map((item) =>
-        item.id === appointment.id ? { ...item, status: "cancelled" } : item,
-      ),
-    );
-    addAssistantMessage(
-      `He cancelado la cita del ${appointment.date} a las ${appointment.time}.`,
-    );
-    await sendEmail("cancellation", { ...appointment, status: "cancelled" });
-  }
-
-  async function handleMove(appointment: Appointment) {
-    const [slot] = findAvailableSlots(appointments, {
-      treatmentId: appointment.treatmentId,
-    });
-
-    if (!slot) {
-      addAssistantMessage(
-        "No veo huecos libres para mover esa cita ahora mismo.",
-      );
-      return;
-    }
-
-    const nextAppointments = updateAppointment(appointments, appointment.id, {
-      date: slot.date,
-      time: slot.time,
-      therapistId: slot.therapistId,
-    });
-    const moved = nextAppointments.find((item) => item.id === appointment.id);
-
-    setAppointments(nextAppointments);
-
-    if (moved) {
-      addAssistantMessage(
-        `He movido la cita al ${moved.date} a las ${moved.time} y preparo el email con el cambio.`,
-      );
-      await sendEmail("modification", moved);
-    }
-  }
-
-  function handleReset() {
-    setAppointments(resetAgenda());
-    setEmails([]);
-    setProposedSlots([]);
-    setMessages([assistantGreeting]);
+    await sendEmail("confirmation", payload.appointment);
   }
 
   return (
@@ -254,45 +123,45 @@ export function ReceptionistExperience() {
               />
             </div>
             <span className="font-display text-lg tracking-tight">
-              FisioNova <span className="opacity-60">IA</span>
+              FisioNova <span className="opacity-60">Clínica</span>
             </span>
           </div>
-          <a
-            href="#cta"
+          <Link
+            href="/medico"
             className="text-cream/90 hover:text-cream hidden items-center gap-1.5 text-sm transition-colors sm:inline-flex"
           >
-            Probar demo <ArrowRight className="h-3.5 w-3.5" />
-          </a>
+            Área clínica <LockKeyhole className="h-3.5 w-3.5" />
+          </Link>
         </nav>
 
         <div className="relative z-10 mx-auto grid min-h-screen max-w-7xl items-center gap-10 px-6 pt-32 pb-20 lg:grid-cols-12 lg:gap-8 lg:px-12 lg:pt-40 lg:pb-28">
           <div className="animate-fade-up text-cream lg:col-span-6">
             <div className="text-cream/70 mb-6 inline-flex items-center gap-2 text-xs tracking-[0.18em] uppercase">
               <span className="animate-pulse-dot bg-sage h-1.5 w-1.5 rounded-full" />
-              FisioNova IA, demo en vivo
+              Fisioterapia en Madrid · cita online
             </div>
             <h1 className="font-display text-cream text-4xl leading-[1.05] sm:text-5xl lg:text-6xl">
-              Tu recepcionista IA
+              Fisioterapia para
               <br />
-              <span className="text-sage italic">para clínicas</span> de
-              fisioterapia
+              <span className="text-sage italic">moverte sin dolor</span>
             </h1>
             <p className="text-cream/80 mt-6 max-w-xl text-lg leading-relaxed">
-              Atiende pacientes, busca huecos en la agenda, confirma citas y
-              envía emails automáticamente. Trabaja contigo, no en lugar de ti.
+              Tratamientos personalizados para dolor de espalda, lesiones
+              deportivas y recuperación funcional. Reserva tu cita hablando con
+              recepción, sin llamadas ni formularios largos.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <a
                 href="#chat"
                 className="bg-cream text-charcoal hover:bg-cream/90 inline-flex items-center gap-2 rounded-md px-5 py-3 text-sm font-medium transition-colors"
               >
-                Probar la recepcionista <ArrowRight className="h-4 w-4" />
+                Reservar cita <ArrowRight className="h-4 w-4" />
               </a>
               <a
-                href="#how"
+                href="#treatments"
                 className="border-cream/30 text-cream hover:bg-cream/10 inline-flex items-center gap-2 rounded-md border px-5 py-3 text-sm font-medium transition-colors"
               >
-                Cómo funciona
+                Ver tratamientos
               </a>
             </div>
           </div>
@@ -308,64 +177,34 @@ export function ReceptionistExperience() {
               onSubmit={handleSubmit}
               onSelectSlot={handleSelectSlot}
             />
-            <div className="w-full max-w-md">
-              <AgendaPanel
-                appointments={sortedAppointments.slice(0, 3)}
-                onCancel={handleCancel}
-                onMove={handleMove}
-                onReset={handleReset}
-              />
-            </div>
+            <PatientPrivacyNote />
           </div>
         </div>
       </section>
 
       <HowItWorks />
-
-      <section className="bg-secondary/40 px-6 py-24 lg:px-12 lg:py-32">
-        <div className="mx-auto grid max-w-7xl items-start gap-12 lg:grid-cols-12">
-          <div className="lg:col-span-5">
-            <span className="text-sage text-xs tracking-[0.18em] uppercase">
-              Agenda
-            </span>
-            <h2 className="font-display mt-3 text-3xl leading-tight lg:text-5xl">
-              Agenda funcional, no decorativa
-            </h2>
-            <p className="text-muted-foreground mt-4 text-lg leading-relaxed">
-              La recepcionista ve los huecos reales de cada profesional, respeta
-              duraciones de tratamiento y nunca propone una hora ocupada.
-            </p>
-            <ul className="mt-8 space-y-3 text-sm">
-              {[
-                "Múltiples profesionales y tratamientos",
-                "Citas persistentes en el navegador",
-                "Confirmaciones automáticas por email",
-              ].map((feature) => (
-                <li key={feature} className="flex items-center gap-3">
-                  <CheckCircle2
-                    className="text-sage h-4 w-4 shrink-0"
-                    strokeWidth={2}
-                    aria-hidden="true"
-                  />
-                  {feature}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="space-y-6 lg:col-span-7">
-            <AgendaPanel
-              appointments={sortedAppointments}
-              onCancel={handleCancel}
-              onMove={handleMove}
-              onReset={handleReset}
-            />
-            <EmailLog emails={emails} />
-          </div>
-        </div>
-      </section>
-
-      <AutomationSection />
+      <TreatmentsSection />
+      <BookingSection />
       <FinalCTA />
+    </div>
+  );
+}
+
+function PatientPrivacyNote() {
+  return (
+    <div className="glass shadow-elegant border-border/60 w-full max-w-md rounded-xl border px-5 py-4">
+      <div className="flex items-start gap-3">
+        <div className="bg-sage/15 mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-md">
+          <LockKeyhole className="text-sage h-4 w-4" aria-hidden="true" />
+        </div>
+        <div>
+          <p className="text-sm font-medium">Agenda privada</p>
+          <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
+            Solo verás los huecos disponibles para tu cita. La agenda completa
+            queda reservada para el equipo clínico.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
@@ -374,23 +213,23 @@ function HowItWorks() {
   const steps = [
     {
       icon: Ear,
-      title: "Escucha",
-      text: "Entiende la peticion del paciente en lenguaje natural.",
+      title: "Cuéntanos",
+      text: "Escribe qué necesitas: dolor, lesión, horario o tipo de tratamiento.",
     },
     {
       icon: CalendarSearch,
-      title: "Busca hueco",
-      text: "Consulta la agenda y propone el mejor momento.",
+      title: "Vemos huecos",
+      text: "Recepción consulta disponibilidad y te propone horas libres.",
     },
     {
       icon: CheckCircle2,
-      title: "Confirma",
-      text: "Reserva la cita y la bloquea en el calendario.",
+      title: "Reservamos",
+      text: "Cuando eliges una hora, la cita queda bloqueada para ti.",
     },
     {
       icon: Mail,
-      title: "Envía email",
-      text: "Manda confirmación o cancelación automáticamente.",
+      title: "Te avisamos",
+      text: "Recibes la confirmación por email con los datos de la visita.",
     },
   ];
 
@@ -399,13 +238,14 @@ function HowItWorks() {
       <div className="mx-auto max-w-7xl">
         <header className="mb-16 max-w-2xl">
           <span className="text-sage text-xs tracking-[0.18em] uppercase">
-            Flujo
+            Citas
           </span>
           <h2 className="font-display mt-3 text-3xl leading-tight lg:text-5xl">
-            Cómo trabaja la recepcionista
+            Reserva sin esperar al teléfono
           </h2>
           <p className="text-muted-foreground mt-4 text-lg">
-            Cuatro pasos, una conversación. Sin formularios, sin esperas.
+            Una conversación breve para encontrar el mejor momento y dejar tu
+            cita cerrada.
           </p>
         </header>
 
@@ -441,51 +281,82 @@ function HowItWorks() {
   );
 }
 
-function AutomationSection() {
-  const items = [
-    {
-      tag: "OpenAI",
-      title: "Conversación natural",
-      text: "Modelos de lenguaje para entender peticiones reales de pacientes en español.",
-    },
-    {
-      tag: "Demo mode",
-      title: "Fallback inteligente",
-      text: "Si la IA no esta disponible, el modo demo mantiene la experiencia operativa.",
-    },
-    {
-      tag: "Resend",
-      title: "Emails transaccionales",
-      text: "Confirmaciones, modificaciones y cancelaciones enviadas al instante.",
-    },
-  ];
-
+function TreatmentsSection() {
   return (
-    <section className="px-6 py-24 lg:px-12 lg:py-32">
+    <section
+      id="treatments"
+      className="bg-secondary/40 px-6 py-24 lg:px-12 lg:py-32"
+    >
       <div className="mx-auto max-w-7xl">
         <header className="mb-16 max-w-2xl">
           <span className="text-sage text-xs tracking-[0.18em] uppercase">
-            Tecnología
+            Tratamientos
           </span>
           <h2 className="font-display mt-3 text-3xl leading-tight lg:text-5xl">
-            Automatización con IA
+            Fisioterapia cercana y personalizada
           </h2>
+          <p className="text-muted-foreground mt-4 text-lg">
+            Sesiones individuales con profesionales especializados en
+            recuperación, dolor y movimiento.
+          </p>
         </header>
         <div className="grid gap-6 md:grid-cols-3">
-          {items.map((item) => (
+          {treatments.map((treatment) => (
             <article
-              key={item.title}
+              key={treatment.id}
               className="border-border bg-card hover:border-sage/40 rounded-xl border p-8 transition-colors"
             >
               <span className="text-clay text-[11px] font-medium tracking-widest uppercase">
-                {item.tag}
+                {treatment.durationMinutes} min · {treatment.price} €
               </span>
-              <h3 className="font-display mt-4 mb-3 text-2xl">{item.title}</h3>
+              <h3 className="font-display mt-4 mb-3 text-2xl">
+                {treatment.name}
+              </h3>
               <p className="text-muted-foreground text-sm leading-relaxed">
-                {item.text}
+                {treatment.description}
               </p>
             </article>
           ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function BookingSection() {
+  return (
+    <section className="px-6 py-24 lg:px-12 lg:py-32">
+      <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-12">
+        <div className="lg:col-span-6">
+          <span className="text-sage text-xs tracking-[0.18em] uppercase">
+            Recepción online
+          </span>
+          <h2 className="font-display mt-3 text-3xl leading-tight lg:text-5xl">
+            Pide cita igual que escribirías a la clínica
+          </h2>
+          <p className="text-muted-foreground mt-4 text-lg leading-relaxed">
+            Puedes pedir hora por la mañana, por la tarde, preguntar precios o
+            cambiar una cita. Recepción revisa disponibilidad sin enseñar la
+            agenda interna.
+          </p>
+        </div>
+        <div className="glass shadow-elegant border-border/60 rounded-xl border p-6 lg:col-span-6">
+          <ul className="space-y-4 text-sm">
+            {[
+              "Disponibilidad real de profesionales",
+              "Datos de pacientes visibles solo en el área clínica",
+              "Confirmaciones y cambios enviados por email",
+            ].map((feature) => (
+              <li key={feature} className="flex items-center gap-3">
+                <CheckCircle2
+                  className="text-sage h-4 w-4 shrink-0"
+                  strokeWidth={2}
+                  aria-hidden="true"
+                />
+                {feature}
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
     </section>
@@ -500,17 +371,17 @@ function FinalCTA() {
     >
       <div className="relative mx-auto max-w-3xl text-center">
         <h2 className="font-display text-cream text-4xl leading-tight lg:text-6xl">
-          Prueba la recepcionista{" "}
-          <span className="text-sage italic">ahora</span>
+          Reserva tu cita en <span className="text-sage italic">FisioNova</span>
         </h2>
         <p className="text-cream/70 mt-6 text-lg">
-          Habla con FisioNova IA como lo haría un paciente real.
+          Nuestro equipo te ayuda a encontrar el tratamiento y la hora que mejor
+          encajan contigo.
         </p>
         <a
           href="#chat"
           className="bg-cream text-charcoal hover:bg-sage hover:text-sage-foreground mt-10 inline-flex items-center gap-2 rounded-md px-6 py-3.5 text-sm font-medium transition-colors"
         >
-          Probar la recepcionista <ArrowRight className="h-4 w-4" />
+          Reservar cita <ArrowRight className="h-4 w-4" />
         </a>
       </div>
     </section>

@@ -11,6 +11,7 @@ const envSchema = z.object({
   OPENAI_MODEL: z.string().min(1).default("gpt-5.4-nano"),
   RESEND_API_KEY: z.string().min(1).optional(),
   RESEND_FROM_EMAIL: z.email().optional(),
+  DOCTOR_DASHBOARD_PIN: z.string().min(4).default("1234"),
 });
 
 export const env = envSchema.parse({
@@ -24,4 +25,5 @@ export const env = envSchema.parse({
   OPENAI_MODEL: process.env.OPENAI_MODEL,
   RESEND_API_KEY: process.env.RESEND_API_KEY,
   RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL,
+  DOCTOR_DASHBOARD_PIN: process.env.DOCTOR_DASHBOARD_PIN,
 });

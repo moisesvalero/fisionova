@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 
 import { env } from "@/lib/env";
+import { getDemoAppointments } from "@/lib/receptionist/appointment-store";
 import { getFallbackReceptionAction } from "@/lib/receptionist/fallback";
-import type { Appointment, ReceptionAction } from "@/lib/receptionist/types";
+import type { ReceptionAction } from "@/lib/receptionist/types";
 
 type ReceptionRequest = {
   message: string;
-  appointments: Appointment[];
 };
 
 type OpenAIResponse = {
@@ -32,7 +32,8 @@ function getOpenAIText(data: OpenAIResponse) {
 
 export async function POST(request: Request) {
   const body = (await request.json()) as ReceptionRequest;
-  const fallback = getFallbackReceptionAction(body.message, body.appointments);
+  const appointments = getDemoAppointments();
+  const fallback = getFallbackReceptionAction(body.message, appointments);
 
   if (!env.OPENAI_API_KEY) {
     return NextResponse.json({
