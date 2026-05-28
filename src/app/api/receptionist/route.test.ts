@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import { resetDemoAppointmentStore } from "@/lib/receptionist/appointment-store";
+import { seedAppointments } from "@/lib/receptionist/demo-data";
 
-import { POST } from "./route";
+import { POST, createReceptionActionFromOpenAIIntent } from "./route";
 
 describe("/api/receptionist", () => {
   it("uses the local fallback when OpenAI is not configured", async () => {
@@ -24,5 +25,25 @@ describe("/api/receptionist", () => {
 
     expect(payload.provider).toBe("fallback");
     expect(payload.action.type).toBe("propose_slots");
+  });
+
+  it("turns an OpenAI appointment intent into backend-controlled slots", () => {
+    const action = createReceptionActionFromOpenAIIntent(
+      {
+        intent: "request_appointment",
+        message: "Claro, te busco huecos para fisioterapia deportiva.",
+        treatmentId: "sports",
+      },
+      seedAppointments,
+    );
+
+    expect(action.type).toBe("propose_slots");
+    if (action.type === "propose_slots") {
+      expect(action.message).toContain("fisioterapia deportiva");
+      expect(action.slots.length).toBeGreaterThan(0);
+      expect(action.slots.every((slot) => slot.treatmentId === "sports")).toBe(
+        true,
+      );
+    }
   });
 });
