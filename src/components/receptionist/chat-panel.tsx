@@ -86,8 +86,10 @@ export function ChatPanel({
   return (
     <section
       className={cn(
-        "glass shadow-elegant border-border/60 w-full overflow-hidden rounded-xl border",
-        mode === "modal" ? "max-w-4xl" : "max-w-md",
+        "chat-panel-motion glass shadow-elegant border-border/60 w-full overflow-hidden rounded-xl border",
+        mode === "modal"
+          ? "modal-panel max-w-4xl"
+          : "chat-panel-inline max-w-md",
         className,
       )}
     >
@@ -123,7 +125,7 @@ export function ChatPanel({
         {messages.map((message) => (
           <div
             key={message.id}
-            className={`animate-fade-up flex ${
+            className={`message-pop animate-fade-up flex ${
               message.role === "user" ? "justify-end" : "justify-start"
             }`}
           >
@@ -145,7 +147,7 @@ export function ChatPanel({
               <button
                 key={slot.id}
                 type="button"
-                className="bg-sage text-sage-foreground hover:bg-sage/90 inline-flex w-full items-center justify-center gap-1.5 rounded-md px-3 py-2 text-xs font-medium transition-colors"
+                className="magic-button bg-sage text-sage-foreground hover:bg-sage/90 inline-flex w-full items-center justify-center gap-1.5 rounded-md px-3 py-2 text-xs font-medium transition-colors"
                 onClick={() => onSelectSlot(slot)}
               >
                 <Check className="h-3.5 w-3.5" strokeWidth={2.5} />
@@ -224,7 +226,7 @@ export function ChatPanel({
           <span>Confirmación por email</span>
         </div>
         <form
-          className="border-border/70 bg-background/80 focus-within:ring-ring/40 flex items-center gap-2 rounded-lg border px-2 py-1.5 transition-shadow focus-within:ring-2"
+          className="chat-input-shell border-border/70 bg-background/80 focus-within:ring-ring/40 flex items-center gap-2 rounded-lg border px-2 py-1.5 transition-shadow focus-within:ring-2"
           onSubmit={handleSubmit}
         >
           <label className="sr-only" htmlFor={inputId}>
@@ -237,12 +239,13 @@ export function ChatPanel({
             placeholder="Escribe un mensaje..."
             disabled={pending}
             autoFocus={mode === "modal"}
+            onClick={mode === "inline" ? onInputFocus : undefined}
             onFocus={mode === "inline" ? onInputFocus : undefined}
           />
           <Button
             type="submit"
             size="icon"
-            className="bg-primary text-primary-foreground h-9 w-9 hover:opacity-90"
+            className="magic-button bg-primary text-primary-foreground h-9 w-9 hover:opacity-90"
             disabled={pending}
           >
             <Send className="size-4" aria-hidden="true" />

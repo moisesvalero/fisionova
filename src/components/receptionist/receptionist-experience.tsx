@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
   CalendarSearch,
@@ -62,6 +62,7 @@ const treatmentPhotos: Record<string, string> = {
 };
 
 export function ReceptionistExperience() {
+  const pageRef = useRef<HTMLDivElement>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([assistantGreeting]);
   const [proposedSlots, setProposedSlots] = useState<AppointmentSlot[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<AppointmentSlot | null>(
@@ -70,6 +71,101 @@ export function ReceptionistExperience() {
   const [pending, setPending] = useState(false);
   const [bookingPending, setBookingPending] = useState(false);
   const [isChatModalOpen, setIsChatModalOpen] = useState(false);
+
+  useEffect(() => {
+    const page = pageRef.current;
+
+    if (!page) {
+      return;
+    }
+
+    const prefersReducedMotion =
+      typeof window.matchMedia === "function"
+        ? window.matchMedia("(prefers-reduced-motion: reduce)")
+        : null;
+
+    const revealElements = Array.from(
+      page.querySelectorAll<HTMLElement>(
+        ".reveal-up, .reveal-up-delayed, .reveal-soft, .reveal-left, .reveal-right, .reveal-scale",
+      ),
+    );
+
+    if (prefersReducedMotion?.matches) {
+      revealElements.forEach((element) => element.classList.add("is-visible"));
+
+      return;
+    }
+
+    if (typeof IntersectionObserver !== "function") {
+      revealElements.forEach((element) => element.classList.add("is-visible"));
+
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) {
+            return;
+          }
+
+          entry.target.classList.add("is-visible");
+          observer.unobserve(entry.target);
+        });
+      },
+      {
+        rootMargin: "0px 0px -12% 0px",
+        threshold: 0.18,
+      },
+    );
+
+    revealElements.forEach((element) => observer.observe(element));
+
+    const parallaxElements = Array.from(
+      page.querySelectorAll<HTMLElement>("[data-parallax]"),
+    );
+    let frame = 0;
+
+    const updateParallax = () => {
+      frame = 0;
+      const viewportHeight = window.innerHeight || 1;
+
+      parallaxElements.forEach((element) => {
+        const strength = Number(element.dataset.parallax ?? 24);
+        const rect = element.getBoundingClientRect();
+        const elementCenter = rect.top + rect.height / 2;
+        const progress = (viewportHeight / 2 - elementCenter) / viewportHeight;
+        const clampedProgress = Math.max(-1.2, Math.min(1.2, progress));
+
+        element.style.setProperty(
+          "--parallax-y",
+          `${(clampedProgress * strength).toFixed(2)}px`,
+        );
+      });
+    };
+
+    const requestParallax = () => {
+      if (frame) {
+        return;
+      }
+
+      frame = window.requestAnimationFrame(updateParallax);
+    };
+
+    updateParallax();
+    window.addEventListener("scroll", requestParallax, { passive: true });
+    window.addEventListener("resize", requestParallax);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("scroll", requestParallax);
+      window.removeEventListener("resize", requestParallax);
+
+      if (frame) {
+        window.cancelAnimationFrame(frame);
+      }
+    };
+  }, []);
 
   async function sendEmail(type: EmailEventType, appointment: Appointment) {
     const response = await fetch("/api/email", {
@@ -163,7 +259,7 @@ export function ReceptionistExperience() {
   }
 
   return (
-    <div className="bg-background text-foreground min-h-screen">
+    <div ref={pageRef} className="bg-background text-foreground min-h-screen">
       <section className="relative min-h-screen w-full overflow-hidden">
         <Image
           src="/images/clinic-hero.jpg"
@@ -171,7 +267,8 @@ export function ReceptionistExperience() {
           fill
           priority
           sizes="100vw"
-          className="hero-media object-cover"
+          className="hero-media parallax-layer object-cover"
+          data-parallax="34"
         />
         <div className="hero-overlay from-charcoal/70 via-charcoal/40 to-charcoal/80 absolute inset-0 bg-gradient-to-b" />
         <div className="hero-overlay from-charcoal/60 absolute inset-0 bg-gradient-to-r via-transparent to-transparent" />
@@ -218,7 +315,10 @@ export function ReceptionistExperience() {
         </nav>
 
         <div className="relative z-10 mx-auto grid min-h-screen max-w-7xl items-center gap-8 px-6 pt-28 pb-14 sm:gap-10 sm:pt-32 sm:pb-20 lg:grid-cols-12 lg:gap-8 lg:px-12 lg:pt-40 lg:pb-28">
-          <div className="hero-copy text-cream lg:col-span-6">
+          <div
+            className="hero-copy parallax-layer text-cream lg:col-span-6"
+            data-parallax="-12"
+          >
             <div className="hero-kicker text-cream/70 mb-6 inline-flex items-center gap-2 text-xs tracking-[0.18em] uppercase">
               <span className="animate-pulse-dot bg-sage h-1.5 w-1.5 rounded-full" />
               Fisioterapia en Madrid · cita online
@@ -238,13 +338,13 @@ export function ReceptionistExperience() {
             <div className="hero-actions mt-8 flex flex-wrap gap-3">
               <a
                 href="#chat"
-                className="bg-cream text-charcoal hover:bg-cream/90 inline-flex items-center gap-2 rounded-md px-5 py-3 text-sm font-medium transition-colors"
+                className="magic-button bg-cream text-charcoal hover:bg-cream/90 inline-flex items-center gap-2 rounded-md px-5 py-3 text-sm font-medium transition-colors"
               >
                 Reservar cita <ArrowRight className="h-4 w-4" />
               </a>
               <a
                 href="#treatments"
-                className="border-cream/30 text-cream hover:bg-cream/10 inline-flex items-center gap-2 rounded-md border px-5 py-3 text-sm font-medium transition-colors"
+                className="magic-button border-cream/30 text-cream hover:bg-cream/10 inline-flex items-center gap-2 rounded-md border px-5 py-3 text-sm font-medium transition-colors"
               >
                 Ver tratamientos
               </a>
@@ -253,7 +353,8 @@ export function ReceptionistExperience() {
 
           <div
             id="chat"
-            className="hero-chat flex flex-col items-center gap-4 lg:col-span-6 lg:items-end"
+            className="hero-chat parallax-layer flex flex-col items-center gap-4 lg:col-span-6 lg:items-end"
+            data-parallax="18"
           >
             <ChatPanel
               inputId="receptionist-message-inline"
@@ -273,14 +374,14 @@ export function ReceptionistExperience() {
 
       {isChatModalOpen ? (
         <div
-          className="bg-charcoal/70 fixed inset-0 z-50 flex items-center justify-center px-4 py-6 backdrop-blur-sm"
+          className="modal-backdrop bg-charcoal/70 fixed inset-0 z-50 flex items-center justify-center px-4 py-6 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-label="Chat de recepción"
         >
           <button
             type="button"
-            className="text-cream hover:bg-cream/10 absolute top-5 right-5 inline-flex h-11 w-11 items-center justify-center rounded-full transition-colors"
+            className="modal-close text-cream hover:bg-cream/10 absolute top-5 right-5 inline-flex h-11 w-11 items-center justify-center rounded-full transition-colors"
             onClick={() => setIsChatModalOpen(false)}
           >
             <X className="h-5 w-5" aria-hidden="true" />
@@ -386,10 +487,16 @@ function AboutSectionBalanced() {
   ];
 
   return (
-    <section id="about" className="px-6 py-20 lg:px-12 lg:py-28">
-      <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-12">
-        <div className="relative lg:col-span-6">
-          <div className="shadow-elegant relative aspect-[5/4] overflow-hidden rounded-xl lg:aspect-[4/3]">
+    <section
+      id="about"
+      className="premium-section px-6 py-20 lg:px-12 lg:py-28"
+    >
+      <div className="reveal-split mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-12">
+        <div className="reveal-left relative lg:col-span-6">
+          <div
+            className="image-reveal parallax-layer shadow-elegant relative aspect-[5/4] overflow-hidden rounded-xl lg:aspect-[4/3]"
+            data-parallax="22"
+          >
             <Image
               src={clinicPhotos.assessment}
               alt="Sala luminosa de fisioterapia preparada para una sesión"
@@ -399,7 +506,10 @@ function AboutSectionBalanced() {
             />
             <div className="from-charcoal/45 absolute inset-0 bg-gradient-to-t via-transparent to-transparent" />
           </div>
-          <div className="border-background bg-card shadow-elegant absolute right-4 bottom-4 max-w-[260px] rounded-xl border p-4 lg:right-6 lg:bottom-6">
+          <div
+            className="float-card parallax-layer border-background bg-card shadow-elegant absolute right-4 bottom-4 max-w-[260px] rounded-xl border p-4 lg:right-6 lg:bottom-6"
+            data-parallax="-16"
+          >
             <p className="text-sage text-[11px] font-medium tracking-[0.16em] uppercase">
               Primera valoración
             </p>
@@ -410,7 +520,7 @@ function AboutSectionBalanced() {
           </div>
         </div>
 
-        <div className="lg:col-span-6">
+        <div className="reveal-right lg:col-span-6">
           <span className="text-sage text-xs tracking-[0.18em] uppercase">
             Quiénes somos
           </span>
@@ -428,11 +538,11 @@ function AboutSectionBalanced() {
               trabajar y cómo puedes cuidarte entre sesiones.
             </p>
           </div>
-          <div className="mt-8 grid gap-4 sm:grid-cols-3 lg:grid-cols-2">
+          <div className="stagger-list mt-8 grid gap-4 sm:grid-cols-3 lg:grid-cols-2">
             {trustItems.map(([value, label], index) => (
               <div
                 key={value}
-                className={`reveal-soft border-border bg-card rounded-xl border p-5 ${
+                className={`reveal-soft motion-card border-border bg-card rounded-xl border p-5 ${
                   index === 2 ? "lg:col-span-2" : ""
                 }`}
               >
@@ -449,9 +559,9 @@ function AboutSectionBalanced() {
 
 function ClinicGallerySection() {
   return (
-    <section className="bg-charcoal text-cream overflow-hidden px-6 py-20 lg:px-12 lg:py-28">
-      <div className="reveal-up mx-auto grid max-w-7xl items-end gap-8 lg:grid-cols-12">
-        <div className="lg:col-span-4">
+    <section className="premium-section section-dark bg-charcoal text-cream overflow-hidden px-6 py-20 lg:px-12 lg:py-28">
+      <div className="reveal-split mx-auto grid max-w-7xl items-end gap-8 lg:grid-cols-12">
+        <div className="reveal-left lg:col-span-4">
           <span className="text-sage text-xs tracking-[0.18em] uppercase">
             Espacio
           </span>
@@ -462,8 +572,11 @@ function ClinicGallerySection() {
             Un entorno pensado para valorar, tratar y entrenar sin prisas.
           </p>
         </div>
-        <div className="grid gap-4 lg:col-span-8 lg:grid-cols-5">
-          <div className="premium-photo relative min-h-[360px] overflow-hidden rounded-xl lg:col-span-3">
+        <div className="stagger-list reveal-right grid gap-4 lg:col-span-8 lg:grid-cols-5">
+          <div
+            className="image-reveal parallax-layer premium-photo relative min-h-[360px] overflow-hidden rounded-xl lg:col-span-3"
+            data-parallax="26"
+          >
             <Image
               src={clinicPhotos.movement}
               alt="Sesión de movimiento terapéutico en una clínica luminosa"
@@ -477,7 +590,8 @@ function ClinicGallerySection() {
               (photo, index) => (
                 <div
                   key={photo}
-                  className="premium-photo relative min-h-[170px] overflow-hidden rounded-xl"
+                  className="image-reveal parallax-layer premium-photo relative min-h-[170px] overflow-hidden rounded-xl"
+                  data-parallax={index === 0 ? "-18" : "14"}
                 >
                   <Image
                     src={photo}
@@ -525,7 +639,10 @@ function HowItWorks() {
   ];
 
   return (
-    <section id="how" className="bg-secondary/40 px-6 py-24 lg:px-12 lg:py-32">
+    <section
+      id="how"
+      className="premium-section bg-secondary/40 px-6 py-24 lg:px-12 lg:py-32"
+    >
       <div className="reveal-up mx-auto max-w-7xl">
         <header className="mb-16 max-w-2xl">
           <span className="text-sage text-xs tracking-[0.18em] uppercase">
@@ -540,11 +657,11 @@ function HowItWorks() {
           </p>
         </header>
 
-        <ol className="border-border bg-border grid overflow-hidden rounded-xl border md:grid-cols-2 lg:grid-cols-4">
+        <ol className="stagger-list border-border bg-border grid overflow-hidden rounded-xl border md:grid-cols-2 lg:grid-cols-4">
           {steps.map((step, index) => (
             <li
               key={step.title}
-              className="reveal-soft group bg-background hover:bg-secondary/40 relative flex flex-col gap-4 p-8 transition-colors lg:p-10"
+              className="reveal-soft motion-card group bg-background hover:bg-secondary/40 relative flex flex-col gap-4 p-8 transition-colors lg:p-10"
             >
               <div className="flex items-center justify-between">
                 <div className="bg-sage/15 flex h-11 w-11 items-center justify-center rounded-md">
@@ -574,7 +691,10 @@ function HowItWorks() {
 
 function TreatmentsSection() {
   return (
-    <section id="treatments" className="px-6 py-24 lg:px-12 lg:py-32">
+    <section
+      id="treatments"
+      className="premium-section px-6 py-24 lg:px-12 lg:py-32"
+    >
       <div className="reveal-up mx-auto max-w-7xl">
         <header className="mb-16 max-w-2xl">
           <span className="text-sage text-xs tracking-[0.18em] uppercase">
@@ -588,13 +708,16 @@ function TreatmentsSection() {
             recuperación, dolor y movimiento.
           </p>
         </header>
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="stagger-list grid gap-6 md:grid-cols-3">
           {treatments.map((treatment) => (
             <article
               key={treatment.id}
-              className="reveal-soft premium-card border-border bg-card hover:border-sage/40 group overflow-hidden rounded-xl border transition-colors"
+              className="reveal-soft premium-card motion-card border-border bg-card hover:border-sage/40 group overflow-hidden rounded-xl border transition-colors"
             >
-              <div className="relative aspect-[5/4] overflow-hidden">
+              <div
+                className="image-reveal parallax-layer relative aspect-[5/4] overflow-hidden"
+                data-parallax="12"
+              >
                 <Image
                   src={treatmentPhotos[treatment.id]}
                   alt={`Tratamiento de ${treatment.name.toLowerCase()}`}
@@ -627,10 +750,10 @@ function TeamSection() {
   return (
     <section
       id="team"
-      className="bg-charcoal text-cream px-6 py-24 lg:px-12 lg:py-32"
+      className="premium-section section-dark bg-charcoal text-cream px-6 py-24 lg:px-12 lg:py-32"
     >
-      <div className="reveal-up mx-auto grid max-w-7xl gap-12 lg:grid-cols-12">
-        <div className="lg:col-span-4">
+      <div className="reveal-split mx-auto grid max-w-7xl gap-12 lg:grid-cols-12">
+        <div className="reveal-left lg:col-span-4">
           <span className="text-sage text-xs tracking-[0.18em] uppercase">
             Equipo
           </span>
@@ -638,13 +761,16 @@ function TeamSection() {
             Fisios que escuchan antes de tratar
           </h2>
         </div>
-        <div className="grid gap-5 md:grid-cols-2 lg:col-span-8">
+        <div className="stagger-list reveal-right grid gap-5 md:grid-cols-2 lg:col-span-8">
           {therapists.map((therapist) => (
             <article
               key={therapist.id}
-              className="reveal-soft group border-cream/15 bg-cream/5 overflow-hidden rounded-xl border"
+              className="reveal-soft motion-card group border-cream/15 bg-cream/5 overflow-hidden rounded-xl border"
             >
-              <div className="relative aspect-[4/3] overflow-hidden">
+              <div
+                className="image-reveal parallax-layer relative aspect-[4/3] overflow-hidden"
+                data-parallax="14"
+              >
                 <Image
                   src={therapistPhotos[therapist.id]}
                   alt={`${therapist.name}, fisioterapeuta de FisioNova`}
@@ -674,9 +800,9 @@ function TeamSection() {
 
 function BookingSection() {
   return (
-    <section className="px-6 py-24 lg:px-12 lg:py-32">
-      <div className="reveal-up mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-12">
-        <div className="lg:col-span-6">
+    <section className="premium-section px-6 py-24 lg:px-12 lg:py-32">
+      <div className="reveal-split mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-12">
+        <div className="reveal-left lg:col-span-6">
           <span className="text-sage text-xs tracking-[0.18em] uppercase">
             Recepción online
           </span>
@@ -689,8 +815,11 @@ function BookingSection() {
             agenda interna.
           </p>
         </div>
-        <div className="glass shadow-elegant border-border/60 rounded-xl border p-6 lg:col-span-6">
-          <ul className="space-y-4 text-sm">
+        <div
+          className="reveal-right parallax-layer glass shadow-elegant border-border/60 glow-panel rounded-xl border p-6 lg:col-span-6"
+          data-parallax="-18"
+        >
+          <ul className="stagger-list space-y-4 text-sm">
             {[
               "Disponibilidad real de profesionales",
               "Datos de pacientes visibles solo en el área clínica",
@@ -714,9 +843,9 @@ function BookingSection() {
 
 function FirstVisitSection() {
   return (
-    <section className="bg-secondary/40 px-6 py-24 lg:px-12 lg:py-32">
-      <div className="reveal-up mx-auto grid max-w-7xl gap-12 lg:grid-cols-12">
-        <div className="lg:col-span-5">
+    <section className="premium-section bg-secondary/40 px-6 py-24 lg:px-12 lg:py-32">
+      <div className="reveal-split mx-auto grid max-w-7xl gap-12 lg:grid-cols-12">
+        <div className="reveal-left lg:col-span-5">
           <span className="text-sage text-xs tracking-[0.18em] uppercase">
             Primera visita
           </span>
@@ -724,7 +853,7 @@ function FirstVisitSection() {
             Llegas, valoramos y sales con un plan claro
           </h2>
         </div>
-        <div className="grid gap-4 md:grid-cols-3 lg:col-span-7">
+        <div className="stagger-list reveal-right grid gap-4 md:grid-cols-3 lg:col-span-7">
           {[
             [
               "Valoración",
@@ -741,7 +870,7 @@ function FirstVisitSection() {
           ].map(([title, text], index) => (
             <article
               key={title}
-              className="reveal-soft border-border bg-card rounded-xl border p-6"
+              className="reveal-soft motion-card border-border bg-card rounded-xl border p-6"
             >
               <span className="font-display text-sage text-3xl">
                 0{index + 1}
@@ -769,10 +898,10 @@ function ContactSection() {
   return (
     <section
       id="contact"
-      className="bg-secondary/40 px-6 py-24 lg:px-12 lg:py-32"
+      className="premium-section bg-secondary/40 px-6 py-24 lg:px-12 lg:py-32"
     >
-      <div className="reveal-up mx-auto grid max-w-7xl gap-12 lg:grid-cols-12">
-        <div className="lg:col-span-5">
+      <div className="reveal-split mx-auto grid max-w-7xl gap-12 lg:grid-cols-12">
+        <div className="reveal-left lg:col-span-5">
           <span className="text-sage text-xs tracking-[0.18em] uppercase">
             Contacto
           </span>
@@ -784,11 +913,11 @@ function ContactSection() {
             Si no sabes qué tratamiento pedir, recepción te orienta.
           </p>
         </div>
-        <div className="grid gap-4 md:grid-cols-2 lg:col-span-7">
+        <div className="stagger-list reveal-right grid gap-4 md:grid-cols-2 lg:col-span-7">
           {contactItems.map((item) => (
             <div
               key={item.label}
-              className="reveal-soft border-border bg-card rounded-xl border p-6"
+              className="reveal-soft motion-card border-border bg-card rounded-xl border p-6"
             >
               <item.icon className="text-sage h-5 w-5" aria-hidden="true" />
               <p className="text-muted-foreground mt-4 text-xs tracking-[0.16em] uppercase">
@@ -823,7 +952,7 @@ function FAQSection() {
   ];
 
   return (
-    <section className="px-6 py-24 lg:px-12 lg:py-32">
+    <section className="premium-section px-6 py-24 lg:px-12 lg:py-32">
       <div className="reveal-up mx-auto max-w-4xl">
         <span className="text-sage text-xs tracking-[0.18em] uppercase">
           Dudas frecuentes
@@ -831,9 +960,9 @@ function FAQSection() {
         <h2 className="font-display mt-3 text-3xl leading-tight lg:text-5xl">
           Antes de venir
         </h2>
-        <div className="border-border bg-card mt-10 divide-y rounded-xl border">
+        <div className="stagger-list border-border bg-card mt-10 divide-y rounded-xl border">
           {faqs.map((faq) => (
-            <article key={faq.question} className="reveal-soft p-6">
+            <article key={faq.question} className="reveal-soft motion-row p-6">
               <h3 className="text-base font-medium">{faq.question}</h3>
               <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
                 {faq.answer}
@@ -850,9 +979,14 @@ function FinalCTA() {
   return (
     <section
       id="cta"
-      className="bg-charcoal text-cream relative overflow-hidden px-6 py-28 lg:px-12 lg:py-40"
+      className="premium-section section-dark bg-charcoal text-cream relative overflow-hidden px-6 py-28 lg:px-12 lg:py-40"
     >
-      <div className="relative mx-auto max-w-3xl text-center">
+      <div
+        className="cta-orbit parallax-layer"
+        data-parallax="20"
+        aria-hidden="true"
+      />
+      <div className="reveal-scale relative mx-auto max-w-3xl text-center">
         <h2 className="font-display text-cream text-4xl leading-tight lg:text-6xl">
           Reserva tu cita en <span className="text-sage italic">FisioNova</span>
         </h2>
@@ -862,7 +996,7 @@ function FinalCTA() {
         </p>
         <a
           href="#chat"
-          className="bg-cream text-charcoal hover:bg-sage hover:text-sage-foreground mt-10 inline-flex items-center gap-2 rounded-md px-6 py-3.5 text-sm font-medium transition-colors"
+          className="magic-button bg-cream text-charcoal hover:bg-sage hover:text-sage-foreground mt-10 inline-flex items-center gap-2 rounded-md px-6 py-3.5 text-sm font-medium transition-colors"
         >
           Reservar cita <ArrowRight className="h-4 w-4" />
         </a>
