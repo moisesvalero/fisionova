@@ -20,6 +20,7 @@ type ChatPanelProps = {
   className?: string;
   inputId?: string;
   mode?: "inline" | "modal";
+  onInputFocus?: () => void;
   onSubmit: (message: string) => void;
   onSelectSlot: (slot: AppointmentSlot) => void;
   onConfirmBooking: (details: PatientDetails) => void;
@@ -40,6 +41,7 @@ export function ChatPanel({
   className,
   inputId = "receptionist-message",
   mode = "inline",
+  onInputFocus,
   onSubmit,
   onSelectSlot,
   onConfirmBooking,
@@ -234,6 +236,8 @@ export function ChatPanel({
             className="text-foreground placeholder:text-muted-foreground flex-1 bg-transparent px-2 py-2 text-sm outline-none"
             placeholder="Escribe un mensaje..."
             disabled={pending}
+            autoFocus={mode === "modal"}
+            onFocus={mode === "inline" ? onInputFocus : undefined}
           />
           <Button
             type="submit"

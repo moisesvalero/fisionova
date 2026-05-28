@@ -8,7 +8,6 @@ import {
   Clock3,
   Ear,
   Mail,
-  MessageCircle,
   MapPin,
   Phone,
   Sparkles,
@@ -17,7 +16,6 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 
-import { Button } from "@/components/ui/button";
 import { ChatPanel } from "@/components/receptionist/chat-panel";
 import {
   clinicProfile,
@@ -218,13 +216,9 @@ export function ReceptionistExperience() {
             <div className="mt-8 flex flex-wrap gap-3">
               <a
                 href="#chat"
-                onClick={(event) => {
-                  event.preventDefault();
-                  setIsChatModalOpen(true);
-                }}
                 className="bg-cream text-charcoal hover:bg-cream/90 inline-flex items-center gap-2 rounded-md px-5 py-3 text-sm font-medium transition-colors"
               >
-                Chatear con recepción <MessageCircle className="h-4 w-4" />
+                Reservar cita <ArrowRight className="h-4 w-4" />
               </a>
               <a
                 href="#treatments"
@@ -239,38 +233,14 @@ export function ReceptionistExperience() {
             id="chat"
             className="animate-fade-up flex flex-col items-center gap-4 lg:col-span-6 lg:items-end"
           >
-            <div className="glass shadow-elegant border-cream/25 hidden w-full max-w-md overflow-hidden rounded-xl border lg:block">
-              <div className="relative min-h-[360px] p-7">
-                <div className="border-border/60 bg-card/90 absolute top-6 right-6 left-10 rounded-2xl rounded-br-md border px-5 py-4 text-sm leading-relaxed">
-                  Hola, soy recepción. Dime qué te duele o cuándo quieres venir
-                  y busco una cita para ti.
-                </div>
-                <div className="bg-charcoal text-cream absolute right-10 bottom-28 left-20 rounded-2xl rounded-br-md px-5 py-4 text-sm">
-                  Quiero cita para fisioterapia deportiva esta semana.
-                </div>
-                <div className="border-border/60 bg-card absolute right-10 bottom-10 left-10 flex items-center justify-between gap-4 rounded-xl border p-3">
-                  <span className="text-muted-foreground text-sm">
-                    Recepción online preparada
-                  </span>
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={() => setIsChatModalOpen(true)}
-                  >
-                    Abrir chat
-                  </Button>
-                </div>
-              </div>
-            </div>
-
             <ChatPanel
-              className="lg:hidden"
               inputId="receptionist-message-inline"
               messages={messages}
               pending={pending}
               proposedSlots={proposedSlots}
               selectedSlot={selectedSlot}
               bookingPending={bookingPending}
+              onInputFocus={() => setIsChatModalOpen(true)}
               onSubmit={handleSubmit}
               onSelectSlot={handleSelectSlot}
               onConfirmBooking={handleConfirmBooking}
