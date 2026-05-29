@@ -8,7 +8,6 @@ import {
   CalendarCheck2,
   CalendarClock,
   CheckCircle2,
-  Filter,
   GripVertical,
   Hourglass,
   LockKeyhole,
@@ -1588,10 +1587,6 @@ export function DoctorAgenda() {
     () => countByStatus(appointments, "blocked"),
     [appointments],
   );
-  const estimatedMinutesSaved = useMemo(
-    () => Math.max(appointments.length - blockCount, 0) * 4 + emails.length * 2,
-    [appointments.length, blockCount, emails.length],
-  );
   const agendaDays = useMemo(
     () =>
       Array.from(new Set(appointments.map((appointment) => appointment.date))),
@@ -2017,7 +2012,7 @@ export function DoctorAgenda() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 gap-2">
                     <Button
                       type="button"
                       className="h-9 justify-center"
@@ -2047,192 +2042,159 @@ export function DoctorAgenda() {
                     </Button>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2">
-                    <button
-                      type="button"
-                      className="border-border/70 bg-background/65 hover:border-clinical/40 hover:bg-clinical/10 rounded-lg border p-2 text-left transition-all"
-                      onClick={() => setStatusFilter("pending")}
-                    >
-                      <div className="text-clinical flex items-center justify-between text-xs font-medium uppercase">
-                        Pendientes
-                        <CalendarCheck2 className="size-4" aria-hidden="true" />
-                      </div>
-                      <p className="font-display mt-2 text-xl leading-none tabular-nums">
-                        {pendingCount}
-                      </p>
-                      <p className="sr-only">confirmar</p>
-                    </button>
-                    <button
-                      type="button"
-                      className="border-border/70 bg-sage/10 hover:border-sage/40 rounded-lg border p-2 text-left transition-all"
-                      onClick={() => setStatusFilter("confirmed")}
-                    >
-                      <div className="text-sage flex items-center justify-between text-xs font-medium uppercase">
-                        Confirmadas
-                        <CheckCircle2 className="size-4" aria-hidden="true" />
-                      </div>
-                      <p className="font-display mt-2 text-xl leading-none tabular-nums">
-                        {confirmedCount}
-                      </p>
-                      <p className="sr-only">agenda</p>
-                    </button>
-                    <button
-                      type="button"
-                      className="rounded-lg border border-red-700/35 bg-red-600/15 p-2 text-left transition-all hover:border-red-700/55 hover:bg-red-600/20"
-                      onClick={() => setStatusFilter("cancelled")}
-                    >
-                      <div className="flex items-center justify-between text-xs font-medium text-red-800 uppercase">
-                        Canceladas
-                        <XCircle className="size-4" aria-hidden="true" />
-                      </div>
-                      <p className="font-display mt-2 text-xl leading-none tabular-nums">
-                        {cancelledCount}
-                      </p>
-                      <p className="sr-only">liberadas</p>
-                    </button>
-                    <button
-                      type="button"
-                      className="border-border/70 rounded-lg border bg-amber-500/10 p-2 text-left transition-all hover:border-amber-500/40"
-                      onClick={() => setStatusFilter("awaiting_response")}
-                    >
-                      <div className="flex items-center justify-between text-xs font-medium text-amber-700 uppercase">
-                        Respuesta
-                        <Mail className="size-4" aria-hidden="true" />
-                      </div>
-                      <p className="font-display mt-2 text-xl leading-none tabular-nums">
-                        {waitingCount}
-                      </p>
-                      <p className="sr-only">avisos</p>
-                    </button>
-                    <button
-                      type="button"
-                      className="border-border/70 bg-background/65 hover:border-sage/40 hover:bg-sage/10 rounded-lg border p-2 text-left transition-all"
-                      onClick={() => setStatusFilter("all")}
-                    >
-                      <div className="text-sage flex items-center justify-between text-xs font-medium uppercase">
-                        Lista espera
-                        <Shuffle className="size-4" aria-hidden="true" />
-                      </div>
-                      <p className="font-display mt-2 text-xl leading-none tabular-nums">
-                        {waitlistCount}
-                      </p>
-                      <p className="sr-only">adelantar</p>
-                    </button>
-                    <button
-                      type="button"
-                      className="border-border/70 bg-background/65 rounded-lg border p-2 text-left transition-all hover:border-amber-500/40 hover:bg-amber-500/10"
-                      onClick={() => setStatusFilter("blocked")}
-                    >
-                      <div className="flex items-center justify-between text-xs font-medium text-amber-700 uppercase">
-                        Bloqueos
-                        <XCircle className="size-4" aria-hidden="true" />
-                      </div>
-                      <p className="font-display mt-2 text-xl leading-none tabular-nums">
-                        {blockCount}
-                      </p>
-                      <p className="sr-only">bloqueados</p>
-                    </button>
-                    <div className="border-border/70 bg-background/65 rounded-lg border p-2 text-left">
-                      <div className="text-muted-foreground flex items-center justify-between text-xs font-medium uppercase">
-                        Ahorro
-                        <CalendarClock className="size-4" aria-hidden="true" />
-                      </div>
-                      <p className="font-display mt-2 text-xl leading-none tabular-nums">
-                        {estimatedMinutesSaved}
-                      </p>
-                      <p className="sr-only">min. demo</p>
+                  <div className="border-border/60 bg-background/50 overflow-hidden rounded-lg border">
+                    <div className="border-border/60 flex items-center justify-between border-b px-3 py-2">
+                      <span className="text-muted-foreground text-xs font-medium tracking-[0.14em] uppercase">
+                        Bandeja
+                      </span>
+                      <span className="text-muted-foreground text-xs tabular-nums">
+                        {filteredAppointments.length}/{appointments.length}
+                      </span>
+                    </div>
+                    <div className="divide-border/50 divide-y">
+                      <button
+                        type="button"
+                        className="hover:bg-clinical/10 grid w-full grid-cols-[1fr_auto] items-center gap-3 px-3 py-2 text-left transition-colors"
+                        onClick={() => setStatusFilter("pending")}
+                      >
+                        <span className="flex min-w-0 items-center gap-2">
+                          <CalendarCheck2
+                            className="text-clinical size-4 shrink-0"
+                            aria-hidden="true"
+                          />
+                          <span className="min-w-0">
+                            <span className="block truncate text-sm font-medium">
+                              Pendientes
+                            </span>
+                            <span className="text-muted-foreground block truncate text-xs">
+                              Solicitudes por revisar
+                            </span>
+                          </span>
+                        </span>
+                        <span className="text-clinical font-display text-xl tabular-nums">
+                          {pendingCount}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        className="grid w-full grid-cols-[1fr_auto] items-center gap-3 px-3 py-2 text-left transition-colors hover:bg-amber-500/10"
+                        onClick={() => setStatusFilter("awaiting_response")}
+                      >
+                        <span className="flex min-w-0 items-center gap-2">
+                          <Mail
+                            className="size-4 shrink-0 text-amber-700"
+                            aria-hidden="true"
+                          />
+                          <span className="min-w-0">
+                            <span className="block truncate text-sm font-medium">
+                              Respuesta pendiente
+                            </span>
+                            <span className="text-muted-foreground block truncate text-xs">
+                              Avisos enviados
+                            </span>
+                          </span>
+                        </span>
+                        <span className="font-display text-xl text-amber-700 tabular-nums">
+                          {waitingCount}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        className="hover:bg-sage/10 grid w-full grid-cols-[1fr_auto] items-center gap-3 px-3 py-2 text-left transition-colors"
+                        onClick={() => setStatusFilter("confirmed")}
+                      >
+                        <span className="flex min-w-0 items-center gap-2">
+                          <CheckCircle2
+                            className="text-sage size-4 shrink-0"
+                            aria-hidden="true"
+                          />
+                          <span className="min-w-0">
+                            <span className="block truncate text-sm font-medium">
+                              Confirmadas
+                            </span>
+                            <span className="text-muted-foreground block truncate text-xs">
+                              Agenda ocupada
+                            </span>
+                          </span>
+                        </span>
+                        <span className="text-sage font-display text-xl tabular-nums">
+                          {confirmedCount}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        className="hover:bg-sage/10 grid w-full grid-cols-[1fr_auto] items-center gap-3 px-3 py-2 text-left transition-colors"
+                        onClick={() => setStatusFilter("all")}
+                      >
+                        <span className="flex min-w-0 items-center gap-2">
+                          <Shuffle
+                            className="text-sage size-4 shrink-0"
+                            aria-hidden="true"
+                          />
+                          <span className="min-w-0">
+                            <span className="block truncate text-sm font-medium">
+                              Lista de espera
+                            </span>
+                            <span className="text-muted-foreground block truncate text-xs">
+                              Quieren venir antes
+                            </span>
+                          </span>
+                        </span>
+                        <span className="text-sage font-display text-xl tabular-nums">
+                          {waitlistCount}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        className="grid w-full grid-cols-[1fr_auto] items-center gap-3 px-3 py-2 text-left transition-colors hover:bg-red-600/10"
+                        onClick={() => setStatusFilter("cancelled")}
+                      >
+                        <span className="flex min-w-0 items-center gap-2">
+                          <XCircle
+                            className="size-4 shrink-0 text-red-700"
+                            aria-hidden="true"
+                          />
+                          <span className="min-w-0">
+                            <span className="block truncate text-sm font-medium">
+                              Canceladas
+                            </span>
+                            <span className="text-muted-foreground block truncate text-xs">
+                              Huecos liberados
+                            </span>
+                          </span>
+                        </span>
+                        <span className="font-display text-xl text-red-800 tabular-nums">
+                          {cancelledCount}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        className="grid w-full grid-cols-[1fr_auto] items-center gap-3 px-3 py-2 text-left transition-colors hover:bg-amber-500/10"
+                        onClick={() => setStatusFilter("blocked")}
+                      >
+                        <span className="flex min-w-0 items-center gap-2">
+                          <XCircle
+                            className="size-4 shrink-0 text-amber-700"
+                            aria-hidden="true"
+                          />
+                          <span className="min-w-0">
+                            <span className="block truncate text-sm font-medium">
+                              Bloqueos
+                            </span>
+                            <span className="text-muted-foreground block truncate text-xs">
+                              No disponibles
+                            </span>
+                          </span>
+                        </span>
+                        <span className="font-display text-xl text-amber-700 tabular-nums">
+                          {blockCount}
+                        </span>
+                      </button>
                     </div>
                   </div>
                 </div>
 
                 <div className="border-border/60 flex flex-1 flex-col justify-between gap-3 border-t p-3">
-                  <div>
-                    <div className="text-muted-foreground mb-3 flex items-center gap-2 text-xs font-medium tracking-[0.16em] uppercase">
-                      <Filter className="size-4" aria-hidden="true" />
-                      Filtros
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <label className="col-span-2 flex flex-col gap-2 text-sm font-medium">
-                        Buscar
-                        <div className="border-input bg-background focus-within:ring-ring/40 flex h-9 items-center gap-2 rounded-md border px-3 text-sm transition-shadow focus-within:ring-2">
-                          <Search
-                            className="text-muted-foreground size-4 shrink-0"
-                            aria-hidden="true"
-                          />
-                          <input
-                            className="placeholder:text-muted-foreground min-w-0 flex-1 bg-transparent outline-none"
-                            value={searchQuery}
-                            onChange={(event) =>
-                              setSearchQuery(event.target.value)
-                            }
-                            placeholder="Paciente, email o tratamiento"
-                          />
-                          {searchQuery ? (
-                            <button
-                              type="button"
-                              className="text-muted-foreground hover:text-foreground"
-                              onClick={() => setSearchQuery("")}
-                            >
-                              <X className="size-4" aria-hidden="true" />
-                              <span className="sr-only">Limpiar busqueda</span>
-                            </button>
-                          ) : null}
-                        </div>
-                      </label>
-
-                      <label className="flex flex-col gap-2 text-sm font-medium">
-                        Dia
-                        <select
-                          className="border-input bg-background focus:ring-ring/40 h-9 rounded-md border px-3 text-sm outline-none focus:ring-2"
-                          value={dayFilter}
-                          onChange={(event) => setDayFilter(event.target.value)}
-                        >
-                          <option value="all">Todos los dias</option>
-                          {agendaDays.map((day) => (
-                            <option key={day} value={day}>
-                              {formatAppointmentDate(day)}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-
-                      <label className="flex flex-col gap-2 text-sm font-medium">
-                        Profesional
-                        <select
-                          className="border-input bg-background focus:ring-ring/40 h-9 rounded-md border px-3 text-sm outline-none focus:ring-2"
-                          value={therapistFilter}
-                          onChange={(event) =>
-                            setTherapistFilter(event.target.value)
-                          }
-                        >
-                          <option value="all">Todos los profesionales</option>
-                          {therapists.map((therapist) => (
-                            <option key={therapist.id} value={therapist.id}>
-                              {therapist.name}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-
-                      <div className="col-span-2 flex flex-col gap-2">
-                        <span className="text-sm font-medium">Estado</span>
-                        <select
-                          className="border-input bg-background focus:ring-ring/40 h-9 rounded-md border px-3 text-sm outline-none focus:ring-2"
-                          value={statusFilter}
-                          onChange={(event) =>
-                            setStatusFilter(event.target.value as StatusFilter)
-                          }
-                        >
-                          {statusOptions.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-
                   <div className="hidden gap-3 2xl:grid">
                     <div className="border-border/60 bg-background/55 rounded-lg border px-4 py-3 text-sm">
                       <span className="text-muted-foreground block text-xs">
@@ -2263,6 +2225,97 @@ export function DoctorAgenda() {
                   onMoveCandidate={handleMoveCandidateToFreedSlot}
                 />
               ) : null}
+
+              <section className="glass shadow-elegant border-border/60 shrink-0 rounded-xl border p-3">
+                <div className="grid gap-3 lg:grid-cols-[minmax(260px,1.1fr)_180px_220px_180px_auto] lg:items-end">
+                  <label className="flex flex-col gap-1.5 text-xs font-medium">
+                    Buscar
+                    <div className="border-input bg-background focus-within:ring-ring/40 flex h-9 items-center gap-2 rounded-md border px-3 text-sm transition-shadow focus-within:ring-2">
+                      <Search
+                        className="text-muted-foreground size-4 shrink-0"
+                        aria-hidden="true"
+                      />
+                      <input
+                        className="placeholder:text-muted-foreground min-w-0 flex-1 bg-transparent outline-none"
+                        value={searchQuery}
+                        onChange={(event) => setSearchQuery(event.target.value)}
+                        placeholder="Paciente, email o tratamiento"
+                      />
+                      {searchQuery ? (
+                        <button
+                          type="button"
+                          className="text-muted-foreground hover:text-foreground"
+                          onClick={() => setSearchQuery("")}
+                        >
+                          <X className="size-4" aria-hidden="true" />
+                          <span className="sr-only">Limpiar busqueda</span>
+                        </button>
+                      ) : null}
+                    </div>
+                  </label>
+
+                  <label className="flex flex-col gap-1.5 text-xs font-medium">
+                    Dia
+                    <select
+                      className="border-input bg-background focus:ring-ring/40 h-9 rounded-md border px-3 text-sm outline-none focus:ring-2"
+                      value={dayFilter}
+                      onChange={(event) => setDayFilter(event.target.value)}
+                    >
+                      <option value="all">Todos los dias</option>
+                      {agendaDays.map((day) => (
+                        <option key={day} value={day}>
+                          {formatAppointmentDate(day)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="flex flex-col gap-1.5 text-xs font-medium">
+                    Profesional
+                    <select
+                      className="border-input bg-background focus:ring-ring/40 h-9 rounded-md border px-3 text-sm outline-none focus:ring-2"
+                      value={therapistFilter}
+                      onChange={(event) =>
+                        setTherapistFilter(event.target.value)
+                      }
+                    >
+                      <option value="all">Todos los profesionales</option>
+                      {therapists.map((therapist) => (
+                        <option key={therapist.id} value={therapist.id}>
+                          {therapist.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="flex flex-col gap-1.5 text-xs font-medium">
+                    Estado
+                    <select
+                      className="border-input bg-background focus:ring-ring/40 h-9 rounded-md border px-3 text-sm outline-none focus:ring-2"
+                      value={statusFilter}
+                      onChange={(event) =>
+                        setStatusFilter(event.target.value as StatusFilter)
+                      }
+                    >
+                      {statusOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <div className="border-border/60 bg-background/55 rounded-md border px-3 py-2 text-sm lg:text-right">
+                    <span className="text-muted-foreground block text-[11px] tracking-[0.12em] uppercase">
+                      Mostrando
+                    </span>
+                    <strong className="font-display text-xl font-normal tabular-nums">
+                      {filteredAppointments.length}
+                    </strong>{" "}
+                    de {appointments.length}
+                  </div>
+                </div>
+              </section>
 
               <AppointmentCalendar
                 appointments={filteredAppointments}

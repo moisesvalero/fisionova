@@ -128,14 +128,6 @@ h3 {
       0 24px 60px -20px color-mix(in oklab, var(--charcoal) 25%, transparent);
   }
 
-  @media (min-width: 80rem) {
-    .reception-workspace {
-      height: 740px;
-      min-height: 0;
-      overflow: hidden;
-    }
-  }
-
   .premium-card {
     box-shadow:
       0 1px 0 color-mix(in oklab, var(--cream) 65%, transparent) inset,
@@ -736,10 +728,8 @@ h3 {
 
 @media (min-width: 80rem) {
   .reception-workspace {
-    flex: 0 0 min(720px, calc(100vh - 11rem)) !important;
-    height: min(720px, calc(100vh - 11rem)) !important;
-    min-height: 0;
-    overflow: hidden;
+    min-height: calc(100vh - 10rem);
+    overflow: visible;
   }
 }
 
