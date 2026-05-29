@@ -10,6 +10,7 @@ import {
   Ear,
   Globe2,
   Mail,
+  MessageCircle,
   MapPin,
   Phone,
   Sparkles,
@@ -376,7 +377,33 @@ export function ReceptionistExperience() {
             id="chat"
             className="hero-chat flex flex-col items-center gap-4 pb-2 lg:col-span-6 lg:items-end lg:pb-0"
           >
+            <button
+              type="button"
+              className="mobile-chat-launcher glass shadow-elegant border-border/60 w-full rounded-xl border p-3 text-left sm:hidden"
+              onClick={() => setIsChatModalOpen(true)}
+            >
+              <span className="flex items-center gap-3">
+                <span className="bg-sage text-sage-foreground flex h-10 w-10 shrink-0 items-center justify-center rounded-full">
+                  <MessageCircle className="h-4 w-4" aria-hidden="true" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="text-foreground block text-sm font-semibold">
+                    Habla con Clara
+                  </span>
+                  <span className="text-muted-foreground mt-0.5 block text-xs">
+                    Pide cita en un momento, como por WhatsApp.
+                  </span>
+                </span>
+                <span className="bg-primary text-primary-foreground flex h-9 w-9 shrink-0 items-center justify-center rounded-full">
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </span>
+              </span>
+              <span className="border-border/60 bg-background/85 text-muted-foreground mt-3 block rounded-lg border px-3 py-2 text-xs">
+                Escribe lo que necesitas y te enseño huecos.
+              </span>
+            </button>
             <ChatPanel
+              className="hidden sm:block"
               inputId="receptionist-message-inline"
               messages={messages}
               pending={pending}
@@ -394,14 +421,14 @@ export function ReceptionistExperience() {
 
       {isChatModalOpen ? (
         <div
-          className="modal-backdrop bg-charcoal/70 fixed inset-0 z-50 flex items-center justify-center px-4 py-6 backdrop-blur-sm"
+          className="modal-backdrop bg-charcoal/70 fixed inset-0 z-50 flex items-end justify-center px-2 py-2 backdrop-blur-sm sm:items-center sm:px-4 sm:py-6"
           role="dialog"
           aria-modal="true"
           aria-label="Chat de recepción"
         >
           <button
             type="button"
-            className="modal-close text-cream hover:bg-cream/10 absolute top-5 right-5 inline-flex h-11 w-11 items-center justify-center rounded-full transition-colors"
+            className="modal-close text-cream hover:bg-cream/10 absolute top-3 right-3 inline-flex h-11 w-11 items-center justify-center rounded-full transition-colors sm:top-5 sm:right-5"
             onClick={() => setIsChatModalOpen(false)}
           >
             <X className="h-5 w-5" aria-hidden="true" />

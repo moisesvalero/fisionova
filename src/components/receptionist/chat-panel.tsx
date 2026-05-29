@@ -88,7 +88,7 @@ export function ChatPanel({
       className={cn(
         "chat-panel-motion glass shadow-elegant border-border/60 w-full overflow-hidden rounded-xl border",
         mode === "modal"
-          ? "modal-panel max-w-4xl"
+          ? "modal-panel max-h-[calc(100svh-1rem)] max-w-4xl"
           : "chat-panel-inline max-w-md",
         className,
       )}
@@ -118,7 +118,7 @@ export function ChatPanel({
         className={cn(
           "chat-panel-messages bg-background/40 space-y-3 overflow-y-auto px-4 py-4 sm:px-5 sm:py-5",
           mode === "modal"
-            ? "max-h-[min(64vh,680px)] min-h-[420px] md:px-8 md:py-7"
+            ? "max-h-[min(58svh,680px)] min-h-[360px] md:px-8 md:py-7"
             : "max-h-[184px] min-h-[132px] sm:max-h-[340px] sm:min-h-[220px]",
         )}
       >
@@ -172,7 +172,7 @@ export function ChatPanel({
               Nombre
               <input
                 name="patientName"
-                className="border-border bg-background focus:ring-ring/40 rounded-md border px-3 py-2 text-sm font-normal outline-none focus:ring-2"
+                className="border-border bg-background focus:ring-ring/40 rounded-md border px-3 py-2 text-base font-normal outline-none focus:ring-2 sm:text-sm"
                 placeholder="Tu nombre"
                 disabled={bookingPending}
                 required
@@ -183,7 +183,7 @@ export function ChatPanel({
               <input
                 name="patientEmail"
                 type="email"
-                className="border-border bg-background focus:ring-ring/40 rounded-md border px-3 py-2 text-sm font-normal outline-none focus:ring-2"
+                className="border-border bg-background focus:ring-ring/40 rounded-md border px-3 py-2 text-base font-normal outline-none focus:ring-2 sm:text-sm"
                 placeholder="tu@email.com"
                 disabled={bookingPending}
                 required
@@ -194,7 +194,7 @@ export function ChatPanel({
               <input
                 name="patientPhone"
                 type="tel"
-                className="border-border bg-background focus:ring-ring/40 rounded-md border px-3 py-2 text-sm font-normal outline-none focus:ring-2"
+                className="border-border bg-background focus:ring-ring/40 rounded-md border px-3 py-2 text-base font-normal outline-none focus:ring-2 sm:text-sm"
                 placeholder="600 000 000"
                 disabled={bookingPending}
                 required
@@ -236,7 +236,7 @@ export function ChatPanel({
           <input
             id={inputId}
             name="message"
-            className="text-foreground placeholder:text-muted-foreground flex-1 bg-transparent px-2 py-1.5 text-xs outline-none sm:py-2 sm:text-sm"
+            className="text-foreground placeholder:text-muted-foreground flex-1 bg-transparent px-2 py-1.5 text-base outline-none sm:py-2 sm:text-sm"
             placeholder="Escribe un mensaje..."
             disabled={pending}
             autoFocus={mode === "modal"}
