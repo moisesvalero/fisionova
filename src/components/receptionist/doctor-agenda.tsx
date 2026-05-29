@@ -2256,22 +2256,11 @@ export function DoctorAgenda() {
                 </div>
 
                 <div className="border-border/60 flex flex-1 flex-col justify-between gap-3 border-t p-3">
-                  <div className="hidden gap-3 2xl:grid">
-                    <div className="border-border/60 bg-background/55 rounded-lg border px-4 py-3 text-sm">
-                      <span className="text-muted-foreground block text-xs">
-                        Mostrando
-                      </span>
-                      <strong className="font-display text-2xl font-normal tabular-nums">
-                        {filteredAppointments.length}
-                      </strong>{" "}
-                      de {appointments.length} citas
-                    </div>
-                    <EmailLog
-                      emails={emails}
-                      compact
-                      className="hidden 2xl:block"
-                    />
-                  </div>
+                  <EmailLog
+                    emails={emails}
+                    compact
+                    className="hidden 2xl:block"
+                  />
                 </div>
               </div>
             </aside>
