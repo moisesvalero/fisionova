@@ -86,9 +86,9 @@ export function ChatPanel({
   return (
     <section
       className={cn(
-        "chat-panel-motion glass shadow-elegant border-border/60 w-full overflow-hidden rounded-xl border",
+        "chat-panel-motion glass shadow-elegant border-border/60 flex w-full flex-col overflow-hidden rounded-xl border",
         mode === "modal"
-          ? "modal-panel max-h-[calc(100svh-1rem)] max-w-4xl"
+          ? "modal-panel h-[calc(100dvh-1rem)] max-h-[calc(100dvh-1rem)] max-w-4xl sm:h-auto sm:max-h-[calc(100svh-3rem)]"
           : "chat-panel-inline max-w-md",
         className,
       )}
@@ -118,7 +118,7 @@ export function ChatPanel({
         className={cn(
           "chat-panel-messages bg-background/40 space-y-3 overflow-y-auto px-4 py-4 sm:px-5 sm:py-5",
           mode === "modal"
-            ? "max-h-[min(58svh,680px)] min-h-[360px] md:px-8 md:py-7"
+            ? "min-h-0 flex-1 md:max-h-[min(64vh,680px)] md:min-h-[420px] md:px-8 md:py-7"
             : "max-h-[184px] min-h-[132px] sm:max-h-[340px] sm:min-h-[220px]",
         )}
       >
@@ -217,7 +217,7 @@ export function ChatPanel({
         <div ref={bottomRef} />
       </div>
 
-      <div className="chat-panel-footer border-border/50 bg-card/85 border-t px-3 py-3 sm:px-4 sm:py-3.5">
+      <div className="chat-panel-footer border-border/50 bg-card/85 shrink-0 border-t px-3 py-3 sm:px-4 sm:py-3.5">
         <div className="chat-panel-meta text-muted-foreground mb-2.5 flex items-center justify-between gap-3 text-[10px] sm:mb-3 sm:text-[11px]">
           <span className="inline-flex items-center gap-1.5">
             <Clock3 className="h-3.5 w-3.5" aria-hidden="true" />

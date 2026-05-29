@@ -302,6 +302,9 @@ h3 {
   .modal-panel {
     position: relative;
     z-index: 1;
+    background: color-mix(in oklab, var(--cream) 98%, white);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     box-shadow:
       0 1px 0 color-mix(in oklab, var(--cream) 70%, transparent) inset,
       0 44px 120px -54px color-mix(in oklab, var(--charcoal) 88%, transparent),
@@ -724,7 +727,7 @@ h3 {
   }
 
   .hero-title {
-    font-size: 1.82rem;
+    font-size: 2.12rem;
   }
 
   .hero-text {

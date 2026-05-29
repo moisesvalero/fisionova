@@ -393,7 +393,7 @@ export function ReceptionistExperience() {
               <span className="animate-pulse-dot bg-sage h-1.5 w-1.5 rounded-full" />
               Fisioterapia en Madrid · cita online
             </div>
-            <h1 className="hero-title font-display text-cream text-[2rem] leading-[1.05] sm:text-5xl lg:text-6xl">
+            <h1 className="hero-title font-display text-cream text-[2.42rem] leading-[0.98] sm:text-5xl lg:text-6xl">
               Fisioterapia para
               <br />
               <span className="text-accent italic drop-shadow-[0_2px_14px_rgba(0,0,0,0.65)]">
@@ -476,7 +476,7 @@ export function ReceptionistExperience() {
         >
           <button
             type="button"
-            className="modal-close text-cream hover:bg-cream/10 absolute top-3 right-3 inline-flex h-11 w-11 items-center justify-center rounded-full transition-colors sm:top-5 sm:right-5"
+            className="modal-close text-foreground hover:bg-charcoal/10 sm:text-cream sm:hover:bg-cream/10 absolute top-3 right-3 inline-flex h-11 w-11 items-center justify-center rounded-full transition-colors sm:top-5 sm:right-5"
             onClick={() => setIsChatModalOpen(false)}
           >
             <X className="h-5 w-5" aria-hidden="true" />
