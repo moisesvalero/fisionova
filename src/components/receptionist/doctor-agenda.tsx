@@ -1143,7 +1143,7 @@ function AppointmentCalendar({
                                   )}
                                 />
                               </div>
-                              <p className="text-muted-foreground mt-1 leading-snug">
+                              <p className="hidden">
                                 {resolveTreatment(appointment.treatmentId)} ·{" "}
                                 {resolveTreatmentDuration(
                                   appointment.treatmentId,
@@ -1359,7 +1359,7 @@ function AppointmentCalendar({
                                 }}
                               >
                                 <div className="flex items-start justify-between gap-2">
-                                  <p className="leading-snug font-medium">
+                                  <p className="truncate leading-snug font-medium">
                                     {appointment.patientName}
                                   </p>
                                   <div className="flex items-center gap-1">
@@ -1375,17 +1375,17 @@ function AppointmentCalendar({
                                     />
                                   </div>
                                 </div>
-                                <p className="text-muted-foreground hidden truncate min-[1600px]:block">
+                                <p className="hidden">
                                   {resolveTreatment(appointment.treatmentId)} ·{" "}
                                   {resolveTreatmentDuration(
                                     appointment.treatmentId,
                                   )}{" "}
                                   min
                                 </p>
-                                <p className="text-muted-foreground hidden truncate min-[1800px]:block">
+                                <p className="text-muted-foreground mt-0.5 truncate">
                                   {resolveTherapist(appointment.therapistId)}
                                 </p>
-                                <div className="hidden min-[1800px]:block">
+                                <div className="[&>div]:mt-0.5">
                                   <AppointmentBadges
                                     appointment={appointment}
                                   />
@@ -2100,12 +2100,12 @@ export function DoctorAgenda() {
           Volver a la web pública
         </Link>
 
-        <header className="mb-4 flex flex-col gap-3 lg:mb-2 lg:flex-row lg:items-start lg:justify-between">
+        <header className="mb-4 flex flex-col gap-3 lg:mb-1 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <span className="text-sage text-xs tracking-[0.18em] uppercase">
+            <span className="text-sage text-xs tracking-[0.18em] uppercase lg:hidden">
               Recepcion privada
             </span>
-            <h1 className="font-display mt-1 text-2xl leading-tight sm:mt-2 sm:text-4xl lg:mt-0.5 lg:text-3xl">
+            <h1 className="font-display mt-1 text-2xl leading-tight sm:mt-2 sm:text-4xl lg:m-0 lg:text-2xl">
               Panel de recepcion
             </h1>
           </div>
