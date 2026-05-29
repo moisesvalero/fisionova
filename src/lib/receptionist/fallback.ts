@@ -3,6 +3,7 @@ import { clinicProfile, treatments } from "./demo-data";
 import type { Appointment, ReceptionAction } from "./types";
 
 type FallbackContext = {
+  completedBooking?: boolean;
   pendingAppointmentTriage?: boolean;
 };
 
@@ -64,6 +65,16 @@ function isSeriousMedicalMessage(text: string) {
   );
 }
 
+function isThanksMessage(text: string) {
+  return (
+    text.includes("gracias") ||
+    text.includes("muchas gracias") ||
+    text.includes("perfecto") ||
+    text.includes("genial") ||
+    text.includes("vale gracias")
+  );
+}
+
 export function getFallbackReceptionAction(
   message: string,
   appointments: Appointment[],
@@ -76,6 +87,13 @@ export function getFallbackReceptionAction(
       type: "reply",
       message:
         "Esto es una demo ficticia de portfolio y no puede valorar urgencias ni dar diagnóstico. Si tienes síntomas fuertes, dificultad para respirar, dolor en el pecho o algo que te preocupe, llama a urgencias o acude a un centro sanitario real.",
+    };
+  }
+
+  if (context.completedBooking && isThanksMessage(text)) {
+    return {
+      type: "reply",
+      message: "A ti. Recibirás la confirmación por email. Que vaya muy bien.",
     };
   }
 

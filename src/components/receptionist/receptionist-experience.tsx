@@ -70,6 +70,7 @@ export function ReceptionistExperience() {
   const [pending, setPending] = useState(false);
   const [bookingPending, setBookingPending] = useState(false);
   const [isChatModalOpen, setIsChatModalOpen] = useState(false);
+  const [completedBooking, setCompletedBooking] = useState(false);
   const [pendingAppointmentTriage, setPendingAppointmentTriage] =
     useState(false);
 
@@ -192,7 +193,7 @@ export function ReceptionistExperience() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message,
-          context: { pendingAppointmentTriage },
+          context: { completedBooking, pendingAppointmentTriage },
         }),
       });
       const payload = (await response.json()) as { action: ReceptionAction };
@@ -206,6 +207,9 @@ export function ReceptionistExperience() {
         payload.action.type === "reply" &&
           payload.action.message.includes("Antes de mirar hora"),
       );
+      if (payload.action.type === "propose_slots") {
+        setCompletedBooking(false);
+      }
     } catch {
       addAssistantMessage(
         "Uy, ahora mismo se me ha atascado la conexión. Prueba otra vez en un momento y te ayudo con la cita.",
@@ -217,6 +221,7 @@ export function ReceptionistExperience() {
 
   function handleSelectSlot(slot: AppointmentSlot) {
     setPendingAppointmentTriage(false);
+    setCompletedBooking(false);
     setSelectedSlot(slot);
     setProposedSlots([]);
     addAssistantMessage(
@@ -245,6 +250,7 @@ export function ReceptionistExperience() {
       setSelectedSlot(null);
       setProposedSlots([]);
       setPendingAppointmentTriage(false);
+      setCompletedBooking(true);
       addAssistantMessage(
         `Listo, ${details.patientName}. Te dejo apuntado para el ${payload.appointment.date} a las ${payload.appointment.time}. Recibirás la confirmación por email.`,
       );

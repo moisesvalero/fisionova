@@ -53,6 +53,16 @@ describe("fallback receptionist", () => {
     }
   });
 
+  it("answers thanks as a closing message after a booking", () => {
+    const action = getFallbackReceptionAction("gracias", seedAppointments, {
+      completedBooking: true,
+    });
+
+    expect(action.type).toBe("reply");
+    expect(action.message).toContain("A ti");
+    expect(action.message).toContain("confirmaci");
+  });
+
   it("discloses the portfolio demo and redirects urgent medical questions", () => {
     const action = getFallbackReceptionAction(
       "tengo dolor fuerte en el pecho y me cuesta respirar, que hago?",

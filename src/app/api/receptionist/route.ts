@@ -13,6 +13,7 @@ const receptionRequestSchema = z.object({
   message: z.string().trim().min(1).max(700),
   context: z
     .object({
+      completedBooking: z.boolean().optional(),
       pendingAppointmentTriage: z.boolean().optional(),
     })
     .optional(),
@@ -202,6 +203,9 @@ export async function POST(request: Request) {
               buildReceptionSystemPrompt(),
               body.context?.pendingAppointmentTriage
                 ? "Contexto: el paciente ya pidió cita y Clara ya le preguntó una vez qué le molesta. Interpreta este mensaje como respuesta corta a esa pregunta y, si hay cualquier pista mínima, usa request_appointment. No hagas otra pregunta de triaje."
+                : "",
+              body.context?.completedBooking
+                ? "Contexto: el paciente acaba de dejar una cita apuntada. Si da las gracias o cierra la conversación, responde con una despedida breve y natural. No reinicies la conversación."
                 : "",
             ]
               .filter(Boolean)
