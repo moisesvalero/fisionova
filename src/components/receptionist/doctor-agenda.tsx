@@ -131,6 +131,10 @@ function normalizeSearchText(value: string) {
 }
 
 function getStatusTone(status: Appointment["status"]) {
+  if (status === "cancelled" || status === "no_show") {
+    return "border-red-700/55 bg-red-600/15 text-red-800";
+  }
+
   if (status === "pending") {
     return "border-clinical/30 bg-clinical/10 text-clinical";
   }
@@ -155,6 +159,10 @@ function canDragAppointment(appointment: Appointment) {
 }
 
 function getAppointmentCardTone(status: Appointment["status"]) {
+  if (status === "cancelled" || status === "no_show") {
+    return "border-red-700/50 bg-red-600/15 opacity-95";
+  }
+
   if (status === "pending") {
     return "border-clinical/30 bg-clinical/10";
   }
@@ -175,6 +183,10 @@ function getAppointmentCardTone(status: Appointment["status"]) {
 }
 
 function getStatusDotTone(status: Appointment["status"]) {
+  if (status === "cancelled" || status === "no_show") {
+    return "bg-red-700";
+  }
+
   if (status === "pending") {
     return "bg-clinical";
   }
@@ -1795,10 +1807,10 @@ export function DoctorAgenda() {
                     </button>
                     <button
                       type="button"
-                      className="border-border/70 bg-clay/10 hover:border-clay/40 rounded-lg border p-4 text-left transition-all"
+                      className="rounded-lg border border-red-700/35 bg-red-600/15 p-4 text-left transition-all hover:border-red-700/55 hover:bg-red-600/20"
                       onClick={() => setStatusFilter("cancelled")}
                     >
-                      <div className="text-clay flex items-center justify-between text-xs font-medium uppercase">
+                      <div className="flex items-center justify-between text-xs font-medium text-red-800 uppercase">
                         Canceladas
                         <XCircle className="size-4" aria-hidden="true" />
                       </div>
