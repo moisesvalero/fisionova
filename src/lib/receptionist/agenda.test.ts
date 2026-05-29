@@ -95,6 +95,15 @@ describe("agenda", () => {
   });
 
   it("resets to seed appointments", () => {
-    expect(resetAgenda()).toEqual(seedAppointments);
+    const resetAppointments = resetAgenda();
+
+    expect(resetAppointments).toHaveLength(seedAppointments.length);
+    expect(resetAppointments[0]).toMatchObject(seedAppointments[0]!);
+    expect(
+      resetAppointments.some((appointment) => appointment.source === "ai"),
+    ).toBe(true);
+    expect(
+      resetAppointments.some((appointment) => appointment.source === "manual"),
+    ).toBe(true);
   });
 });

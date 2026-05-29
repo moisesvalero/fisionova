@@ -4,6 +4,7 @@ import { FormEvent, useMemo, useState } from "react";
 import {
   ArrowLeft,
   BadgeCheck,
+  Bot,
   CalendarCheck2,
   CalendarClock,
   CheckCircle2,
@@ -18,6 +19,7 @@ import {
   Search,
   Shuffle,
   Sparkles,
+  UserCheck,
   UserRound,
   X,
   XCircle,
@@ -220,6 +222,59 @@ function getStatusDotTone(status: Appointment["status"]) {
   return "bg-clay";
 }
 
+function getAppointmentSource(appointment: Appointment) {
+  if (appointment.status === "blocked") {
+    return "system";
+  }
+
+  if (appointment.source) {
+    return appointment.source;
+  }
+
+  if (appointment.notes?.toLowerCase().includes("manual")) {
+    return "manual";
+  }
+
+  return "ai";
+}
+
+function AppointmentSourceBadge({
+  appointment,
+  compact = false,
+}: {
+  appointment: Appointment;
+  compact?: boolean;
+}) {
+  const source = getAppointmentSource(appointment);
+
+  if (source === "system") {
+    return null;
+  }
+
+  const isAi = source === "ai";
+  const Icon = isAi ? Bot : UserCheck;
+  const label = isAi ? "Reservada por IA" : "Creada manualmente";
+
+  return (
+    <span
+      className={cn(
+        "inline-flex shrink-0 items-center rounded-full border font-medium",
+        isAi
+          ? "border-clinical/25 bg-clinical/10 text-clinical"
+          : "border-sage/25 bg-sage/10 text-sage",
+        compact
+          ? "gap-0.5 px-1 py-0.5 text-[9px]"
+          : "gap-1 px-2 py-0.5 text-[11px]",
+      )}
+      title={label}
+      aria-label={label}
+    >
+      <Icon className={compact ? "size-2.5" : "size-3"} aria-hidden="true" />
+      <span>{isAi ? "IA" : "Manual"}</span>
+    </span>
+  );
+}
+
 export function getResponsePendingToggleStatus(status: AppointmentStatus) {
   return status === "awaiting_response" ? "confirmed" : "awaiting_response";
 }
@@ -238,6 +293,7 @@ export function didAppointmentFreeSlot(
 function AppointmentBadges({ appointment }: { appointment: Appointment }) {
   return (
     <div className="mt-2 flex flex-wrap items-center gap-1.5">
+      <AppointmentSourceBadge appointment={appointment} />
       {appointment.status === "patient_confirmed" ? (
         <span className="border-sage/25 bg-sage/10 text-sage inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium">
           <BadgeCheck className="size-3" aria-hidden="true" />
@@ -332,6 +388,7 @@ function AppointmentDetailModal({
             >
               {formatStatus(appointment.status)}
             </span>
+            <AppointmentSourceBadge appointment={appointment} />
             <span className="text-muted-foreground text-xs tabular-nums">
               {formatAppointmentDate(appointment.date)} · {appointment.time}
             </span>
@@ -1057,12 +1114,18 @@ function AppointmentCalendar({
                               <p className="leading-snug font-medium">
                                 {appointment.patientName}
                               </p>
-                              <span
-                                className={cn(
-                                  "mt-1 h-2.5 w-2.5 shrink-0 rounded-full",
-                                  getStatusDotTone(appointment.status),
-                                )}
-                              />
+                              <div className="flex items-center gap-1">
+                                <AppointmentSourceBadge
+                                  appointment={appointment}
+                                  compact
+                                />
+                                <span
+                                  className={cn(
+                                    "h-2.5 w-2.5 shrink-0 rounded-full",
+                                    getStatusDotTone(appointment.status),
+                                  )}
+                                />
+                              </div>
                             </div>
                             <p className="text-muted-foreground mt-1 leading-snug">
                               {resolveTreatment(appointment.treatmentId)} ·{" "}
@@ -1180,7 +1243,10 @@ function AppointmentCalendar({
                               getAppointmentCardTone(appointment.status),
                             )}
                           >
-                            {appointment.time} {appointment.patientName}
+                            {getAppointmentSource(appointment) === "manual"
+                              ? "M"
+                              : "IA"}{" "}
+                            · {appointment.time} {appointment.patientName}
                           </span>
                         ))}
                         {dayAppointments.length > 3 ? (
@@ -1293,12 +1359,18 @@ function AppointmentCalendar({
                                 <p className="leading-snug font-medium">
                                   {appointment.patientName}
                                 </p>
-                                <span
-                                  className={cn(
-                                    "mt-0.5 h-2 w-2 shrink-0 rounded-full",
-                                    getStatusDotTone(appointment.status),
-                                  )}
-                                />
+                                <div className="flex items-center gap-1">
+                                  <AppointmentSourceBadge
+                                    appointment={appointment}
+                                    compact
+                                  />
+                                  <span
+                                    className={cn(
+                                      "h-2 w-2 shrink-0 rounded-full",
+                                      getStatusDotTone(appointment.status),
+                                    )}
+                                  />
+                                </div>
                               </div>
                               <p className="text-muted-foreground truncate">
                                 {resolveTreatment(appointment.treatmentId)} ·{" "}

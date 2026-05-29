@@ -29,6 +29,7 @@ type AppointmentRow = {
   status: Appointment["status"];
   notes: string | null;
   wants_earlier?: boolean | null;
+  source?: Appointment["source"] | null;
 };
 
 function getSupabase() {
@@ -46,6 +47,7 @@ function toAppointment(row: AppointmentRow): Appointment {
     date: row.date,
     time: row.time,
     status: row.status,
+    source: row.source ?? undefined,
     notes: row.notes ?? undefined,
     wantsEarlier: row.wants_earlier ?? false,
   };
@@ -160,6 +162,7 @@ export async function createBlockedSlotRequest(input: BlockInput) {
     date: input.date,
     time: input.time,
     status: "blocked",
+    source: "system",
     notes: input.notes || "Bloqueo manual de recepcion.",
     wantsEarlier: false,
   };

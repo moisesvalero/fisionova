@@ -22,7 +22,16 @@ export function isBlockingAppointment(appointment: Appointment) {
 }
 
 export function resetAgenda(): Appointment[] {
-  return seedAppointments.map((appointment) => ({ ...appointment }));
+  return seedAppointments.map((appointment, index) => ({
+    ...appointment,
+    source:
+      appointment.source ??
+      (appointment.status === "blocked"
+        ? "system"
+        : index % 3 === 0
+          ? "manual"
+          : "ai"),
+  }));
 }
 
 export function isSlotAvailable(

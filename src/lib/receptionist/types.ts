@@ -22,6 +22,8 @@ export type AppointmentStatus =
   | "no_show"
   | "blocked";
 
+export type AppointmentSource = "ai" | "manual" | "seed" | "system";
+
 export type Appointment = {
   id: string;
   patientName: string;
@@ -32,6 +34,7 @@ export type Appointment = {
   date: string;
   time: string;
   status: AppointmentStatus;
+  source?: AppointmentSource;
   notes?: string;
   wantsEarlier?: boolean;
 };

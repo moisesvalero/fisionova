@@ -69,6 +69,7 @@ export function blockDemoSlot(input: BlockInput) {
     date: input.date,
     time: input.time,
     status: "blocked" as const,
+    source: "system" as const,
     notes: input.notes || "Bloqueo manual de recepcion.",
     wantsEarlier: false,
   } satisfies Appointment;

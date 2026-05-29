@@ -265,6 +265,7 @@ export async function POST(request: Request) {
     time: body.slot.time,
     notes: body.notes,
     wantsEarlier: body.wantsEarlier,
+    source: "ai",
   });
 
   return NextResponse.json({ appointment });
@@ -384,9 +385,10 @@ export async function PATCH(request: Request) {
   }
 
   if (body.action === "create_manual") {
-    const appointment = await createConfirmedAppointmentRequest(
-      body.appointment,
-    );
+    const appointment = await createConfirmedAppointmentRequest({
+      ...body.appointment,
+      source: "manual",
+    });
 
     return NextResponse.json({
       appointment,
