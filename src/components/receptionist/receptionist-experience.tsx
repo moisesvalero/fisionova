@@ -10,6 +10,7 @@ import {
   Ear,
   Globe2,
   Mail,
+  Menu,
   MessageCircle,
   MapPin,
   Phone,
@@ -63,6 +64,13 @@ const treatmentPhotos: Record<string, string> = {
     "https://images.unsplash.com/photo-1600881333168-2ef49b341f30?auto=format&fit=crop&w=900&q=82",
 };
 
+const navigationLinks = [
+  { label: "Clínica", href: "#about" },
+  { label: "Tratamientos", href: "#treatments" },
+  { label: "Equipo", href: "#team" },
+  { label: "Contacto", href: "#contact" },
+];
+
 export function ReceptionistExperience() {
   const pageRef = useRef<HTMLDivElement>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([assistantGreeting]);
@@ -73,6 +81,7 @@ export function ReceptionistExperience() {
   const [pending, setPending] = useState(false);
   const [bookingPending, setBookingPending] = useState(false);
   const [isChatModalOpen, setIsChatModalOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [completedBooking, setCompletedBooking] = useState(false);
   const [pendingAppointmentTriage, setPendingAppointmentTriage] =
     useState(false);
@@ -312,21 +321,15 @@ export function ReceptionistExperience() {
             </span>
           </a>
           <div className="text-cream/90 hidden items-center gap-6 text-sm md:flex">
-            <a href="#about" className="hover:text-cream transition-colors">
-              Clínica
-            </a>
-            <a
-              href="#treatments"
-              className="hover:text-cream transition-colors"
-            >
-              Tratamientos
-            </a>
-            <a href="#team" className="hover:text-cream transition-colors">
-              Equipo
-            </a>
-            <a href="#contact" className="hover:text-cream transition-colors">
-              Contacto
-            </a>
+            {navigationLinks.map((item) => (
+              <a
+                key={item.href}
+                href={item.href}
+                className="hover:text-cream transition-colors"
+              >
+                {item.label}
+              </a>
+            ))}
             <Link href="/medico" className="hover:text-cream transition-colors">
               Área clínica
             </Link>
@@ -337,6 +340,51 @@ export function ReceptionistExperience() {
               Reservar
             </a>
           </div>
+          <button
+            type="button"
+            className="border-cream/15 bg-cream/10 text-cream hover:bg-cream/15 inline-flex h-10 w-10 items-center justify-center rounded-md border transition-colors md:hidden"
+            aria-label={isMobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
+            aria-expanded={isMobileMenuOpen}
+            onClick={() => setIsMobileMenuOpen((current) => !current)}
+          >
+            {isMobileMenuOpen ? (
+              <X className="h-5 w-5" aria-hidden="true" />
+            ) : (
+              <Menu className="h-5 w-5" aria-hidden="true" />
+            )}
+          </button>
+          {isMobileMenuOpen ? (
+            <div className="border-cream/12 bg-charcoal/95 shadow-elegant text-cream absolute top-full right-3 left-3 mt-2 overflow-hidden rounded-xl border p-2 text-sm md:hidden">
+              {navigationLinks.map((item) => (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  className="hover:bg-cream/10 block rounded-lg px-4 py-3 transition-colors"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  {item.label}
+                </a>
+              ))}
+              <Link
+                href="/medico"
+                className="hover:bg-cream/10 block rounded-lg px-4 py-3 transition-colors"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Área clínica
+              </Link>
+              <button
+                type="button"
+                className="bg-cream text-charcoal mt-2 flex w-full items-center justify-between rounded-lg px-4 py-3 text-left font-medium"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  setIsChatModalOpen(true);
+                }}
+              >
+                Reservar cita
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </button>
+            </div>
+          ) : null}
         </nav>
 
         <div className="relative z-10 mx-auto grid min-h-[100svh] max-w-7xl items-center gap-5 px-4 pt-24 pb-6 sm:gap-10 sm:px-6 sm:pt-32 sm:pb-20 lg:grid-cols-12 lg:gap-8 lg:px-12 lg:pt-40 lg:pb-28">
