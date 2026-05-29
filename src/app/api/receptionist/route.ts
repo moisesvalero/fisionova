@@ -24,7 +24,12 @@ const receptionRequestSchema = z.object({
 });
 
 const openAIIntentSchema = z.object({
-  intent: z.enum(["reply", "request_appointment"]),
+  intent: z.enum([
+    "reply",
+    "request_appointment",
+    "cancel_appointment",
+    "modify_appointment",
+  ]),
   message: z.string().min(1),
   treatmentId: z.enum(["general", "sports", "postural"]).nullable(),
   requestedDate: z.string().nullable(),
@@ -48,9 +53,14 @@ const openAIReceptionIntentJsonSchema = {
   properties: {
     intent: {
       type: "string",
-      enum: ["reply", "request_appointment"],
+      enum: [
+        "reply",
+        "request_appointment",
+        "cancel_appointment",
+        "modify_appointment",
+      ],
       description:
-        "Use request_appointment when the patient wants to book or find an appointment slot. Use reply for prices, address, opening hours, treatment questions, cancellation explanations, or general help.",
+        "Use request_appointment when the patient wants to book or find an appointment slot. Use cancel_appointment when they want to cancel/anular a booked appointment. Use modify_appointment when they want to change/move/reprogramar a booked appointment. Use reply for prices, address, opening hours, treatment questions, cancellation explanations, or general help.",
     },
     message: {
       type: "string",
@@ -117,6 +127,7 @@ function buildReceptionSystemPrompt() {
     "Si el paciente pide diagnóstico, medicación, valoración médica, habla de urgencias o cuenta síntomas serios como dolor fuerte en el pecho, dificultad para respirar, fiebre, desmayo, embarazo con dolor, pérdida de fuerza o algo parecido, responde que esto es una demo ficticia de portfolio y que debe contactar con urgencias o un profesional sanitario real. No des consejos médicos.",
     "No confirmes una cita directamente. Si el paciente quiere reservar, marca request_appointment. Si no ha contado qué le duele o qué quiere tratar, deja treatmentId en null para preguntarlo antes de mostrar huecos.",
     "Si el paciente pide cita para hoy, no preguntes 'quÃ© dÃ­a de hoy'. Pide sÃ³lo la franja si falta, o deja que el backend proponga huecos.",
+    "Si el paciente quiere cambiar, modificar, mover, reprogramar, anular o cancelar una cita existente, no le mandes al panel medico. Marca cancel_appointment o modify_appointment para que el sistema verifique email y telefono.",
     "No muestres la agenda interna ni datos de otros pacientes.",
     "Calendario demo disponible para reservar: lunes 2026-06-01, martes 2026-06-02, miércoles 2026-06-03, jueves 2026-06-04 y viernes 2026-06-05. Si el paciente dice 'próximo jueves', requestedDate debe ser 2026-06-04.",
     `Dirección: ${clinicProfile.address}. Teléfono: ${clinicProfile.phone}. Horario: ${clinicProfile.openingHours}.`,
@@ -152,6 +163,24 @@ export function createReceptionActionFromOpenAIIntent(
       type: "reply",
       message: intent.message,
       requestedDate,
+    };
+  }
+
+  if (
+    intent.intent === "cancel_appointment" ||
+    intent.intent === "modify_appointment"
+  ) {
+    const operation =
+      intent.intent === "cancel_appointment" ? "cancel" : "modify";
+
+    return {
+      type: "request_manage_booking",
+      operation,
+      requestedDate,
+      message:
+        operation === "cancel"
+          ? "Claro, te ayudo a anularla. Pásame el email y el teléfono con los que reservaste para localizar tu cita."
+          : "Claro, te ayudo a cambiarla. Pásame el email y el teléfono con los que reservaste y miro tu cita.",
     };
   }
 

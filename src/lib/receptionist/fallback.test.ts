@@ -69,6 +69,33 @@ describe("fallback receptionist", () => {
     }
   });
 
+  it("asks for verification before cancelling an appointment from chat", () => {
+    const action = getFallbackReceptionAction(
+      "quiero anular mi cita",
+      seedAppointments,
+    );
+
+    expect(action).toMatchObject({
+      type: "request_manage_booking",
+      operation: "cancel",
+    });
+    expect(action.message).toContain("email");
+    expect(action.message).toContain("tel");
+  });
+
+  it("asks for verification before changing an appointment from chat", () => {
+    const action = getFallbackReceptionAction(
+      "quiero cambiar mi cita al jueves",
+      seedAppointments,
+    );
+
+    expect(action).toMatchObject({
+      type: "request_manage_booking",
+      operation: "modify",
+      requestedDate: "2026-06-04",
+    });
+  });
+
   it("keeps the requested weekday after asking one treatment question", () => {
     const action = getFallbackReceptionAction("rodilla", seedAppointments, {
       pendingAppointmentTriage: true,

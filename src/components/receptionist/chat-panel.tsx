@@ -8,6 +8,7 @@ import type {
   AppointmentSlot,
   ChatMessage,
   PatientDetails,
+  PatientVerification,
 } from "@/lib/receptionist/types";
 import { cn } from "@/lib/utils";
 
@@ -16,6 +17,8 @@ type ChatPanelProps = {
   pending: boolean;
   proposedSlots: AppointmentSlot[];
   selectedSlot: AppointmentSlot | null;
+  manageOperation?: "cancel" | "modify" | null;
+  managePending?: boolean;
   bookingPending: boolean;
   className?: string;
   inputId?: string;
@@ -25,6 +28,7 @@ type ChatPanelProps = {
   onSubmit: (message: string) => void;
   onSelectSlot: (slot: AppointmentSlot) => void;
   onConfirmBooking: (details: PatientDetails) => void;
+  onVerifyManagedAppointment?: (details: PatientVerification) => void;
 };
 
 function formatShortDate(date: string) {
@@ -38,6 +42,8 @@ export function ChatPanel({
   pending,
   proposedSlots,
   selectedSlot,
+  manageOperation = null,
+  managePending = false,
   bookingPending,
   className,
   inputId = "receptionist-message",
@@ -47,6 +53,7 @@ export function ChatPanel({
   onSubmit,
   onSelectSlot,
   onConfirmBooking,
+  onVerifyManagedAppointment,
 }: ChatPanelProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -56,7 +63,15 @@ export function ChatPanel({
     }
 
     bottomRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [messages, pending, proposedSlots.length, selectedSlot, bookingPending]);
+  }, [
+    messages,
+    pending,
+    proposedSlots.length,
+    selectedSlot,
+    bookingPending,
+    manageOperation,
+    managePending,
+  ]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -83,6 +98,19 @@ export function ChatPanel({
     }
 
     onConfirmBooking({ patientName, patientEmail, patientPhone });
+  }
+
+  function handleManageSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const patientEmail = String(formData.get("patientEmail") ?? "").trim();
+    const patientPhone = String(formData.get("patientPhone") ?? "").trim();
+
+    if (!patientEmail || !patientPhone || !onVerifyManagedAppointment) {
+      return;
+    }
+
+    onVerifyManagedAppointment({ patientEmail, patientPhone });
   }
 
   return (
@@ -214,6 +242,53 @@ export function ChatPanel({
             </label>
             <Button type="submit" size="sm" disabled={bookingPending}>
               {bookingPending ? "Un momentito..." : "Dejarlo apuntado"}
+            </Button>
+          </form>
+        ) : null}
+
+        {manageOperation ? (
+          <form
+            className="animate-fade-up border-border/60 bg-card grid gap-3 rounded-2xl rounded-bl-md border p-4"
+            onSubmit={handleManageSubmit}
+          >
+            <div>
+              <p className="text-sm font-medium">
+                {manageOperation === "cancel"
+                  ? "Localizo tu cita"
+                  : "Busco tu cita"}
+              </p>
+              <p className="text-muted-foreground mt-1 text-xs">
+                Necesito el email y teléfono con los que reservaste.
+              </p>
+            </div>
+            <label className="grid gap-1.5 text-xs font-medium">
+              Email
+              <input
+                name="patientEmail"
+                type="email"
+                className="border-border bg-background focus:ring-ring/40 rounded-md border px-3 py-2 text-base font-normal outline-none focus:ring-2 sm:text-sm"
+                placeholder="tu@email.com"
+                disabled={managePending}
+                required
+              />
+            </label>
+            <label className="grid gap-1.5 text-xs font-medium">
+              TelÃ©fono
+              <input
+                name="patientPhone"
+                type="tel"
+                className="border-border bg-background focus:ring-ring/40 rounded-md border px-3 py-2 text-base font-normal outline-none focus:ring-2 sm:text-sm"
+                placeholder="600 000 000"
+                disabled={managePending}
+                required
+              />
+            </label>
+            <Button type="submit" size="sm" disabled={managePending}>
+              {managePending
+                ? "Un momentito..."
+                : manageOperation === "cancel"
+                  ? "Anular mi cita"
+                  : "Ver opciones de cambio"}
             </Button>
           </form>
         ) : null}

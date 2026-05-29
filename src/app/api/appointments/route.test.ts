@@ -189,4 +189,115 @@ describe("/api/appointments", () => {
       ]),
     );
   });
+
+  it("lets a verified patient cancel their appointment from chat", async () => {
+    resetDemoAppointmentStore();
+
+    const response = await PATCH(
+      new Request("http://localhost/api/appointments", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "patient_cancel",
+          patientEmail: "laura@example.com",
+          patientPhone: "600111222",
+        }),
+      }),
+    );
+    const payload = (await response.json()) as {
+      appointment: { id: string; status: string };
+    };
+
+    expect(response.status).toBe(200);
+    expect(payload.appointment).toMatchObject({
+      id: "apt-demo-1",
+      status: "cancelled",
+    });
+  });
+
+  it("returns slots for a verified patient appointment change", async () => {
+    resetDemoAppointmentStore();
+
+    const response = await PATCH(
+      new Request("http://localhost/api/appointments", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "patient_lookup",
+          operation: "modify",
+          patientEmail: "laura@example.com",
+          patientPhone: "600 111 222",
+          requestedDate: "2026-06-04",
+        }),
+      }),
+    );
+    const payload = (await response.json()) as {
+      appointment: { id: string };
+      slots: Array<{ date: string; therapistId: string }>;
+    };
+
+    expect(response.status).toBe(200);
+    expect(payload.appointment.id).toBe("apt-demo-1");
+    expect(payload.slots.length).toBeGreaterThan(0);
+    expect(payload.slots.every((slot) => slot.date === "2026-06-04")).toBe(
+      true,
+    );
+  });
+
+  it("lets a verified patient move their appointment from chat", async () => {
+    resetDemoAppointmentStore();
+
+    const response = await PATCH(
+      new Request("http://localhost/api/appointments", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "patient_move",
+          appointmentId: "apt-demo-1",
+          patientEmail: "laura@example.com",
+          patientPhone: "600 111 222",
+          slot: {
+            date: "2026-06-03",
+            time: "16:30",
+            therapistId: "alvaro",
+            treatmentId: "sports",
+          },
+        }),
+      }),
+    );
+    const payload = (await response.json()) as {
+      appointment: {
+        id: string;
+        date: string;
+        time: string;
+        therapistId: string;
+      };
+    };
+
+    expect(response.status).toBe(200);
+    expect(payload.appointment).toMatchObject({
+      id: "apt-demo-1",
+      date: "2026-06-03",
+      time: "16:30",
+      therapistId: "alvaro",
+    });
+  });
+
+  it("does not let a patient manage an appointment with wrong contact details", async () => {
+    resetDemoAppointmentStore();
+
+    const response = await PATCH(
+      new Request("http://localhost/api/appointments", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "patient_cancel",
+          patientEmail: "laura@example.com",
+          patientPhone: "699 999 999",
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(404);
+  });
 });

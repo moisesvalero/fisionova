@@ -41,6 +41,11 @@ export type PatientDetails = {
   patientPhone: string;
 };
 
+export type PatientVerification = Pick<
+  PatientDetails,
+  "patientEmail" | "patientPhone"
+>;
+
 export type ChatMessage = {
   id: string;
   role: "assistant" | "user";
@@ -53,6 +58,12 @@ export type ReceptionAction =
       type: "propose_slots";
       message: string;
       slots: AppointmentSlot[];
+      requestedDate?: string | null;
+    }
+  | {
+      type: "request_manage_booking";
+      operation: "cancel" | "modify";
+      message: string;
       requestedDate?: string | null;
     }
   | { type: "confirm_booking"; message: string; appointment: Appointment }

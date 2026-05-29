@@ -124,6 +124,30 @@ function isThanksMessage(text: string) {
   );
 }
 
+function getManageOperation(text: string): "cancel" | "modify" | null {
+  if (
+    text.includes("cancel") ||
+    text.includes("anul") ||
+    text.includes("borrar") ||
+    text.includes("quitar")
+  ) {
+    return "cancel";
+  }
+
+  if (
+    text.includes("cambiar") ||
+    text.includes("modificar") ||
+    text.includes("mover") ||
+    text.includes("reprogram") ||
+    text.includes("otra hora") ||
+    text.includes("otro dia")
+  ) {
+    return "modify";
+  }
+
+  return null;
+}
+
 export function getFallbackReceptionAction(
   message: string,
   appointments: Appointment[],
@@ -145,6 +169,20 @@ export function getFallbackReceptionAction(
     return {
       type: "reply",
       message: "A ti. Recibirás la confirmación por email. Que vaya muy bien.",
+    };
+  }
+
+  const manageOperation = getManageOperation(text);
+
+  if (manageOperation) {
+    return {
+      type: "request_manage_booking",
+      operation: manageOperation,
+      requestedDate,
+      message:
+        manageOperation === "cancel"
+          ? "Claro, te ayudo a anularla. Pásame el email y el teléfono con los que reservaste para localizar tu cita."
+          : "Claro, te ayudo a cambiarla. Pásame el email y el teléfono con los que reservaste y miro tu cita.",
     };
   }
 

@@ -31,8 +31,14 @@ import type {
   AppointmentSlot,
   ChatMessage,
   PatientDetails,
+  PatientVerification,
   ReceptionAction,
 } from "@/lib/receptionist/types";
+
+type ManagedAppointment = {
+  appointment: Appointment;
+  contact: PatientVerification;
+};
 
 const assistantGreeting: ChatMessage = {
   id: "assistant-greeting",
@@ -80,6 +86,12 @@ export function ReceptionistExperience() {
   );
   const [pending, setPending] = useState(false);
   const [bookingPending, setBookingPending] = useState(false);
+  const [manageOperation, setManageOperation] = useState<
+    "cancel" | "modify" | null
+  >(null);
+  const [managePending, setManagePending] = useState(false);
+  const [managedAppointment, setManagedAppointment] =
+    useState<ManagedAppointment | null>(null);
   const [isChatModalOpen, setIsChatModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [chatViewport, setChatViewport] = useState({
@@ -257,6 +269,12 @@ export function ReceptionistExperience() {
 
       addAssistantMessage(payload.action.message);
       setSelectedSlot(null);
+      setManagedAppointment(null);
+      setManageOperation(
+        payload.action.type === "request_manage_booking"
+          ? payload.action.operation
+          : null,
+      );
       setProposedSlots(
         payload.action.type === "propose_slots" ? payload.action.slots : [],
       );
@@ -266,7 +284,8 @@ export function ReceptionistExperience() {
       );
       if (
         payload.action.type === "reply" ||
-        payload.action.type === "propose_slots"
+        payload.action.type === "propose_slots" ||
+        payload.action.type === "request_manage_booking"
       ) {
         setPendingRequestedDate(payload.action.requestedDate ?? null);
       }
@@ -283,7 +302,48 @@ export function ReceptionistExperience() {
     }
   }
 
-  function handleSelectSlot(slot: AppointmentSlot) {
+  async function handleSelectSlot(slot: AppointmentSlot) {
+    if (managedAppointment) {
+      setManagePending(true);
+
+      try {
+        const response = await fetch("/api/appointments", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "patient_move",
+            appointmentId: managedAppointment.appointment.id,
+            ...managedAppointment.contact,
+            slot,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Unable to move appointment");
+        }
+
+        const payload = (await response.json()) as {
+          appointment: Appointment;
+        };
+
+        setManagedAppointment(null);
+        setProposedSlots([]);
+        setPendingRequestedDate(null);
+        setCompletedBooking(true);
+        addAssistantMessage(
+          `Hecho, te he cambiado la cita al ${payload.appointment.date} a las ${payload.appointment.time}. Te llega la actualización por email.`,
+        );
+      } catch {
+        addAssistantMessage(
+          "No he podido cambiarla ahora mismo. Revisa los datos o llámanos y lo vemos contigo.",
+        );
+      } finally {
+        setManagePending(false);
+      }
+
+      return;
+    }
+
     setPendingAppointmentTriage(false);
     setPendingRequestedDate(null);
     setCompletedBooking(false);
@@ -326,6 +386,67 @@ export function ReceptionistExperience() {
       );
     } finally {
       setBookingPending(false);
+    }
+  }
+
+  async function handleVerifyManagedAppointment(details: PatientVerification) {
+    if (!manageOperation) {
+      return;
+    }
+
+    setManagePending(true);
+
+    try {
+      const response = await fetch("/api/appointments", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action:
+            manageOperation === "cancel" ? "patient_cancel" : "patient_lookup",
+          operation: manageOperation,
+          requestedDate: pendingRequestedDate,
+          ...details,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Appointment not found");
+      }
+
+      const payload = (await response.json()) as {
+        appointment: Appointment;
+        slots?: AppointmentSlot[];
+      };
+
+      if (manageOperation === "cancel") {
+        setManageOperation(null);
+        setManagedAppointment(null);
+        setProposedSlots([]);
+        setCompletedBooking(true);
+        addAssistantMessage(
+          `Listo, ${payload.appointment.patientName}. Tu cita queda anulada y te llega el aviso por email.`,
+        );
+        return;
+      }
+
+      setManageOperation(null);
+      setManagedAppointment({
+        appointment: payload.appointment,
+        contact: details,
+      });
+      setProposedSlots(payload.slots ?? []);
+      setSelectedSlot(null);
+      addAssistantMessage(
+        payload.slots?.length
+          ? "Perfecto, he encontrado tu cita. Elige el nuevo hueco que prefieras."
+          : "He encontrado tu cita, pero ahora mismo no veo huecos libres para ese cambio. Llámanos y lo miramos contigo.",
+      );
+    } catch {
+      addAssistantMessage(
+        "No encuentro una cita activa con ese email y teléfono. Revisa los datos o llámanos y te ayudamos.",
+      );
+    } finally {
+      setManagePending(false);
     }
   }
 
@@ -503,11 +624,14 @@ export function ReceptionistExperience() {
               pending={pending}
               proposedSlots={proposedSlots}
               selectedSlot={selectedSlot}
+              manageOperation={manageOperation}
+              managePending={managePending}
               bookingPending={bookingPending}
               onInputFocus={() => setIsChatModalOpen(true)}
               onSubmit={handleSubmit}
               onSelectSlot={handleSelectSlot}
               onConfirmBooking={handleConfirmBooking}
+              onVerifyManagedAppointment={handleVerifyManagedAppointment}
             />
           </div>
         </div>
@@ -529,11 +653,14 @@ export function ReceptionistExperience() {
             pending={pending}
             proposedSlots={proposedSlots}
             selectedSlot={selectedSlot}
+            manageOperation={manageOperation}
+            managePending={managePending}
             bookingPending={bookingPending}
             onClose={() => setIsChatModalOpen(false)}
             onSubmit={handleSubmit}
             onSelectSlot={handleSelectSlot}
             onConfirmBooking={handleConfirmBooking}
+            onVerifyManagedAppointment={handleVerifyManagedAppointment}
           />
         </div>
       ) : null}

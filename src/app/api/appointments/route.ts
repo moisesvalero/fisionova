@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { env } from "@/lib/env";
 import { checkRateLimit, getClientKey } from "@/lib/rate-limit";
+import { findAvailableSlots } from "@/lib/receptionist/agenda";
 import {
   cancelAppointmentRequest,
   confirmAppointmentRequest,
@@ -11,6 +12,7 @@ import {
   moveAppointmentRequest,
   resetAppointments,
 } from "@/lib/receptionist/appointment-repository";
+import { buildAppointmentEmail } from "@/lib/receptionist/email";
 import type { Appointment } from "@/lib/receptionist/types";
 
 const slotSchema = z.object({
@@ -50,6 +52,42 @@ const privateActionSchema = z.discriminatedUnion("action", [
   }),
 ]);
 
+const patientContactSchema = z.object({
+  patientEmail: z.email().max(254),
+  patientPhone: z.string().min(1).max(40),
+});
+
+const patientActionSchema = z.discriminatedUnion("action", [
+  z
+    .object({
+      action: z.literal("patient_lookup"),
+      operation: z.enum(["cancel", "modify"]),
+      requestedDate: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .nullable()
+        .optional(),
+    })
+    .extend(patientContactSchema.shape),
+  z
+    .object({
+      action: z.literal("patient_cancel"),
+    })
+    .extend(patientContactSchema.shape),
+  z
+    .object({
+      action: z.literal("patient_move"),
+      appointmentId: z.string().min(1),
+      slot: slotSchema,
+    })
+    .extend(patientContactSchema.shape),
+]);
+
+const patchActionSchema = z.discriminatedUnion("action", [
+  ...privateActionSchema.options,
+  ...patientActionSchema.options,
+]);
+
 function isAuthorized(request: Request) {
   return request.headers.get("x-doctor-pin") === env.DOCTOR_DASHBOARD_PIN;
 }
@@ -62,6 +100,84 @@ function sortAppointments(appointments: Appointment[]) {
   return [...appointments].sort((a, b) =>
     `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`),
   );
+}
+
+function normalizeEmail(email: string) {
+  return email.trim().toLowerCase();
+}
+
+function normalizePhone(phone: string) {
+  return phone.replace(/\D/g, "");
+}
+
+function findVerifiedAppointment(
+  appointments: Appointment[],
+  contact: z.infer<typeof patientContactSchema>,
+  appointmentId?: string,
+) {
+  const patientEmail = normalizeEmail(contact.patientEmail);
+  const patientPhone = normalizePhone(contact.patientPhone);
+
+  return sortAppointments(appointments).find(
+    (appointment) =>
+      appointment.status !== "cancelled" &&
+      (!appointmentId || appointment.id === appointmentId) &&
+      normalizeEmail(appointment.patientEmail) === patientEmail &&
+      normalizePhone(appointment.patientPhone) === patientPhone,
+  );
+}
+
+async function sendAppointmentEmail(
+  type: "confirmation" | "modification" | "cancellation",
+  appointment: Appointment,
+) {
+  const email = buildAppointmentEmail(type, appointment);
+  const recipient = env.RESEND_TEST_RECIPIENT ?? appointment.patientEmail;
+  const emailBody = env.RESEND_TEST_RECIPIENT
+    ? `${email.body}\n\n[Demo] Destinatario original: ${appointment.patientEmail}`
+    : email.body;
+  const emailHtml = env.RESEND_TEST_RECIPIENT
+    ? email.html.replace(
+        "</body>",
+        `<p style="font-family:Arial,Helvetica,sans-serif;color:#69756f;font-size:12px;text-align:center;">Destinatario original: ${appointment.patientEmail}</p></body>`,
+      )
+    : email.html;
+
+  if (!env.RESEND_API_KEY || !env.RESEND_FROM_EMAIL) {
+    return { status: "simulated" as const, email, recipient };
+  }
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${env.RESEND_API_KEY}`,
+      "Content-Type": "application/json",
+      "Idempotency-Key": `patient-${type}-${appointment.id}-${appointment.date}-${appointment.time}-${appointment.status}`,
+      "User-Agent": "FisioNova-Appointment-Emails/1.0",
+    },
+    body: JSON.stringify({
+      from: `FisioNova <${env.RESEND_FROM_EMAIL}>`,
+      to: recipient,
+      reply_to: env.RESEND_REPLY_TO_EMAIL ?? env.RESEND_FROM_EMAIL,
+      subject: email.subject,
+      text: emailBody,
+      html: emailHtml,
+      headers: {
+        "X-Entity-Ref-ID": `patient-${type}-${appointment.id}-${appointment.date}-${appointment.time}`,
+        "X-Auto-Response-Suppress": "All",
+      },
+      tags: [
+        { name: "category", value: "appointment" },
+        { name: "event", value: type },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    return { status: "failed" as const, email, recipient };
+  }
+
+  return { status: "sent" as const, email, recipient };
 }
 
 export async function GET(request: Request) {
@@ -106,11 +222,94 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
+  const body = patchActionSchema.parse(await request.json());
+
+  if (
+    body.action === "patient_lookup" ||
+    body.action === "patient_cancel" ||
+    body.action === "patient_move"
+  ) {
+    const rateLimit = checkRateLimit(getClientKey(request, "patient-manage"), {
+      limit: 8,
+      windowMs: 60_000,
+    });
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: "Too many requests" },
+        {
+          status: 429,
+          headers: { "Retry-After": String(rateLimit.retryAfter) },
+        },
+      );
+    }
+
+    const appointments = await listAppointments();
+    const appointmentId =
+      body.action === "patient_move" ? body.appointmentId : undefined;
+    const appointment = findVerifiedAppointment(
+      appointments,
+      body,
+      appointmentId,
+    );
+
+    if (!appointment) {
+      return NextResponse.json(
+        { error: "No active appointment found for those details." },
+        { status: 404 },
+      );
+    }
+
+    if (body.action === "patient_lookup") {
+      return NextResponse.json({
+        appointment,
+        slots:
+          body.operation === "modify"
+            ? findAvailableSlots(appointments, {
+                treatmentId: appointment.treatmentId,
+                date: body.requestedDate ?? undefined,
+              })
+            : [],
+      });
+    }
+
+    if (body.action === "patient_cancel") {
+      const nextAppointments = await cancelAppointmentRequest(appointment.id);
+      const cancelled = nextAppointments.find(
+        (item) => item.id === appointment.id,
+      ) ?? {
+        ...appointment,
+        status: "cancelled" as const,
+      };
+      const email = await sendAppointmentEmail("cancellation", cancelled);
+
+      return NextResponse.json({
+        appointment: cancelled,
+        appointments: sortAppointments(nextAppointments),
+        email,
+      });
+    }
+
+    const nextAppointments = await moveAppointmentRequest(appointment.id, {
+      ...body.slot,
+      notes:
+        `Cambio solicitado por el paciente desde recepción online. ${appointment.notes ?? ""}`.trim(),
+    });
+    const moved =
+      nextAppointments.find((item) => item.id === appointment.id) ??
+      appointment;
+    const email = await sendAppointmentEmail("modification", moved);
+
+    return NextResponse.json({
+      appointment: moved,
+      appointments: sortAppointments(nextAppointments),
+      email,
+    });
+  }
+
   if (!isAuthorized(request)) {
     return unauthorized();
   }
-
-  const body = privateActionSchema.parse(await request.json());
 
   if (body.action === "reset") {
     return NextResponse.json({
@@ -135,9 +334,13 @@ export async function PATCH(request: Request) {
     });
   }
 
-  return NextResponse.json({
-    appointments: sortAppointments(
-      await moveAppointmentRequest(body.appointmentId, body.slot),
-    ),
-  });
+  if (body.action === "move") {
+    return NextResponse.json({
+      appointments: sortAppointments(
+        await moveAppointmentRequest(body.appointmentId, body.slot),
+      ),
+    });
+  }
+
+  return NextResponse.json({ error: "Unsupported action" }, { status: 400 });
 }
