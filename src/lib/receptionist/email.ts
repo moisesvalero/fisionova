@@ -34,6 +34,18 @@ export function buildAppointmentEmail(
   const appointmentDateTime = escapeHtml(
     `${appointment.date} a las ${appointment.time}`,
   );
+  const phoneHref = escapeHtml(`tel:${clinicProfile.phone.replace(/\s/g, "")}`);
+  const changeFallback =
+    type === "modification"
+      ? [
+          "",
+          `Si este cambio no te encaja, llamanos y lo ajustamos contigo: ${clinicProfile.phone}.`,
+        ]
+      : [];
+  const changeFallbackHtml =
+    type === "modification"
+      ? `<p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#31413b;">Si este cambio no te encaja, llamanos y lo ajustamos contigo: <a href="${phoneHref}" style="color:#22312d;font-weight:700;text-decoration:underline;">${escapeHtml(clinicProfile.phone)}</a>.</p>`
+      : "";
 
   return {
     subject: `Tu cita ha sido ${typeText} - ${clinicProfile.name}`,
@@ -44,6 +56,7 @@ export function buildAppointmentEmail(
       `Tratamiento: ${treatment?.name ?? "Fisioterapia"}`,
       `Profesional: ${therapist?.name ?? "Equipo de fisioterapia"}`,
       `Fecha y hora: ${appointment.date} a las ${appointment.time}`,
+      ...changeFallback,
       "",
       `Clinica: ${clinicProfile.address}`,
       `Telefono: ${clinicProfile.phone}`,
@@ -87,6 +100,7 @@ export function buildAppointmentEmail(
                     <td align="right" style="padding:12px 0;font-size:14px;font-weight:700;">${escapeHtml(clinicProfile.address)}</td>
                   </tr>
                 </table>
+                ${changeFallbackHtml}
                 <div style="background:#eef5ed;border:1px solid #d7e6d5;border-radius:12px;padding:18px;">
                   <p style="margin:0 0 12px;font-size:14px;line-height:1.55;color:#31413b;">Esta demo ha sido desarrollada por <strong>Moises Valero</strong>. Si te gusta este trabajo y quieres algo parecido para tu empresa, puedes ver mi portfolio aqui:</p>
                   <a href="${portfolioUrl}" style="display:inline-block;background:#22312d;color:#fffaf2;text-decoration:none;border-radius:8px;padding:11px 16px;font-size:14px;font-weight:700;">Ver portfolio</a>

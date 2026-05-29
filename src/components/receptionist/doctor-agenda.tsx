@@ -9,6 +9,7 @@ import {
   Filter,
   LockKeyhole,
   Mail,
+  Pencil,
   Phone,
   Shuffle,
   UserRound,
@@ -123,6 +124,7 @@ function AppointmentDetailModal({
   onCancel,
   onClose,
   onConfirm,
+  onEdit,
   onMove,
 }: {
   appointment: Appointment;
@@ -130,6 +132,7 @@ function AppointmentDetailModal({
   onCancel: (appointment: Appointment) => void;
   onClose: () => void;
   onConfirm: (appointment: Appointment) => void;
+  onEdit: (appointment: Appointment) => void;
   onMove: (appointment: Appointment) => void;
 }) {
   return (
@@ -216,6 +219,14 @@ function AppointmentDetailModal({
                 <>
                   <Button
                     type="button"
+                    disabled={loading}
+                    onClick={() => onEdit(appointment)}
+                  >
+                    <Pencil className="size-4" aria-hidden="true" />
+                    Modificar cita
+                  </Button>
+                  <Button
+                    type="button"
                     variant="ghost"
                     disabled={loading}
                     onClick={() => onMove(appointment)}
@@ -241,6 +252,170 @@ function AppointmentDetailModal({
             </div>
           </section>
         </div>
+      </article>
+    </div>
+  );
+}
+
+function AppointmentEditModal({
+  appointment,
+  loading,
+  onClose,
+  onSave,
+}: {
+  appointment: Appointment;
+  loading: boolean;
+  onClose: () => void;
+  onSave: (
+    appointment: Appointment,
+    changes: Pick<
+      Appointment,
+      "date" | "time" | "therapistId" | "treatmentId" | "notes"
+    >,
+  ) => void;
+}) {
+  const [date, setDate] = useState(appointment.date);
+  const [time, setTime] = useState(appointment.time);
+  const [therapistId, setTherapistId] = useState(appointment.therapistId);
+  const [treatmentId, setTreatmentId] = useState(appointment.treatmentId);
+  const [notes, setNotes] = useState(appointment.notes ?? "");
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    onSave(appointment, {
+      date,
+      time,
+      therapistId,
+      treatmentId,
+      notes: notes.trim(),
+    });
+  }
+
+  return (
+    <div
+      className="modal-backdrop bg-charcoal/70 fixed inset-0 z-50 flex items-end justify-center px-3 py-3 backdrop-blur-sm sm:items-center sm:px-4 sm:py-6"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="appointment-edit-title"
+    >
+      <article className="modal-panel glass shadow-elegant border-border/60 relative max-h-[calc(100dvh-1.5rem)] w-full max-w-2xl overflow-y-auto rounded-2xl border">
+        <button
+          type="button"
+          className="text-muted-foreground hover:text-foreground hover:bg-background/70 absolute top-4 right-4 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full transition-colors"
+          onClick={onClose}
+        >
+          <X className="size-5" aria-hidden="true" />
+          <span className="sr-only">Cerrar modificacion de cita</span>
+        </button>
+
+        <header className="border-border/60 bg-background/85 border-b px-5 py-5 pr-16 sm:px-7">
+          <span className="text-sage text-xs font-medium tracking-[0.16em] uppercase">
+            Modificar cita
+          </span>
+          <h2
+            id="appointment-edit-title"
+            className="font-display mt-3 text-2xl leading-tight sm:text-3xl"
+          >
+            {appointment.patientName}
+          </h2>
+          <p className="text-muted-foreground mt-2 text-sm">
+            Al guardar, se envia un email al paciente con el nuevo horario.
+          </p>
+        </header>
+
+        <form className="grid gap-4 px-5 py-5 sm:px-7" onSubmit={handleSubmit}>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="grid gap-2 text-sm font-medium">
+              Dia
+              <select
+                className="border-input bg-background focus:ring-ring/40 h-11 rounded-md border px-3 text-base outline-none focus:ring-2 sm:text-sm"
+                value={date}
+                onChange={(event) => setDate(event.target.value)}
+              >
+                {demoDates.map((day) => (
+                  <option key={day} value={day}>
+                    {formatAppointmentDate(day)}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="grid gap-2 text-sm font-medium">
+              Hora
+              <select
+                className="border-input bg-background focus:ring-ring/40 h-11 rounded-md border px-3 text-base outline-none focus:ring-2 sm:text-sm"
+                value={time}
+                onChange={(event) => setTime(event.target.value)}
+              >
+                {availableTimes.map((availableTime) => (
+                  <option key={availableTime} value={availableTime}>
+                    {availableTime}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="grid gap-2 text-sm font-medium">
+              Profesional
+              <select
+                className="border-input bg-background focus:ring-ring/40 h-11 rounded-md border px-3 text-base outline-none focus:ring-2 sm:text-sm"
+                value={therapistId}
+                onChange={(event) => setTherapistId(event.target.value)}
+              >
+                {therapists.map((therapist) => (
+                  <option key={therapist.id} value={therapist.id}>
+                    {therapist.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="grid gap-2 text-sm font-medium">
+              Tratamiento
+              <select
+                className="border-input bg-background focus:ring-ring/40 h-11 rounded-md border px-3 text-base outline-none focus:ring-2 sm:text-sm"
+                value={treatmentId}
+                onChange={(event) => setTreatmentId(event.target.value)}
+              >
+                {treatments.map((treatment) => (
+                  <option key={treatment.id} value={treatment.id}>
+                    {treatment.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <label className="grid gap-2 text-sm font-medium">
+            Notas internas
+            <textarea
+              className="border-input bg-background focus:ring-ring/40 min-h-20 rounded-md border px-3 py-3 text-base outline-none focus:ring-2 sm:min-h-28 sm:text-sm"
+              value={notes}
+              maxLength={500}
+              onChange={(event) => setNotes(event.target.value)}
+              placeholder="Motivo, observaciones o contexto de recepcion."
+            />
+          </label>
+
+          <div className="border-border/60 bg-background/55 rounded-lg border px-4 py-3 text-sm leading-relaxed">
+            El paciente recibira un email con la cita modificada y el telefono
+            de la clinica por si el cambio no le encaja.
+          </div>
+
+          <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={loading}
+              onClick={onClose}
+            >
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? "Guardando..." : "Guardar y avisar"}
+            </Button>
+          </div>
+        </form>
       </article>
     </div>
   );
@@ -582,6 +757,8 @@ export function DoctorAgenda() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [selectedAppointment, setSelectedAppointment] =
     useState<Appointment | null>(null);
+  const [editingAppointment, setEditingAppointment] =
+    useState<Appointment | null>(null);
   const [emails, setEmails] = useState<EmailLogItem[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<Pick<
     AppointmentSlot,
@@ -770,6 +947,27 @@ export function DoctorAgenda() {
     const moved = updated?.find((item) => item.id === appointment.id);
 
     if (moved) {
+      setSelectedAppointment(moved);
+      addEmailLog(await sendEmail("modification", moved, pin));
+    }
+  }
+
+  async function handleEditAppointment(
+    appointment: Appointment,
+    changes: Pick<
+      Appointment,
+      "date" | "time" | "therapistId" | "treatmentId" | "notes"
+    >,
+  ) {
+    const updated = await patchAgenda({
+      action: "move",
+      appointmentId: appointment.id,
+      slot: changes,
+    });
+    const moved = updated?.find((item) => item.id === appointment.id);
+
+    if (moved) {
+      setEditingAppointment(null);
       setSelectedAppointment(moved);
       addEmailLog(await sendEmail("modification", moved, pin));
     }
@@ -1000,10 +1198,12 @@ export function DoctorAgenda() {
               onMoveToSlot={handleMoveToSlot}
               onSelectAppointment={(appointment) => {
                 setSelectedSlot(null);
+                setEditingAppointment(null);
                 setSelectedAppointment(appointment);
               }}
               onSelectSlot={(slot) => {
                 setSelectedAppointment(null);
+                setEditingAppointment(null);
                 setSelectedSlot(slot);
               }}
             />
@@ -1017,7 +1217,20 @@ export function DoctorAgenda() {
                 onClose={() => setSelectedAppointment(null)}
                 onConfirm={handleConfirm}
                 onCancel={handleCancel}
+                onEdit={(appointment) => {
+                  setSelectedAppointment(null);
+                  setEditingAppointment(appointment);
+                }}
                 onMove={handleMove}
+              />
+            ) : null}
+
+            {editingAppointment ? (
+              <AppointmentEditModal
+                appointment={editingAppointment}
+                loading={loading}
+                onClose={() => setEditingAppointment(null)}
+                onSave={handleEditAppointment}
               />
             ) : null}
 

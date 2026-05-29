@@ -114,4 +114,14 @@ describe("fallback receptionist", () => {
     expect(email.html).toContain("https://moisesvalero.es/");
     expect(email.body).toContain("Laura Gómez");
   });
+
+  it("builds a modification email with a phone fallback", () => {
+    const email = buildAppointmentEmail("modification", seedAppointments[0]!);
+
+    expect(email.subject).toContain("modificada");
+    expect(email.body).toContain("Si este cambio no te encaja");
+    expect(email.body).toContain("llamanos");
+    expect(email.html).toContain("Si este cambio no te encaja");
+    expect(email.html).toContain("tel:");
+  });
 });

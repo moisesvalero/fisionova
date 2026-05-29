@@ -42,6 +42,7 @@ const privateActionSchema = z.discriminatedUnion("action", [
     appointmentId: z.string().min(1),
     slot: slotSchema.omit({ treatmentId: true }).extend({
       treatmentId: z.string().min(1).optional(),
+      notes: z.string().max(500).optional(),
     }),
   }),
   z.object({

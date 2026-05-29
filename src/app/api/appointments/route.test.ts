@@ -140,4 +140,53 @@ describe("/api/appointments", () => {
       patientPhone: "611 222 333",
     });
   });
+
+  it("lets the private doctor modify appointment details", async () => {
+    resetDemoAppointmentStore();
+
+    const response = await PATCH(
+      new Request("http://localhost/api/appointments", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "x-doctor-pin": "1234",
+        },
+        body: JSON.stringify({
+          action: "move",
+          appointmentId: "apt-demo-1",
+          slot: {
+            date: "2026-06-03",
+            time: "16:30",
+            therapistId: "alvaro",
+            treatmentId: "postural",
+            notes: "Cambio solicitado desde el panel medico.",
+          },
+        }),
+      }),
+    );
+    const payload = (await response.json()) as {
+      appointments: Array<{
+        id: string;
+        date: string;
+        time: string;
+        therapistId: string;
+        treatmentId: string;
+        notes?: string;
+      }>;
+    };
+
+    expect(response.status).toBe(200);
+    expect(payload.appointments).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "apt-demo-1",
+          date: "2026-06-03",
+          time: "16:30",
+          therapistId: "alvaro",
+          treatmentId: "postural",
+          notes: "Cambio solicitado desde el panel medico.",
+        }),
+      ]),
+    );
+  });
 });
