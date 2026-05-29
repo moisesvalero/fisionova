@@ -15,6 +15,7 @@ import {
   Pencil,
   Phone,
   Plus,
+  Search,
   Shuffle,
   Sparkles,
   UserRound,
@@ -120,6 +121,13 @@ function formatStatus(status: Appointment["status"]) {
   return (
     statusOptions.find((option) => option.value === status)?.label ?? status
   );
+}
+
+function normalizeSearchText(value: string) {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "");
 }
 
 function getStatusTone(status: Appointment["status"]) {
@@ -1241,6 +1249,7 @@ export function DoctorAgenda() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [therapistFilter, setTherapistFilter] =
     useState<TherapistFilter>("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedAppointment, setSelectedAppointment] =
     useState<Appointment | null>(null);
   const [editingAppointment, setEditingAppointment] =
@@ -1301,21 +1310,33 @@ export function DoctorAgenda() {
       Array.from(new Set(appointments.map((appointment) => appointment.date))),
     [appointments],
   );
-  const filteredAppointments = useMemo(
-    () =>
-      appointments.filter((appointment) => {
-        const matchesDay =
-          dayFilter === "all" || appointment.date === dayFilter;
-        const matchesStatus =
-          statusFilter === "all" || appointment.status === statusFilter;
-        const matchesTherapist =
-          therapistFilter === "all" ||
-          appointment.therapistId === therapistFilter;
+  const filteredAppointments = useMemo(() => {
+    const normalizedQuery = normalizeSearchText(searchQuery.trim());
 
-        return matchesDay && matchesStatus && matchesTherapist;
-      }),
-    [appointments, dayFilter, statusFilter, therapistFilter],
-  );
+    return appointments.filter((appointment) => {
+      const matchesDay = dayFilter === "all" || appointment.date === dayFilter;
+      const matchesStatus =
+        statusFilter === "all" || appointment.status === statusFilter;
+      const matchesTherapist =
+        therapistFilter === "all" ||
+        appointment.therapistId === therapistFilter;
+      const searchableText = normalizeSearchText(
+        [
+          appointment.patientName,
+          appointment.patientEmail,
+          appointment.patientPhone,
+          appointment.notes ?? "",
+          resolveTreatment(appointment.treatmentId),
+          resolveTherapist(appointment.therapistId),
+          formatStatus(appointment.status),
+        ].join(" "),
+      );
+      const matchesSearch =
+        !normalizedQuery || searchableText.includes(normalizedQuery);
+
+      return matchesDay && matchesStatus && matchesTherapist && matchesSearch;
+    });
+  }, [appointments, dayFilter, searchQuery, statusFilter, therapistFilter]);
   const waitlistCandidates = useMemo(() => {
     if (!freedSlot) {
       return [];
@@ -1616,7 +1637,7 @@ export function DoctorAgenda() {
 
   return (
     <main className="bg-background text-foreground min-h-screen px-4 py-6 sm:px-6 sm:py-8 lg:px-12">
-      <div className="mx-auto max-w-7xl">
+      <div className="mx-auto max-w-[1600px]">
         <Link
           href="/"
           className="text-muted-foreground hover:text-foreground mb-8 inline-flex items-center gap-2 text-sm transition-colors"
@@ -1678,16 +1699,16 @@ export function DoctorAgenda() {
             </form>
           </section>
         ) : (
-          <section className="flex flex-col gap-5">
+          <section className="grid gap-5 xl:grid-cols-[340px_minmax(0,1fr)]">
             {error ? (
-              <p className="text-clay text-sm" role="alert">
+              <p className="text-clay text-sm xl:col-span-2" role="alert">
                 {error}
               </p>
             ) : null}
-            <div className="glass shadow-elegant border-border/60 overflow-hidden rounded-xl border">
-              <div className="border-border/60 grid gap-0 border-b lg:grid-cols-[1.1fr_0.9fr]">
+            <aside className="glass shadow-elegant border-border/60 overflow-hidden rounded-xl border xl:sticky xl:top-6 xl:max-h-[calc(100svh-3rem)] xl:self-start xl:overflow-y-auto">
+              <div className="flex flex-col">
                 <div className="flex flex-col gap-5 p-5 lg:p-6">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex flex-col gap-3">
                     <div>
                       <div className="text-muted-foreground inline-flex items-center gap-2 text-xs font-medium tracking-[0.16em] uppercase">
                         <CalendarClock className="size-4" aria-hidden="true" />
@@ -1739,7 +1760,7 @@ export function DoctorAgenda() {
                     </Button>
                   </div>
 
-                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  <div className="grid grid-cols-2 gap-3">
                     <button
                       type="button"
                       className="border-border/70 bg-background/65 hover:border-clinical/40 hover:bg-clinical/10 rounded-lg border p-4 text-left transition-all"
@@ -1851,13 +1872,41 @@ export function DoctorAgenda() {
                   </div>
                 </div>
 
-                <div className="border-border/60 flex flex-col justify-between gap-5 border-t p-5 lg:border-t-0 lg:border-l lg:p-6">
+                <div className="border-border/60 flex flex-col justify-between gap-5 border-t p-5 lg:p-6">
                   <div>
                     <div className="text-muted-foreground mb-3 flex items-center gap-2 text-xs font-medium tracking-[0.16em] uppercase">
                       <Filter className="size-4" aria-hidden="true" />
                       Filtros
                     </div>
                     <div className="flex flex-col gap-4">
+                      <label className="flex flex-col gap-2 text-sm font-medium">
+                        Buscar
+                        <div className="border-input bg-background focus-within:ring-ring/40 flex h-10 items-center gap-2 rounded-md border px-3 text-sm transition-shadow focus-within:ring-2">
+                          <Search
+                            className="text-muted-foreground size-4 shrink-0"
+                            aria-hidden="true"
+                          />
+                          <input
+                            className="placeholder:text-muted-foreground min-w-0 flex-1 bg-transparent outline-none"
+                            value={searchQuery}
+                            onChange={(event) =>
+                              setSearchQuery(event.target.value)
+                            }
+                            placeholder="Paciente, email o tratamiento"
+                          />
+                          {searchQuery ? (
+                            <button
+                              type="button"
+                              className="text-muted-foreground hover:text-foreground"
+                              onClick={() => setSearchQuery("")}
+                            >
+                              <X className="size-4" aria-hidden="true" />
+                              <span className="sr-only">Limpiar busqueda</span>
+                            </button>
+                          ) : null}
+                        </div>
+                      </label>
+
                       <label className="flex flex-col gap-2 text-sm font-medium">
                         Dia
                         <select
@@ -1894,7 +1943,7 @@ export function DoctorAgenda() {
 
                       <div className="flex flex-col gap-2">
                         <span className="text-sm font-medium">Estado</span>
-                        <div className="bg-background/70 border-border/70 grid grid-cols-2 rounded-md border p-1 sm:grid-cols-4">
+                        <div className="bg-background/70 border-border/70 grid grid-cols-2 rounded-md border p-1">
                           {statusOptions.map((option) => (
                             <button
                               key={option.value}
@@ -1927,38 +1976,40 @@ export function DoctorAgenda() {
                   </div>
                 </div>
               </div>
-            </div>
+            </aside>
 
-            {freedSlot ? (
-              <FreedSlotPanel
-                candidates={waitlistCandidates}
-                loading={loading}
-                slot={freedSlot}
-                onDismiss={() => setFreedSlot(null)}
-                onMoveCandidate={handleMoveCandidateToFreedSlot}
+            <div className="flex min-w-0 flex-col gap-5">
+              {freedSlot ? (
+                <FreedSlotPanel
+                  candidates={waitlistCandidates}
+                  loading={loading}
+                  slot={freedSlot}
+                  onDismiss={() => setFreedSlot(null)}
+                  onMoveCandidate={handleMoveCandidateToFreedSlot}
+                />
+              ) : null}
+
+              <AppointmentCalendar
+                appointments={filteredAppointments}
+                selectedDay={dayFilter}
+                selectedTherapist={therapistFilter}
+                onMoveToSlot={handleMoveToSlot}
+                onSelectAppointment={(appointment) => {
+                  setSelectedSlot(null);
+                  setEditingAppointment(null);
+                  setActionMessage("");
+                  setSelectedAppointment(appointment);
+                }}
+                onSelectSlot={(slot) => {
+                  setSelectedAppointment(null);
+                  setEditingAppointment(null);
+                  setActionMessage("");
+                  setSelectedSlot(slot);
+                }}
               />
-            ) : null}
 
-            <AppointmentCalendar
-              appointments={filteredAppointments}
-              selectedDay={dayFilter}
-              selectedTherapist={therapistFilter}
-              onMoveToSlot={handleMoveToSlot}
-              onSelectAppointment={(appointment) => {
-                setSelectedSlot(null);
-                setEditingAppointment(null);
-                setActionMessage("");
-                setSelectedAppointment(appointment);
-              }}
-              onSelectSlot={(slot) => {
-                setSelectedAppointment(null);
-                setEditingAppointment(null);
-                setActionMessage("");
-                setSelectedSlot(slot);
-              }}
-            />
-
-            <EmailLog emails={emails} />
+              <EmailLog emails={emails} />
+            </div>
 
             {selectedAppointment ? (
               <AppointmentDetailModal
