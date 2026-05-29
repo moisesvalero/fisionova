@@ -134,12 +134,12 @@ function AppointmentDetailModal({
 }) {
   return (
     <div
-      className="modal-backdrop bg-charcoal/70 fixed inset-0 z-50 flex items-center justify-center px-4 py-6 backdrop-blur-sm"
+      className="modal-backdrop bg-charcoal/70 fixed inset-0 z-50 flex items-end justify-center px-3 py-3 backdrop-blur-sm sm:items-center sm:px-4 sm:py-6"
       role="dialog"
       aria-modal="true"
       aria-labelledby="appointment-detail-title"
     >
-      <article className="modal-panel glass shadow-elegant border-border/60 relative w-full max-w-3xl overflow-hidden rounded-2xl border">
+      <article className="modal-panel glass shadow-elegant border-border/60 relative max-h-[calc(100dvh-1.5rem)] w-full max-w-3xl overflow-y-auto rounded-2xl border">
         <button
           type="button"
           className="text-muted-foreground hover:text-foreground hover:bg-background/70 absolute top-4 right-4 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full transition-colors"
@@ -165,7 +165,7 @@ function AppointmentDetailModal({
           </div>
           <h2
             id="appointment-detail-title"
-            className="font-display mt-3 text-3xl leading-tight"
+            className="font-display mt-3 text-2xl leading-tight sm:text-3xl"
           >
             {appointment.patientName}
           </h2>
@@ -255,12 +255,12 @@ function FreeSlotModal({
 }) {
   return (
     <div
-      className="modal-backdrop bg-charcoal/70 fixed inset-0 z-50 flex items-center justify-center px-4 py-6 backdrop-blur-sm"
+      className="modal-backdrop bg-charcoal/70 fixed inset-0 z-50 flex items-end justify-center px-3 py-3 backdrop-blur-sm sm:items-center sm:px-4 sm:py-6"
       role="dialog"
       aria-modal="true"
       aria-labelledby="free-slot-title"
     >
-      <article className="modal-panel glass shadow-elegant border-border/60 relative w-full max-w-xl overflow-hidden rounded-2xl border">
+      <article className="modal-panel glass shadow-elegant border-border/60 relative max-h-[calc(100dvh-1.5rem)] w-full max-w-xl overflow-y-auto rounded-2xl border">
         <button
           type="button"
           className="text-muted-foreground hover:text-foreground hover:bg-background/70 absolute top-4 right-4 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full transition-colors"
@@ -276,7 +276,7 @@ function FreeSlotModal({
           </span>
           <h2
             id="free-slot-title"
-            className="font-display mt-3 text-3xl leading-tight"
+            className="font-display mt-3 text-2xl leading-tight sm:text-3xl"
           >
             {formatAppointmentDate(slot.date)} · {slot.time}
           </h2>
@@ -336,7 +336,91 @@ function AppointmentCalendar({
         </p>
       </header>
 
-      <div className="overflow-x-auto">
+      <div className="grid gap-3 px-4 py-4 md:hidden">
+        {days.map((day) => (
+          <article
+            key={day}
+            className="border-border/60 bg-background/45 overflow-hidden rounded-xl border"
+          >
+            <header className="border-border/60 bg-background/70 border-b px-4 py-3">
+              <p className="font-display text-xl capitalize">
+                {formatAppointmentDate(day)}
+              </p>
+              <p className="text-muted-foreground mt-1 text-xs tabular-nums">
+                {day}
+              </p>
+            </header>
+            <div className="divide-border/50 divide-y">
+              {availableTimes.map((time) => {
+                const slotAppointments =
+                  appointmentsBySlot.get(`${day}-${time}`) ?? [];
+
+                return (
+                  <div
+                    key={`${day}-${time}`}
+                    className="grid grid-cols-[4.25rem_1fr] gap-3 px-4 py-3"
+                  >
+                    <span className="text-muted-foreground pt-2 text-sm font-medium tabular-nums">
+                      {time}
+                    </span>
+                    {slotAppointments.length > 0 ? (
+                      <div className="space-y-2">
+                        {slotAppointments.map((appointment) => (
+                          <button
+                            key={appointment.id}
+                            type="button"
+                            className={cn(
+                              "focus:ring-ring/40 w-full rounded-lg border px-3 py-3 text-left text-sm shadow-sm transition-all focus:ring-2 focus:outline-none",
+                              appointment.status === "confirmed"
+                                ? "border-sage/30 bg-sage/15"
+                                : appointment.status === "pending"
+                                  ? "border-clinical/30 bg-clinical/10"
+                                  : "border-clay/30 bg-clay/10 opacity-75",
+                            )}
+                            onClick={() => onSelectAppointment(appointment)}
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <p className="leading-snug font-medium">
+                                {appointment.patientName}
+                              </p>
+                              <span
+                                className={cn(
+                                  "mt-1 h-2.5 w-2.5 shrink-0 rounded-full",
+                                  appointment.status === "confirmed"
+                                    ? "bg-sage"
+                                    : appointment.status === "pending"
+                                      ? "bg-clinical"
+                                      : "bg-clay",
+                                )}
+                              />
+                            </div>
+                            <p className="text-muted-foreground mt-1 leading-snug">
+                              {resolveTreatment(appointment.treatmentId)}
+                            </p>
+                            <p className="text-muted-foreground mt-1 leading-snug">
+                              {resolveTherapist(appointment.therapistId)}
+                            </p>
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        className="border-border/50 text-muted-foreground hover:border-sage/40 hover:bg-sage/10 hover:text-foreground min-h-12 w-full rounded-lg border border-dashed px-3 py-3 text-sm transition-colors"
+                        onClick={() => onSelectSlot({ date: day, time })}
+                      >
+                        Libre
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </article>
+        ))}
+      </div>
+
+      <div className="hidden overflow-x-auto md:block">
         <div className="min-w-[920px]">
           <div
             className="border-border/60 grid border-b"
@@ -692,8 +776,8 @@ export function DoctorAgenda() {
   }
 
   return (
-    <main className="bg-background text-foreground min-h-screen px-6 py-8 lg:px-12">
-      <div className="mx-auto max-w-6xl">
+    <main className="bg-background text-foreground min-h-screen px-4 py-6 sm:px-6 sm:py-8 lg:px-12">
+      <div className="mx-auto max-w-7xl">
         <Link
           href="/"
           className="text-muted-foreground hover:text-foreground mb-8 inline-flex items-center gap-2 text-sm transition-colors"
@@ -702,21 +786,21 @@ export function DoctorAgenda() {
           Volver a la web pública
         </Link>
 
-        <header className="mb-10 max-w-3xl">
+        <header className="mb-8 max-w-3xl sm:mb-10">
           <span className="text-sage text-xs tracking-[0.18em] uppercase">
             Backend privado
           </span>
-          <h1 className="font-display mt-3 text-4xl leading-tight lg:text-6xl">
+          <h1 className="font-display mt-3 text-4xl leading-tight sm:text-5xl lg:text-6xl">
             Agenda del médico
           </h1>
-          <p className="text-muted-foreground mt-4 text-lg leading-relaxed">
+          <p className="text-muted-foreground mt-4 text-base leading-relaxed sm:text-lg">
             Este panel simula la zona privada de la clínica. Aquí sí se ven las
             citas completas y se pueden mover, cancelar o restablecer.
           </p>
         </header>
 
         {!authorized ? (
-          <section className="glass shadow-elegant border-border/60 max-w-md rounded-xl border p-6">
+          <section className="glass shadow-elegant border-border/60 max-w-md rounded-xl border p-5 sm:p-6">
             <div className="mb-5 flex items-center gap-3">
               <div className="bg-sage/15 flex h-10 w-10 items-center justify-center rounded-md">
                 <LockKeyhole className="text-sage h-5 w-5" aria-hidden="true" />
@@ -732,7 +816,7 @@ export function DoctorAgenda() {
               <label className="block">
                 <span className="mb-2 block text-sm font-medium">PIN</span>
                 <input
-                  className="border-border bg-background focus:ring-ring/40 w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2"
+                  className="border-border bg-background focus:ring-ring/40 w-full rounded-lg border px-3 py-2 text-base outline-none focus:ring-2 sm:text-sm"
                   value={pin}
                   onChange={(event) => setPin(event.target.value)}
                   type="password"
@@ -745,7 +829,11 @@ export function DoctorAgenda() {
                   {error}
                 </p>
               ) : null}
-              <Button type="submit" disabled={loading}>
+              <Button
+                type="submit"
+                className="w-full sm:w-auto"
+                disabled={loading}
+              >
                 {loading ? "Comprobando..." : "Entrar"}
               </Button>
             </form>
@@ -786,7 +874,7 @@ export function DoctorAgenda() {
                     <Button
                       type="button"
                       variant="ghost"
-                      className="h-10"
+                      className="border-border/70 bg-background/60 h-10 border"
                       disabled={loading}
                       onClick={() => loadAgenda(pin)}
                     >
@@ -804,7 +892,7 @@ export function DoctorAgenda() {
                         Pendientes
                         <CalendarCheck2 className="size-4" aria-hidden="true" />
                       </div>
-                      <p className="font-display mt-3 text-4xl leading-none tabular-nums">
+                      <p className="font-display mt-3 text-3xl leading-none tabular-nums sm:text-4xl">
                         {pendingCount}
                       </p>
                       <p className="text-muted-foreground mt-2 text-xs">
@@ -820,7 +908,7 @@ export function DoctorAgenda() {
                         Confirmadas
                         <CheckCircle2 className="size-4" aria-hidden="true" />
                       </div>
-                      <p className="font-display mt-3 text-4xl leading-none tabular-nums">
+                      <p className="font-display mt-3 text-3xl leading-none tabular-nums sm:text-4xl">
                         {confirmedCount}
                       </p>
                       <p className="text-muted-foreground mt-2 text-xs">
@@ -836,7 +924,7 @@ export function DoctorAgenda() {
                         Canceladas
                         <XCircle className="size-4" aria-hidden="true" />
                       </div>
-                      <p className="font-display mt-3 text-4xl leading-none tabular-nums">
+                      <p className="font-display mt-3 text-3xl leading-none tabular-nums sm:text-4xl">
                         {cancelledCount}
                       </p>
                       <p className="text-muted-foreground mt-2 text-xs">
