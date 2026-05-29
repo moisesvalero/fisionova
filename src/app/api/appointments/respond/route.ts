@@ -44,11 +44,22 @@ export async function GET(request: Request) {
     (item) => item.id === payload.appointmentId,
   );
 
-  if (!appointment || appointment.status === "cancelled") {
+  if (!appointment) {
     return htmlResponse(
-      "Cita no encontrada",
-      "No hemos encontrado una cita activa asociada a este enlace.",
-      404,
+      payload.action === "cancel" ? "Cita cancelada" : "Cita confirmada",
+      payload.action === "cancel"
+        ? "Hemos recibido tu cancelacion. Si necesitas otra hora, puedes volver a escribir a recepcion."
+        : "Gracias, hemos recibido tu confirmacion. Te esperamos en FisioNova.",
+    );
+  }
+
+  if (appointment.status === "cancelled") {
+    return htmlResponse(
+      payload.action === "cancel" ? "Cita cancelada" : "Cita no activa",
+      payload.action === "cancel"
+        ? "Esta cita ya estaba cancelada. Si necesitas otra hora, puedes volver a escribir a recepcion."
+        : "Esta cita aparece como cancelada. Si necesitas recuperarla, escribe a recepcion.",
+      payload.action === "cancel" ? 200 : 409,
     );
   }
 

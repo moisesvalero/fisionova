@@ -21,6 +21,25 @@ describe("/api/appointments/respond", () => {
     expect(html).toContain("Cita confirmada");
   });
 
+  it("accepts a valid signed email link even if the demo appointment store was reset elsewhere", async () => {
+    resetDemoAppointmentStore();
+    const token = createAppointmentActionToken(
+      "apt-missing-from-memory",
+      "cancel",
+    );
+
+    const response = await GET(
+      new Request(
+        `http://localhost/api/appointments/respond?token=${encodeURIComponent(token)}`,
+      ),
+    );
+    const html = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(html).toContain("Cita cancelada");
+    expect(html).not.toContain("Cita no encontrada");
+  });
+
   it("rejects unsigned email actions", async () => {
     const response = await GET(
       new Request("http://localhost/api/appointments/respond?token=bad"),
