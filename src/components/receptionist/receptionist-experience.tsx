@@ -521,14 +521,6 @@ export function ReceptionistExperience() {
           aria-modal="true"
           aria-label="Chat de recepción"
         >
-          <button
-            type="button"
-            className="modal-close text-foreground hover:bg-charcoal/10 sm:text-cream sm:hover:bg-cream/10 absolute top-3 right-3 inline-flex h-11 w-11 items-center justify-center rounded-full transition-colors sm:top-5 sm:right-5"
-            onClick={() => setIsChatModalOpen(false)}
-          >
-            <X className="h-5 w-5" aria-hidden="true" />
-            <span className="sr-only">Cerrar chat</span>
-          </button>
           <ChatPanel
             mode="modal"
             className={chatViewport.keyboardOpen ? "chat-panel-keyboard" : ""}
@@ -538,6 +530,7 @@ export function ReceptionistExperience() {
             proposedSlots={proposedSlots}
             selectedSlot={selectedSlot}
             bookingPending={bookingPending}
+            onClose={() => setIsChatModalOpen(false)}
             onSubmit={handleSubmit}
             onSelectSlot={handleSelectSlot}
             onConfirmBooking={handleConfirmBooking}

@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Clock3, Send, Sparkles } from "lucide-react";
+import { Check, Clock3, Send, Sparkles, X } from "lucide-react";
 import { useEffect, useRef, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ type ChatPanelProps = {
   inputId?: string;
   mode?: "inline" | "modal";
   onInputFocus?: () => void;
+  onClose?: () => void;
   onSubmit: (message: string) => void;
   onSelectSlot: (slot: AppointmentSlot) => void;
   onConfirmBooking: (details: PatientDetails) => void;
@@ -42,6 +43,7 @@ export function ChatPanel({
   inputId = "receptionist-message",
   mode = "inline",
   onInputFocus,
+  onClose,
   onSubmit,
   onSelectSlot,
   onConfirmBooking,
@@ -112,6 +114,16 @@ export function ChatPanel({
             En línea, responde al instante
           </p>
         </div>
+        {mode === "modal" && onClose ? (
+          <button
+            type="button"
+            className="text-foreground hover:bg-charcoal/10 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors"
+            onClick={onClose}
+            aria-label="Cerrar chat"
+          >
+            <X className="h-5 w-5" aria-hidden="true" />
+          </button>
+        ) : null}
       </header>
 
       <div
