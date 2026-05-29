@@ -88,7 +88,7 @@ export function ChatPanel({
       className={cn(
         "chat-panel-motion glass shadow-elegant border-border/60 flex w-full flex-col overflow-hidden rounded-xl border",
         mode === "modal"
-          ? "modal-panel h-[calc(100dvh-1rem)] max-h-[calc(100dvh-1rem)] max-w-4xl sm:h-auto sm:max-h-[calc(100svh-3rem)]"
+          ? "modal-panel h-[min(62dvh,560px)] max-h-[calc(var(--chat-viewport-height,100dvh)-0.75rem)] max-w-4xl sm:h-auto sm:max-h-[calc(100svh-3rem)]"
           : "chat-panel-inline max-w-md",
         className,
       )}
@@ -118,7 +118,7 @@ export function ChatPanel({
         className={cn(
           "chat-panel-messages bg-background/40 space-y-3 overflow-y-auto px-4 py-4 sm:px-5 sm:py-5",
           mode === "modal"
-            ? "min-h-0 flex-1 md:max-h-[min(64vh,680px)] md:min-h-[420px] md:px-8 md:py-7"
+            ? "min-h-0 flex-1 scroll-pb-4 md:max-h-[min(64vh,680px)] md:min-h-[420px] md:px-8 md:py-7"
             : "max-h-[184px] min-h-[132px] sm:max-h-[340px] sm:min-h-[220px]",
         )}
       >
@@ -239,7 +239,7 @@ export function ChatPanel({
             className="text-foreground placeholder:text-muted-foreground flex-1 bg-transparent px-2 py-1.5 text-base outline-none sm:py-2 sm:text-sm"
             placeholder="Escribe un mensaje..."
             disabled={pending}
-            autoFocus={mode === "modal"}
+            autoFocus={false}
             suppressHydrationWarning
             onClick={mode === "inline" ? onInputFocus : undefined}
             onFocus={mode === "inline" ? onInputFocus : undefined}

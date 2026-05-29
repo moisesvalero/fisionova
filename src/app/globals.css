@@ -311,6 +311,11 @@ h3 {
       0 0 0 1px color-mix(in oklab, var(--cream) 22%, transparent);
   }
 
+  .chat-panel-keyboard {
+    height: min(calc(var(--chat-viewport-height, 100dvh) - 0.75rem), 27rem);
+    max-height: min(calc(var(--chat-viewport-height, 100dvh) - 0.75rem), 27rem);
+  }
+
   .modal-panel::before {
     content: "";
     position: absolute;

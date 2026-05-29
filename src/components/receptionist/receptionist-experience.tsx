@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import {
   ArrowRight,
   CalendarSearch,
@@ -82,6 +82,11 @@ export function ReceptionistExperience() {
   const [bookingPending, setBookingPending] = useState(false);
   const [isChatModalOpen, setIsChatModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [chatViewport, setChatViewport] = useState({
+    height: 0,
+    offsetTop: 0,
+    keyboardOpen: false,
+  });
   const [completedBooking, setCompletedBooking] = useState(false);
   const [pendingAppointmentTriage, setPendingAppointmentTriage] =
     useState(false);
@@ -183,6 +188,39 @@ export function ReceptionistExperience() {
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (!isChatModalOpen || typeof window === "undefined") {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    function syncViewport() {
+      const viewport = window.visualViewport;
+      const height = viewport?.height ?? window.innerHeight;
+      const offsetTop = viewport?.offsetTop ?? 0;
+
+      setChatViewport({
+        height,
+        offsetTop,
+        keyboardOpen: height < window.innerHeight * 0.78,
+      });
+    }
+
+    syncViewport();
+    window.visualViewport?.addEventListener("resize", syncViewport);
+    window.visualViewport?.addEventListener("scroll", syncViewport);
+    window.addEventListener("resize", syncViewport);
+
+    return () => {
+      window.visualViewport?.removeEventListener("resize", syncViewport);
+      window.visualViewport?.removeEventListener("scroll", syncViewport);
+      window.removeEventListener("resize", syncViewport);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isChatModalOpen]);
 
   function addAssistantMessage(content: string) {
     setMessages((current) => [
@@ -290,6 +328,14 @@ export function ReceptionistExperience() {
       setBookingPending(false);
     }
   }
+
+  const chatModalStyle =
+    chatViewport.height > 0
+      ? ({
+          "--chat-viewport-height": `${chatViewport.height}px`,
+          "--chat-viewport-top": `${chatViewport.offsetTop}px`,
+        } as CSSProperties)
+      : undefined;
 
   return (
     <div ref={pageRef} className="bg-background text-foreground min-h-screen">
@@ -469,7 +515,8 @@ export function ReceptionistExperience() {
 
       {isChatModalOpen ? (
         <div
-          className="modal-backdrop bg-charcoal/70 fixed inset-0 z-50 flex items-end justify-center px-2 py-2 backdrop-blur-sm sm:items-center sm:px-4 sm:py-6"
+          className="modal-backdrop bg-charcoal/70 fixed inset-x-0 top-0 z-50 flex h-[var(--chat-viewport-height,100dvh)] translate-y-[var(--chat-viewport-top,0px)] items-end justify-center px-2 py-2 backdrop-blur-sm sm:items-center sm:px-4 sm:py-6"
+          style={chatModalStyle}
           role="dialog"
           aria-modal="true"
           aria-label="Chat de recepción"
@@ -484,6 +531,7 @@ export function ReceptionistExperience() {
           </button>
           <ChatPanel
             mode="modal"
+            className={chatViewport.keyboardOpen ? "chat-panel-keyboard" : ""}
             inputId="receptionist-message-modal"
             messages={messages}
             pending={pending}
