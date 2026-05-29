@@ -728,8 +728,9 @@ h3 {
 
 @media (min-width: 80rem) {
   .reception-workspace {
-    min-height: calc(100vh - 10rem);
-    overflow: visible;
+    height: calc(100dvh - 8.25rem);
+    min-height: 0;
+    overflow: hidden;
   }
 }
 

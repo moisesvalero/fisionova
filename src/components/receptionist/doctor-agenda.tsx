@@ -1266,13 +1266,13 @@ function AppointmentCalendar({
             </div>
           </div>
         ) : (
-          <div
-            className="hidden min-h-0 flex-1 grid-rows-[auto_repeat(9,minmax(0,1fr))] md:grid"
-            style={{
-              gridTemplateRows: `auto repeat(${availableTimes.length}, minmax(0, 1fr))`,
-            }}
-          >
-            <div className="min-w-0">
+          <div className="hidden min-h-0 flex-1 md:block">
+            <div
+              className="grid h-full min-h-0 min-w-0 overflow-hidden"
+              style={{
+                gridTemplateRows: `auto repeat(${availableTimes.length}, minmax(0, 1fr))`,
+              }}
+            >
               <div
                 className="border-border/60 grid border-b"
                 style={{
@@ -1382,10 +1382,10 @@ function AppointmentCalendar({
                                   )}{" "}
                                   min
                                 </p>
-                                <p className="text-muted-foreground hidden truncate 2xl:block">
+                                <p className="text-muted-foreground hidden truncate min-[1800px]:block">
                                   {resolveTherapist(appointment.therapistId)}
                                 </p>
-                                <div className="hidden 2xl:block">
+                                <div className="hidden min-[1800px]:block">
                                   <AppointmentBadges
                                     appointment={appointment}
                                   />
@@ -2090,29 +2090,25 @@ export function DoctorAgenda() {
   }
 
   return (
-    <main className="bg-background text-foreground min-h-screen px-3 py-4 sm:px-5 lg:overflow-hidden lg:px-8">
-      <div className="mx-auto flex min-h-[calc(100svh-2rem)] max-w-[1760px] flex-col">
+    <main className="bg-background text-foreground min-h-screen px-3 py-4 sm:px-5 lg:h-screen lg:overflow-hidden lg:px-8 lg:py-3">
+      <div className="mx-auto flex min-h-[calc(100svh-2rem)] max-w-[1760px] flex-col lg:h-full lg:min-h-0">
         <Link
           href="/"
-          className="text-muted-foreground hover:text-foreground mb-4 inline-flex items-center gap-2 text-sm transition-colors"
+          className="text-muted-foreground hover:text-foreground mb-4 inline-flex items-center gap-2 text-sm transition-colors lg:mb-2"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           Volver a la web pública
         </Link>
 
-        <header className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <header className="mb-4 flex flex-col gap-3 lg:mb-2 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <span className="text-sage text-xs tracking-[0.18em] uppercase">
               Recepcion privada
             </span>
-            <h1 className="font-display mt-1 text-2xl leading-tight sm:mt-2 sm:text-4xl lg:text-5xl">
+            <h1 className="font-display mt-1 text-2xl leading-tight sm:mt-2 sm:text-4xl lg:text-4xl">
               Panel de recepcion
             </h1>
           </div>
-          <p className="text-muted-foreground hidden max-w-2xl text-sm leading-relaxed sm:block sm:text-base">
-            Solicitudes, agenda, cambios y emails en una sola pantalla de
-            trabajo.
-          </p>
         </header>
 
         {!authorized ? (
