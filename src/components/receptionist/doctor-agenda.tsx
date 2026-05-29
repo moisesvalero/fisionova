@@ -65,7 +65,7 @@ type AppointmentFormValues = Omit<Appointment, "id" | "status">;
 const statusOptions: Array<{ label: string; value: StatusFilter }> = [
   { label: "Todas", value: "all" },
   { label: "Pendientes", value: "pending" },
-  { label: "Esperando", value: "awaiting_response" },
+  { label: "Respuesta pendiente", value: "awaiting_response" },
   { label: "Confirmadas", value: "confirmed" },
   { label: "Paciente OK", value: "patient_confirmed" },
   { label: "Cambio propuesto", value: "reschedule_proposed" },
@@ -1719,7 +1719,7 @@ export function DoctorAgenda() {
                       onClick={() => setStatusFilter("awaiting_response")}
                     >
                       <div className="flex items-center justify-between text-xs font-medium text-amber-700 uppercase">
-                        En espera
+                        Respuesta pendiente
                         <Mail className="size-4" aria-hidden="true" />
                       </div>
                       <p className="font-display mt-3 text-3xl leading-none tabular-nums sm:text-4xl">
