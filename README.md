@@ -17,7 +17,7 @@ Demo publica para portfolio tecnico: una web app de una clinica de fisioterapia 
 ## Que demuestra
 
 - Landing completa de una clinica local ficticia, con hero visual, tratamientos, equipo, contacto, FAQ y politica de cookies.
-- Chat con Clara, recepcionista IA, integrado en la web y ampliable en modal.
+- Chat con Virgi, recepcionista IA, integrado en la web y ampliable en modal.
 - Integracion opcional con OpenAI para interpretar mensajes y proponer huecos.
 - Flujo seguro de citas: la IA no confirma citas finales, crea una solicitud pendiente.
 - Panel privado `/medico` protegido por PIN.
@@ -41,8 +41,8 @@ Demo publica para portfolio tecnico: una web app de una clinica de fisioterapia 
 
 ## Flujo de cita
 
-1. El paciente habla con Clara.
-2. Si no cuenta que le duele, Clara pregunta antes de mostrar huecos.
+1. El paciente habla con Virgi.
+2. Si no cuenta que le duele, Virgi pregunta antes de mostrar huecos.
 3. Si detecta el motivo, asigna tratamiento: general, deportiva o postural.
 4. La web muestra huecos disponibles.
 5. El paciente deja sus datos.

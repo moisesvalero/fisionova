@@ -253,6 +253,6 @@ export function getFallbackReceptionAction(
   return {
     type: "reply",
     message:
-      "Soy Clara, la recepcionista de FisioNova. Puedo ayudarte con citas, precios, tratamientos, horarios y ubicación.",
+      "Soy Virgi, la recepcionista de FisioNova. Puedo ayudarte con citas, precios, tratamientos, horarios y ubicación.",
   };
 }

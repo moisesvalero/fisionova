@@ -38,7 +38,7 @@ const assistantGreeting: ChatMessage = {
   id: "assistant-greeting",
   role: "assistant",
   content:
-    "¡Hola! Soy Clara, la recepcionista de FisioNova. Cuéntame qué necesitas y te echo una mano con la cita, precios o cualquier duda.",
+    "¡Hola! Soy Virgi, la recepcionista de FisioNova. Cuéntame qué necesitas y te echo una mano con la cita, precios o cualquier duda.",
 };
 
 const therapistPhotos: Record<string, string> = {
@@ -482,7 +482,7 @@ export function ReceptionistExperience() {
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="text-foreground block text-sm font-semibold">
-                    Habla con Clara
+                    Habla con Virgi
                   </span>
                   <span className="text-muted-foreground mt-0.5 block text-xs">
                     Pide cita en un momento, como por WhatsApp.

@@ -163,7 +163,7 @@ export default function Image() {
               maxWidth: 620,
             }}
           >
-            Citas de fisioterapia con Clara, recepcionista IA.
+            Citas de fisioterapia con Virgi, recepcionista IA.
           </div>
           <div
             style={{
