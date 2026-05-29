@@ -41,6 +41,12 @@ export async function POST(request: Request) {
   const emailBody = env.RESEND_TEST_RECIPIENT
     ? `${email.body}\n\n[Demo] Destinatario original: ${body.appointment.patientEmail}`
     : email.body;
+  const emailHtml = env.RESEND_TEST_RECIPIENT
+    ? email.html.replace(
+        "</body>",
+        `<p style="font-family:Arial,Helvetica,sans-serif;color:#69756f;font-size:12px;text-align:center;">Destinatario original: ${body.appointment.patientEmail}</p></body>`,
+      )
+    : email.html;
 
   if (!env.RESEND_API_KEY || !env.RESEND_FROM_EMAIL) {
     return NextResponse.json({
@@ -61,6 +67,7 @@ export async function POST(request: Request) {
       to: recipient,
       subject: email.subject,
       text: emailBody,
+      html: emailHtml,
     }),
   });
 

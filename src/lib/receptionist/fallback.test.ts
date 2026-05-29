@@ -78,7 +78,9 @@ describe("fallback receptionist", () => {
     const email = buildAppointmentEmail("confirmation", seedAppointments[0]!);
 
     expect(email.subject).toContain("confirmada");
-    expect(email.body).toContain("https://moisesvalero.es/");
+    expect(email.body).toContain("moisesvalero.es");
+    expect(email.html).toContain("Ver portfolio");
+    expect(email.html).toContain("https://moisesvalero.es/");
     expect(email.body).toContain("Laura Gómez");
   });
 });
