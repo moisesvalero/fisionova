@@ -2108,6 +2108,36 @@ export function DoctorAgenda() {
                     <div className="divide-border/50 divide-y">
                       <button
                         type="button"
+                        className={cn(
+                          "hover:bg-background/80 grid w-full grid-cols-[1fr_auto] items-center gap-3 px-3 py-2 text-left transition-colors",
+                          statusFilter === "all" &&
+                            "bg-primary/10 text-primary",
+                        )}
+                        onClick={() => {
+                          setStatusFilter("all");
+                          setMobilePanel("agenda");
+                        }}
+                      >
+                        <span className="flex min-w-0 items-center gap-2">
+                          <CalendarClock
+                            className="size-4 shrink-0"
+                            aria-hidden="true"
+                          />
+                          <span className="min-w-0">
+                            <span className="block truncate text-sm font-medium">
+                              Ver todas
+                            </span>
+                            <span className="text-muted-foreground block truncate text-xs">
+                              Quitar filtros de estado
+                            </span>
+                          </span>
+                        </span>
+                        <span className="font-display text-xl tabular-nums">
+                          {appointments.length}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
                         className="hover:bg-clinical/10 grid w-full grid-cols-[1fr_auto] items-center gap-3 px-3 py-2 text-left transition-colors"
                         onClick={() => {
                           setStatusFilter("pending");
