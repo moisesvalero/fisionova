@@ -1,6 +1,7 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 import {
+  blockDemoSlot,
   bookDemoAppointment,
   cancelDemoAppointment,
   confirmDemoAppointment,
@@ -8,11 +9,13 @@ import {
   moveDemoAppointment,
   requestDemoAppointment,
   resetDemoAppointmentStore,
+  updateDemoAppointmentStatus,
 } from "./appointment-store";
 import { seedAppointments } from "./demo-data";
 import type { Appointment } from "./types";
 
 type AppointmentInput = Omit<Appointment, "id" | "status">;
+type BlockInput = Pick<Appointment, "date" | "time" | "therapistId" | "notes">;
 
 type AppointmentRow = {
   id: string;
@@ -140,6 +143,39 @@ export async function createConfirmedAppointmentRequest(
   return toAppointment(data as AppointmentRow);
 }
 
+export async function createBlockedSlotRequest(input: BlockInput) {
+  const supabase = getSupabase();
+
+  if (!supabase) {
+    return blockDemoSlot(input);
+  }
+
+  const appointment: Appointment = {
+    id: `block-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    patientName: `Bloqueo: ${input.notes || "Agenda"}`,
+    patientEmail: "recepcion@fisionova.demo",
+    patientPhone: "-",
+    treatmentId: "general",
+    therapistId: input.therapistId,
+    date: input.date,
+    time: input.time,
+    status: "blocked",
+    notes: input.notes || "Bloqueo manual de recepcion.",
+    wantsEarlier: false,
+  };
+  const { data, error } = await supabase
+    .from("appointments")
+    .insert(toRow(appointment))
+    .select("*")
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return toAppointment(data as AppointmentRow);
+}
+
 export async function confirmAppointmentRequest(appointmentId: string) {
   const supabase = getSupabase();
 
@@ -176,6 +212,29 @@ export async function cancelAppointmentRequest(appointmentId: string) {
     .from("appointments")
     .update({ status: "cancelled" })
     .eq("id", appointmentId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return listAppointments();
+}
+
+export async function updateAppointmentStatusRequest(
+  appointmentId: string,
+  status: Appointment["status"],
+) {
+  const supabase = getSupabase();
+
+  if (!supabase) {
+    return updateDemoAppointmentStatus(appointmentId, status);
+  }
+
+  const { error } = await supabase
+    .from("appointments")
+    .update({ status })
+    .eq("id", appointmentId)
+    .neq("status", "blocked");
 
   if (error) {
     throw new Error(error.message);

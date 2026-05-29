@@ -12,7 +12,17 @@ export type Therapist = {
   specialty: string;
 };
 
-export type AppointmentStatus = "pending" | "confirmed" | "cancelled";
+export type AppointmentStatus =
+  | "pending"
+  | "awaiting_response"
+  | "confirmed"
+  | "patient_confirmed"
+  | "reschedule_proposed"
+  | "payment_pending"
+  | "cancelled"
+  | "no_show"
+  | "completed"
+  | "blocked";
 
 export type Appointment = {
   id: string;
@@ -71,7 +81,13 @@ export type ReceptionAction =
   | { type: "cancel_booking"; message: string; appointmentId: string }
   | { type: "modify_booking"; message: string; appointment: Appointment };
 
-export type EmailEventType = "confirmation" | "modification" | "cancellation";
+export type EmailEventType =
+  | "confirmation"
+  | "modification"
+  | "cancellation"
+  | "reminder"
+  | "reschedule_proposal"
+  | "waitlist_offer";
 
 export type EmailLogItem = {
   id: string;

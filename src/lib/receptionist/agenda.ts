@@ -8,6 +8,20 @@ import type { Appointment, AppointmentSlot } from "./types";
 
 type BookingInput = Omit<Appointment, "id" | "status">;
 
+const blockingStatuses: Appointment["status"][] = [
+  "pending",
+  "awaiting_response",
+  "confirmed",
+  "patient_confirmed",
+  "reschedule_proposed",
+  "payment_pending",
+  "blocked",
+];
+
+export function isBlockingAppointment(appointment: Appointment) {
+  return blockingStatuses.includes(appointment.status);
+}
+
 export function resetAgenda(): Appointment[] {
   return seedAppointments.map((appointment) => ({ ...appointment }));
 }
@@ -18,7 +32,7 @@ export function isSlotAvailable(
 ) {
   return !appointments.some(
     (appointment) =>
-      appointment.status !== "cancelled" &&
+      isBlockingAppointment(appointment) &&
       appointment.date === slot.date &&
       appointment.time === slot.time &&
       appointment.therapistId === slot.therapistId,
@@ -147,5 +161,27 @@ export function updateAppointment(
 
   return appointments.map((appointment) =>
     appointment.id === appointmentId ? next : appointment,
+  );
+}
+
+export function updateAppointmentStatus(
+  appointments: Appointment[],
+  appointmentId: string,
+  status: Appointment["status"],
+): Appointment[] {
+  const current = appointments.find(
+    (appointment) => appointment.id === appointmentId,
+  );
+
+  if (!current) {
+    throw new Error("Appointment not found");
+  }
+
+  if (status === "blocked") {
+    throw new Error("Use a block action to create blocked slots");
+  }
+
+  return appointments.map((appointment) =>
+    appointment.id === appointmentId ? { ...appointment, status } : appointment,
   );
 }

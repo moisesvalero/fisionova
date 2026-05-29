@@ -7,14 +7,16 @@ import { findAvailableSlots } from "@/lib/receptionist/agenda";
 import {
   cancelAppointmentRequest,
   confirmAppointmentRequest,
+  createBlockedSlotRequest,
   createConfirmedAppointmentRequest,
   createAppointmentRequest,
   listAppointments,
   moveAppointmentRequest,
   resetAppointments,
+  updateAppointmentStatusRequest,
 } from "@/lib/receptionist/appointment-repository";
 import { buildAppointmentEmail } from "@/lib/receptionist/email";
-import type { Appointment } from "@/lib/receptionist/types";
+import type { Appointment, EmailEventType } from "@/lib/receptionist/types";
 
 const slotSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -44,6 +46,26 @@ const manualAppointmentSchema = z.object({
   wantsEarlier: z.boolean().default(false),
 });
 
+const appointmentStatusSchema = z.enum([
+  "pending",
+  "awaiting_response",
+  "confirmed",
+  "patient_confirmed",
+  "reschedule_proposed",
+  "payment_pending",
+  "cancelled",
+  "no_show",
+  "completed",
+  "blocked",
+]);
+
+const blockSlotSchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  time: z.string().regex(/^\d{2}:\d{2}$/),
+  therapistId: z.string().min(1).max(80),
+  notes: z.string().min(1).max(120).default("Bloqueo manual"),
+});
+
 const privateActionSchema = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("confirm"),
@@ -65,6 +87,15 @@ const privateActionSchema = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("create_manual"),
     appointment: manualAppointmentSchema,
+  }),
+  z.object({
+    action: z.literal("create_block"),
+    slot: blockSlotSchema,
+  }),
+  z.object({
+    action: z.literal("set_status"),
+    appointmentId: z.string().min(1),
+    status: appointmentStatusSchema.exclude(["blocked"]),
   }),
   z.object({
     action: z.literal("reset"),
@@ -147,7 +178,7 @@ function findVerifiedAppointment(
 }
 
 async function sendAppointmentEmail(
-  type: "confirmation" | "modification" | "cancellation",
+  type: EmailEventType,
   appointment: Appointment,
 ) {
   const email = buildAppointmentEmail(type, appointment);
@@ -362,6 +393,23 @@ export async function PATCH(request: Request) {
     return NextResponse.json({
       appointment,
       appointments: sortAppointments(await listAppointments()),
+    });
+  }
+
+  if (body.action === "create_block") {
+    const appointment = await createBlockedSlotRequest(body.slot);
+
+    return NextResponse.json({
+      appointment,
+      appointments: sortAppointments(await listAppointments()),
+    });
+  }
+
+  if (body.action === "set_status") {
+    return NextResponse.json({
+      appointments: sortAppointments(
+        await updateAppointmentStatusRequest(body.appointmentId, body.status),
+      ),
     });
   }
 

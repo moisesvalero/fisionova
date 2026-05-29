@@ -31,6 +31,7 @@ import {
 } from "@/lib/receptionist/demo-data";
 import type {
   Appointment,
+  AppointmentStatus,
   AppointmentSlot,
   EmailEventType,
   EmailLogItem,
@@ -50,7 +51,7 @@ type EmailPayload = {
   error?: string;
 };
 
-type StatusFilter = Appointment["status"] | "all";
+type StatusFilter = AppointmentStatus | "all";
 type TherapistFilter = "all" | string;
 type FreeSlot = Pick<AppointmentSlot, "date" | "time"> & {
   therapistId?: string;
@@ -64,8 +65,15 @@ type AppointmentFormValues = Omit<Appointment, "id" | "status">;
 const statusOptions: Array<{ label: string; value: StatusFilter }> = [
   { label: "Todas", value: "all" },
   { label: "Pendientes", value: "pending" },
+  { label: "Esperando", value: "awaiting_response" },
   { label: "Confirmadas", value: "confirmed" },
+  { label: "Paciente OK", value: "patient_confirmed" },
+  { label: "Cambio propuesto", value: "reschedule_proposed" },
+  { label: "Pago pendiente", value: "payment_pending" },
+  { label: "Finalizadas", value: "completed" },
+  { label: "No vino", value: "no_show" },
   { label: "Canceladas", value: "cancelled" },
+  { label: "Bloqueos", value: "blocked" },
 ];
 
 function sortAppointments(appointments: Appointment[]) {
@@ -88,10 +96,7 @@ function formatAppointmentDate(date: string) {
   }).format(value);
 }
 
-function countByStatus(
-  appointments: Appointment[],
-  status: Appointment["status"],
-) {
+function countByStatus(appointments: Appointment[], status: AppointmentStatus) {
   return appointments.filter((appointment) => appointment.status === status)
     .length;
 }
@@ -111,15 +116,9 @@ function resolveTherapist(id: string) {
 }
 
 function formatStatus(status: Appointment["status"]) {
-  if (status === "pending") {
-    return "Pendiente";
-  }
-
-  if (status === "confirmed") {
-    return "Confirmada";
-  }
-
-  return "Cancelada";
+  return (
+    statusOptions.find((option) => option.value === status)?.label ?? status
+  );
 }
 
 function getStatusTone(status: Appointment["status"]) {
@@ -127,8 +126,21 @@ function getStatusTone(status: Appointment["status"]) {
     return "border-clinical/30 bg-clinical/10 text-clinical";
   }
 
-  if (status === "confirmed") {
+  if (status === "confirmed" || status === "patient_confirmed") {
     return "border-sage/30 bg-sage/10 text-sage";
+  }
+
+  if (
+    status === "awaiting_response" ||
+    status === "reschedule_proposed" ||
+    status === "payment_pending" ||
+    status === "blocked"
+  ) {
+    return "border-amber-500/30 bg-amber-500/10 text-amber-700";
+  }
+
+  if (status === "completed") {
+    return "border-stone-400/30 bg-stone-500/10 text-stone-600";
   }
 
   return "border-clay/30 bg-clay/10 text-clay";
@@ -148,6 +160,8 @@ function AppointmentDetailModal({
   onConfirm,
   onEdit,
   onMove,
+  onSendReminder,
+  onStatusChange,
 }: {
   appointment: Appointment;
   loading: boolean;
@@ -156,7 +170,11 @@ function AppointmentDetailModal({
   onConfirm: (appointment: Appointment) => void;
   onEdit: (appointment: Appointment) => void;
   onMove: (appointment: Appointment) => void;
+  onSendReminder: (appointment: Appointment) => void;
+  onStatusChange: (appointment: Appointment, status: AppointmentStatus) => void;
 }) {
+  const isBlock = appointment.status === "blocked";
+
   return (
     <div
       className="modal-backdrop bg-charcoal/70 fixed inset-0 z-50 flex items-end justify-center px-3 py-3 backdrop-blur-sm sm:items-center sm:px-4 sm:py-6"
@@ -242,25 +260,76 @@ function AppointmentDetailModal({
                   Confirmar cita
                 </Button>
               ) : null}
-              {appointment.status !== "cancelled" ? (
+              {appointment.status !== "cancelled" &&
+              appointment.status !== "completed" &&
+              appointment.status !== "no_show" ? (
                 <>
-                  <Button
-                    type="button"
-                    disabled={loading}
-                    onClick={() => onEdit(appointment)}
-                  >
-                    <Pencil className="size-4" aria-hidden="true" />
-                    Modificar cita
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    disabled={loading}
-                    onClick={() => onMove(appointment)}
-                  >
-                    <Shuffle className="size-4" aria-hidden="true" />
-                    Mover al siguiente hueco
-                  </Button>
+                  {!isBlock ? (
+                    <>
+                      <Button
+                        type="button"
+                        disabled={loading}
+                        onClick={() => onEdit(appointment)}
+                      >
+                        <Pencil className="size-4" aria-hidden="true" />
+                        Modificar cita
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        disabled={loading}
+                        onClick={() => onSendReminder(appointment)}
+                      >
+                        <Mail className="size-4" aria-hidden="true" />
+                        Enviar recordatorio
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        disabled={loading}
+                        onClick={() =>
+                          onStatusChange(appointment, "awaiting_response")
+                        }
+                      >
+                        Esperando respuesta
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        disabled={loading}
+                        onClick={() =>
+                          onStatusChange(appointment, "payment_pending")
+                        }
+                      >
+                        Pago pendiente
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        disabled={loading}
+                        onClick={() => onStatusChange(appointment, "completed")}
+                      >
+                        Finalizar cita
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        disabled={loading}
+                        onClick={() => onStatusChange(appointment, "no_show")}
+                      >
+                        No se presento
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        disabled={loading}
+                        onClick={() => onMove(appointment)}
+                      >
+                        <Shuffle className="size-4" aria-hidden="true" />
+                        Mover al siguiente hueco
+                      </Button>
+                    </>
+                  ) : null}
                   <Button
                     type="button"
                     variant="ghost"
@@ -268,7 +337,7 @@ function AppointmentDetailModal({
                     onClick={() => onCancel(appointment)}
                   >
                     <XCircle className="size-4" aria-hidden="true" />
-                    Cancelar cita
+                    {isBlock ? "Liberar bloqueo" : "Cancelar cita"}
                   </Button>
                 </>
               ) : (
@@ -475,11 +544,15 @@ function FreeSlotModal({
   slot,
   onClose,
   onCreate,
+  onCreateBlock,
 }: {
   loading: boolean;
   slot: FreeSlot;
   onClose: () => void;
   onCreate: (values: AppointmentFormValues) => void;
+  onCreateBlock: (
+    slot: Pick<Appointment, "date" | "time" | "therapistId" | "notes">,
+  ) => void;
 }) {
   const [patientName, setPatientName] = useState("");
   const [patientEmail, setPatientEmail] = useState("");
@@ -676,6 +749,21 @@ function FreeSlotModal({
               onClick={onClose}
             >
               Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={loading}
+              onClick={() =>
+                onCreateBlock({
+                  date,
+                  time,
+                  therapistId,
+                  notes: notes.trim() || "Bloqueo manual",
+                })
+              }
+            >
+              Bloquear hueco
             </Button>
             <Button type="submit" disabled={loading}>
               {loading ? "Creando..." : "Crear y enviar email"}
@@ -1103,7 +1191,9 @@ export function DoctorAgenda() {
   }
 
   const confirmedCount = useMemo(
-    () => countByStatus(appointments, "confirmed"),
+    () =>
+      countByStatus(appointments, "confirmed") +
+      countByStatus(appointments, "patient_confirmed"),
     [appointments],
   );
   const pendingCount = useMemo(
@@ -1113,6 +1203,28 @@ export function DoctorAgenda() {
   const cancelledCount = useMemo(
     () => countByStatus(appointments, "cancelled"),
     [appointments],
+  );
+  const waitingCount = useMemo(
+    () =>
+      countByStatus(appointments, "awaiting_response") +
+      countByStatus(appointments, "reschedule_proposed"),
+    [appointments],
+  );
+  const waitlistCount = useMemo(
+    () =>
+      appointments.filter(
+        (appointment) =>
+          appointment.wantsEarlier && appointment.status !== "cancelled",
+      ).length,
+    [appointments],
+  );
+  const blockCount = useMemo(
+    () => countByStatus(appointments, "blocked"),
+    [appointments],
+  );
+  const estimatedMinutesSaved = useMemo(
+    () => Math.max(appointments.length - blockCount, 0) * 4 + emails.length * 2,
+    [appointments.length, blockCount, emails.length],
   );
   const agendaDays = useMemo(
     () =>
@@ -1150,8 +1262,11 @@ export function DoctorAgenda() {
   }, [appointments, freedSlot]);
   const nextAppointment = useMemo(
     () =>
-      appointments.find((appointment) => appointment.status === "confirmed") ??
-      null,
+      appointments.find(
+        (appointment) =>
+          appointment.status === "confirmed" ||
+          appointment.status === "patient_confirmed",
+      ) ?? null,
     [appointments],
   );
 
@@ -1236,13 +1351,15 @@ export function DoctorAgenda() {
       markFreedSlot(appointment);
     }
 
-    addEmailLog(
-      await sendEmail(
-        "cancellation",
-        { ...appointment, status: "cancelled" },
-        pin,
-      ),
-    );
+    if (appointment.status !== "blocked") {
+      addEmailLog(
+        await sendEmail(
+          "cancellation",
+          { ...appointment, status: "cancelled" },
+          pin,
+        ),
+      );
+    }
   }
 
   async function handleConfirm(appointment: Appointment) {
@@ -1354,6 +1471,48 @@ export function DoctorAgenda() {
     }
   }
 
+  async function handleCreateBlock(
+    slot: Pick<Appointment, "date" | "time" | "therapistId" | "notes">,
+  ) {
+    const updated = await patchAgenda({
+      action: "create_block",
+      slot,
+    });
+    const block = updated?.find(
+      (appointment) =>
+        appointment.status === "blocked" &&
+        appointment.date === slot.date &&
+        appointment.time === slot.time &&
+        appointment.therapistId === slot.therapistId,
+    );
+
+    if (block) {
+      setSelectedSlot(null);
+      setSelectedAppointment(block);
+    }
+  }
+
+  async function handleStatusChange(
+    appointment: Appointment,
+    status: AppointmentStatus,
+  ) {
+    const updated = await patchAgenda({
+      action: "set_status",
+      appointmentId: appointment.id,
+      status,
+    });
+    const changed = updated?.find((item) => item.id === appointment.id);
+
+    if (changed) {
+      setSelectedAppointment(changed);
+    }
+  }
+
+  async function handleSendReminder(appointment: Appointment) {
+    await handleStatusChange(appointment, "awaiting_response");
+    addEmailLog(await sendEmail("reminder", appointment, pin));
+  }
+
   async function handleMoveCandidateToFreedSlot(
     appointment: Appointment,
     slot: FreedSlot,
@@ -1393,14 +1552,14 @@ export function DoctorAgenda() {
 
         <header className="mb-8 max-w-3xl sm:mb-10">
           <span className="text-sage text-xs tracking-[0.18em] uppercase">
-            Backend privado
+            Recepcion privada
           </span>
           <h1 className="font-display mt-3 text-4xl leading-tight sm:text-5xl lg:text-6xl">
-            Agenda del médico
+            Panel de recepcion
           </h1>
           <p className="text-muted-foreground mt-4 text-base leading-relaxed sm:text-lg">
-            Este panel simula la zona privada de la clínica. Aquí sí se ven las
-            citas completas y se pueden mover, cancelar o restablecer.
+            Zona privada para revisar solicitudes, confirmar citas, bloquear
+            huecos, mandar recordatorios y rellenar cancelaciones.
           </p>
         </header>
 
@@ -1413,7 +1572,7 @@ export function DoctorAgenda() {
               <div>
                 <h2 className="text-base font-semibold">Acceso privado</h2>
                 <p className="text-muted-foreground text-sm">
-                  Introduce el PIN del médico.
+                  Introduce el PIN de recepcion.
                 </p>
               </div>
             </div>
@@ -1505,7 +1664,7 @@ export function DoctorAgenda() {
                     </Button>
                   </div>
 
-                  <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     <button
                       type="button"
                       className="border-border/70 bg-background/65 hover:border-clinical/40 hover:bg-clinical/10 rounded-lg border p-4 text-left transition-all"
@@ -1554,6 +1713,66 @@ export function DoctorAgenda() {
                         no ocupan agenda
                       </p>
                     </button>
+                    <button
+                      type="button"
+                      className="border-border/70 rounded-lg border bg-amber-500/10 p-4 text-left transition-all hover:border-amber-500/40"
+                      onClick={() => setStatusFilter("awaiting_response")}
+                    >
+                      <div className="flex items-center justify-between text-xs font-medium text-amber-700 uppercase">
+                        En espera
+                        <Mail className="size-4" aria-hidden="true" />
+                      </div>
+                      <p className="font-display mt-3 text-3xl leading-none tabular-nums sm:text-4xl">
+                        {waitingCount}
+                      </p>
+                      <p className="text-muted-foreground mt-2 text-xs">
+                        falta respuesta del paciente
+                      </p>
+                    </button>
+                    <button
+                      type="button"
+                      className="border-border/70 bg-background/65 hover:border-sage/40 hover:bg-sage/10 rounded-lg border p-4 text-left transition-all"
+                      onClick={() => setStatusFilter("all")}
+                    >
+                      <div className="text-sage flex items-center justify-between text-xs font-medium uppercase">
+                        Lista espera
+                        <Shuffle className="size-4" aria-hidden="true" />
+                      </div>
+                      <p className="font-display mt-3 text-3xl leading-none tabular-nums sm:text-4xl">
+                        {waitlistCount}
+                      </p>
+                      <p className="text-muted-foreground mt-2 text-xs">
+                        quieren venir antes
+                      </p>
+                    </button>
+                    <button
+                      type="button"
+                      className="border-border/70 bg-background/65 rounded-lg border p-4 text-left transition-all hover:border-amber-500/40 hover:bg-amber-500/10"
+                      onClick={() => setStatusFilter("blocked")}
+                    >
+                      <div className="flex items-center justify-between text-xs font-medium text-amber-700 uppercase">
+                        Bloqueos
+                        <XCircle className="size-4" aria-hidden="true" />
+                      </div>
+                      <p className="font-display mt-3 text-3xl leading-none tabular-nums sm:text-4xl">
+                        {blockCount}
+                      </p>
+                      <p className="text-muted-foreground mt-2 text-xs">
+                        huecos no disponibles
+                      </p>
+                    </button>
+                    <div className="border-border/70 bg-background/65 rounded-lg border p-4 text-left">
+                      <div className="text-muted-foreground flex items-center justify-between text-xs font-medium uppercase">
+                        Tiempo ahorrado
+                        <CalendarClock className="size-4" aria-hidden="true" />
+                      </div>
+                      <p className="font-display mt-3 text-3xl leading-none tabular-nums sm:text-4xl">
+                        {estimatedMinutesSaved}
+                      </p>
+                      <p className="text-muted-foreground mt-2 text-xs">
+                        minutos estimados en demo
+                      </p>
+                    </div>
                   </div>
                 </div>
 
@@ -1676,6 +1895,8 @@ export function DoctorAgenda() {
                   setEditingAppointment(appointment);
                 }}
                 onMove={handleMove}
+                onSendReminder={handleSendReminder}
+                onStatusChange={handleStatusChange}
               />
             ) : null}
 
@@ -1694,6 +1915,7 @@ export function DoctorAgenda() {
                 slot={selectedSlot}
                 onClose={() => setSelectedSlot(null)}
                 onCreate={handleCreateAppointment}
+                onCreateBlock={handleCreateBlock}
               />
             ) : null}
           </section>

@@ -31,6 +31,7 @@ const envSchema = z.object({
   RESEND_REPLY_TO_EMAIL: z.email().optional(),
   RESEND_TEST_RECIPIENT: z.email().optional(),
   DOCTOR_DASHBOARD_PIN: z.string().min(4).default("1234"),
+  APPOINTMENT_ACTION_SECRET: z.string().min(12).optional(),
 });
 
 export const env = envSchema.parse({
@@ -48,4 +49,5 @@ export const env = envSchema.parse({
   RESEND_REPLY_TO_EMAIL: process.env.RESEND_REPLY_TO_EMAIL,
   RESEND_TEST_RECIPIENT: process.env.RESEND_TEST_RECIPIENT,
   DOCTOR_DASHBOARD_PIN: process.env.DOCTOR_DASHBOARD_PIN,
+  APPOINTMENT_ACTION_SECRET: process.env.APPOINTMENT_ACTION_SECRET,
 });

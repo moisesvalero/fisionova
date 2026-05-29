@@ -5,8 +5,10 @@ import {
   bookAppointment,
   cancelAppointment,
   findAvailableSlots,
+  isSlotAvailable,
   resetAgenda,
   updateAppointment,
+  updateAppointmentStatus,
 } from "./agenda";
 
 describe("agenda", () => {
@@ -60,6 +62,21 @@ describe("agenda", () => {
     const appointments = cancelAppointment(seedAppointments, "apt-demo-1");
 
     expect(appointments[0]?.status).toBe("cancelled");
+  });
+
+  it("does not block slots for completed or no-show appointments", () => {
+    const appointments = updateAppointmentStatus(
+      seedAppointments,
+      "apt-demo-1",
+      "completed",
+    );
+    expect(
+      isSlotAvailable(appointments, {
+        date: "2026-06-02",
+        time: "17:00",
+        therapistId: "marta",
+      }),
+    ).toBe(true);
   });
 
   it("updates an appointment to a free slot", () => {

@@ -13,12 +13,30 @@ const appointmentSchema = z.object({
   therapistId: z.string().min(1).max(80),
   date: z.string().min(1).max(20),
   time: z.string().min(1).max(20),
-  status: z.enum(["pending", "confirmed", "cancelled"]),
+  status: z.enum([
+    "pending",
+    "awaiting_response",
+    "confirmed",
+    "patient_confirmed",
+    "reschedule_proposed",
+    "payment_pending",
+    "cancelled",
+    "no_show",
+    "completed",
+    "blocked",
+  ]),
   notes: z.string().max(500).optional(),
 });
 
 const emailRequestSchema = z.object({
-  type: z.enum(["confirmation", "cancellation", "modification"]),
+  type: z.enum([
+    "confirmation",
+    "cancellation",
+    "modification",
+    "reminder",
+    "reschedule_proposal",
+    "waitlist_offer",
+  ]),
   appointment: appointmentSchema,
 });
 

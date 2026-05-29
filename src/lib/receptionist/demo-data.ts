@@ -134,7 +134,7 @@ export const seedAppointments: Appointment[] = [
     therapistId: "alvaro",
     date: "2026-06-02",
     time: "16:00",
-    status: "confirmed",
+    status: "awaiting_response",
     notes: "Seguimiento de movilidad toracica.",
   },
   {
@@ -195,7 +195,7 @@ export const seedAppointments: Appointment[] = [
     therapistId: "alvaro",
     date: "2026-06-04",
     time: "16:00",
-    status: "confirmed",
+    status: "payment_pending",
     notes: "Dolor de hombro derecho.",
   },
   {
@@ -270,5 +270,17 @@ export const seedAppointments: Appointment[] = [
     time: "18:00",
     status: "cancelled",
     notes: "Cambio pendiente de confirmar.",
+  },
+  {
+    id: "apt-demo-18",
+    patientName: "Bloqueo: reunion de equipo",
+    patientEmail: "recepcion@fisionova.demo",
+    patientPhone: "-",
+    treatmentId: "general",
+    therapistId: "marta",
+    date: "2026-06-01",
+    time: "14:00",
+    status: "blocked",
+    notes: "Reunion de recepcion y fisios.",
   },
 ];

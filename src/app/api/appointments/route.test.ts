@@ -241,6 +241,70 @@ describe("/api/appointments", () => {
     );
   });
 
+  it("lets reception block a calendar slot", async () => {
+    resetDemoAppointmentStore();
+
+    const response = await PATCH(
+      new Request("http://localhost/api/appointments", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "x-doctor-pin": "1234",
+        },
+        body: JSON.stringify({
+          action: "create_block",
+          slot: {
+            date: "2026-06-04",
+            time: "18:00",
+            therapistId: "marta",
+            notes: "Reunion interna",
+          },
+        }),
+      }),
+    );
+    const payload = (await response.json()) as {
+      appointment: { status: string; patientName: string };
+    };
+
+    expect(response.status).toBe(200);
+    expect(payload.appointment).toMatchObject({
+      status: "blocked",
+      patientName: "Bloqueo: Reunion interna",
+    });
+  });
+
+  it("lets reception mark a real appointment as waiting for response", async () => {
+    resetDemoAppointmentStore();
+
+    const response = await PATCH(
+      new Request("http://localhost/api/appointments", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "x-doctor-pin": "1234",
+        },
+        body: JSON.stringify({
+          action: "set_status",
+          appointmentId: "apt-demo-1",
+          status: "awaiting_response",
+        }),
+      }),
+    );
+    const payload = (await response.json()) as {
+      appointments: Array<{ id: string; status: string }>;
+    };
+
+    expect(response.status).toBe(200);
+    expect(payload.appointments).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "apt-demo-1",
+          status: "awaiting_response",
+        }),
+      ]),
+    );
+  });
+
   it("lets a verified patient cancel their appointment from chat", async () => {
     resetDemoAppointmentStore();
 
