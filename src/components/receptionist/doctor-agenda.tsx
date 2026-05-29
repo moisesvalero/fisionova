@@ -3,16 +3,20 @@
 import { FormEvent, useMemo, useState } from "react";
 import {
   ArrowLeft,
+  BadgeCheck,
   CalendarCheck2,
   CalendarClock,
   CheckCircle2,
   Filter,
+  GripVertical,
+  Hourglass,
   LockKeyhole,
   Mail,
   Pencil,
   Phone,
   Plus,
   Shuffle,
+  Sparkles,
   UserRound,
   X,
   XCircle,
@@ -22,7 +26,6 @@ import Link from "next/link";
 import { EmailLog } from "@/components/receptionist/email-log";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { findAvailableSlots } from "@/lib/receptionist/agenda";
 import {
   availableTimes,
   demoDates,
@@ -69,8 +72,6 @@ const statusOptions: Array<{ label: string; value: StatusFilter }> = [
   { label: "Confirmadas", value: "confirmed" },
   { label: "Paciente OK", value: "patient_confirmed" },
   { label: "Cambio propuesto", value: "reschedule_proposed" },
-  { label: "Pago pendiente", value: "payment_pending" },
-  { label: "Finalizadas", value: "completed" },
   { label: "No vino", value: "no_show" },
   { label: "Canceladas", value: "cancelled" },
   { label: "Bloqueos", value: "blocked" },
@@ -133,17 +134,97 @@ function getStatusTone(status: Appointment["status"]) {
   if (
     status === "awaiting_response" ||
     status === "reschedule_proposed" ||
-    status === "payment_pending" ||
     status === "blocked"
   ) {
     return "border-amber-500/30 bg-amber-500/10 text-amber-700";
   }
 
-  if (status === "completed") {
-    return "border-stone-400/30 bg-stone-500/10 text-stone-600";
+  return "border-clay/30 bg-clay/10 text-clay";
+}
+
+function canDragAppointment(appointment: Appointment) {
+  return !["blocked", "cancelled", "no_show"].includes(appointment.status);
+}
+
+function getAppointmentCardTone(status: Appointment["status"]) {
+  if (status === "pending") {
+    return "border-clinical/30 bg-clinical/10";
   }
 
-  return "border-clay/30 bg-clay/10 text-clay";
+  if (status === "confirmed" || status === "patient_confirmed") {
+    return "border-sage/30 bg-sage/15";
+  }
+
+  if (
+    status === "awaiting_response" ||
+    status === "reschedule_proposed" ||
+    status === "blocked"
+  ) {
+    return "border-amber-500/30 bg-amber-500/10";
+  }
+
+  return "border-clay/30 bg-clay/10 opacity-75";
+}
+
+function getStatusDotTone(status: Appointment["status"]) {
+  if (status === "pending") {
+    return "bg-clinical";
+  }
+
+  if (status === "confirmed" || status === "patient_confirmed") {
+    return "bg-sage";
+  }
+
+  if (
+    status === "awaiting_response" ||
+    status === "reschedule_proposed" ||
+    status === "blocked"
+  ) {
+    return "bg-amber-500";
+  }
+
+  return "bg-clay";
+}
+
+function AppointmentBadges({ appointment }: { appointment: Appointment }) {
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+      {appointment.status === "patient_confirmed" ? (
+        <span className="border-sage/25 bg-sage/10 text-sage inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium">
+          <BadgeCheck className="size-3" aria-hidden="true" />
+          Paciente OK
+        </span>
+      ) : null}
+      {appointment.status === "awaiting_response" ||
+      appointment.status === "reschedule_proposed" ? (
+        <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/25 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-700">
+          <Hourglass className="size-3" aria-hidden="true" />
+          Respuesta
+        </span>
+      ) : null}
+      {appointment.status === "blocked" ? (
+        <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/25 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-700">
+          <XCircle className="size-3" aria-hidden="true" />
+          Bloqueo
+        </span>
+      ) : null}
+      {appointment.wantsEarlier ? (
+        <span className="border-clinical/25 bg-clinical/10 text-clinical inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium">
+          <Sparkles className="size-3" aria-hidden="true" />
+          Antes
+        </span>
+      ) : null}
+      {canDragAppointment(appointment) ? (
+        <span
+          className="text-muted-foreground border-border/60 bg-background/50 hidden items-center rounded-full border px-1.5 py-0.5 md:inline-flex"
+          title="Arrastrar para cambiar de hueco"
+        >
+          <GripVertical className="size-3" aria-hidden="true" />
+          <span className="sr-only">Arrastrar para cambiar de hueco</span>
+        </span>
+      ) : null}
+    </div>
+  );
 }
 
 function isAfterSlot(appointment: Appointment, slot: FreedSlot) {
@@ -159,7 +240,6 @@ function AppointmentDetailModal({
   onClose,
   onConfirm,
   onEdit,
-  onMove,
   onSendReminder,
   onStatusChange,
   statusMessage,
@@ -170,7 +250,6 @@ function AppointmentDetailModal({
   onClose: () => void;
   onConfirm: (appointment: Appointment) => void;
   onEdit: (appointment: Appointment) => void;
-  onMove: (appointment: Appointment) => void;
   onSendReminder: (appointment: Appointment) => void;
   onStatusChange: (appointment: Appointment, status: AppointmentStatus) => void;
   statusMessage: string;
@@ -271,7 +350,6 @@ function AppointmentDetailModal({
                 </Button>
               ) : null}
               {appointment.status !== "cancelled" &&
-              appointment.status !== "completed" &&
               appointment.status !== "no_show" ? (
                 <>
                   {!isBlock ? (
@@ -309,42 +387,11 @@ function AppointmentDetailModal({
                       </Button>
                       <Button
                         type="button"
-                        variant={
-                          appointment.status === "payment_pending"
-                            ? "default"
-                            : "ghost"
-                        }
-                        disabled={loading}
-                        onClick={() =>
-                          onStatusChange(appointment, "payment_pending")
-                        }
-                      >
-                        Pago pendiente
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        disabled={loading}
-                        onClick={() => onStatusChange(appointment, "completed")}
-                      >
-                        Finalizar cita
-                      </Button>
-                      <Button
-                        type="button"
                         variant="ghost"
                         disabled={loading}
                         onClick={() => onStatusChange(appointment, "no_show")}
                       >
                         No se presento
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        disabled={loading}
-                        onClick={() => onMove(appointment)}
-                      >
-                        <Shuffle className="size-4" aria-hidden="true" />
-                        Mover al siguiente hueco
                       </Button>
                     </>
                   ) : null}
@@ -529,7 +576,7 @@ function AppointmentEditModal({
               value={notes}
               maxLength={500}
               onChange={(event) => setNotes(event.target.value)}
-              placeholder="Motivo, observaciones o contexto de recepcion."
+              placeholder="Ej: pendiente de pagar, prefiere tardes, llamar antes de confirmar."
             />
           </label>
 
@@ -755,7 +802,7 @@ function FreeSlotModal({
               value={notes}
               maxLength={500}
               onChange={(event) => setNotes(event.target.value)}
-              placeholder="Motivo o contexto de recepcion."
+              placeholder="Ej: pendiente de pagar, prefiere tardes, viene por dolor lumbar."
             />
           </label>
 
@@ -871,12 +918,8 @@ function AppointmentCalendar({
                             key={appointment.id}
                             type="button"
                             className={cn(
-                              "focus:ring-ring/40 w-full rounded-lg border px-3 py-3 text-left text-sm shadow-sm transition-all focus:ring-2 focus:outline-none",
-                              appointment.status === "confirmed"
-                                ? "border-sage/30 bg-sage/15"
-                                : appointment.status === "pending"
-                                  ? "border-clinical/30 bg-clinical/10"
-                                  : "border-clay/30 bg-clay/10 opacity-75",
+                              "focus:ring-ring/40 w-full cursor-pointer rounded-lg border px-3 py-3 text-left text-sm shadow-sm transition-all focus:ring-2 focus:outline-none",
+                              getAppointmentCardTone(appointment.status),
                             )}
                             onClick={() => onSelectAppointment(appointment)}
                           >
@@ -887,11 +930,7 @@ function AppointmentCalendar({
                               <span
                                 className={cn(
                                   "mt-1 h-2.5 w-2.5 shrink-0 rounded-full",
-                                  appointment.status === "confirmed"
-                                    ? "bg-sage"
-                                    : appointment.status === "pending"
-                                      ? "bg-clinical"
-                                      : "bg-clay",
+                                  getStatusDotTone(appointment.status),
                                 )}
                               />
                             </div>
@@ -902,14 +941,10 @@ function AppointmentCalendar({
                               )}{" "}
                               min
                             </p>
-                            {appointment.wantsEarlier ? (
-                              <p className="text-sage mt-1 text-xs font-medium">
-                                Lista de espera
-                              </p>
-                            ) : null}
                             <p className="text-muted-foreground mt-1 leading-snug">
                               {resolveTherapist(appointment.therapistId)}
                             </p>
+                            <AppointmentBadges appointment={appointment} />
                           </button>
                         ))}
                       </div>
@@ -1004,17 +1039,21 @@ function AppointmentCalendar({
                           <button
                             key={appointment.id}
                             type="button"
-                            draggable={appointment.status !== "cancelled"}
+                            draggable={canDragAppointment(appointment)}
                             className={cn(
                               "focus:ring-ring/40 w-full rounded-md border px-3 py-2 text-left text-xs shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus:ring-2 focus:outline-none",
-                              appointment.status === "confirmed"
-                                ? "border-sage/30 bg-sage/15"
-                                : appointment.status === "pending"
-                                  ? "border-clinical/30 bg-clinical/10"
-                                  : "border-clay/30 bg-clay/10 opacity-75",
+                              canDragAppointment(appointment)
+                                ? "cursor-grab active:cursor-grabbing"
+                                : "cursor-pointer",
+                              getAppointmentCardTone(appointment.status),
                             )}
                             onClick={() => onSelectAppointment(appointment)}
                             onDragStart={(event) => {
+                              if (!canDragAppointment(appointment)) {
+                                event.preventDefault();
+                                return;
+                              }
+
                               event.dataTransfer.setData(
                                 "text/plain",
                                 appointment.id,
@@ -1029,11 +1068,7 @@ function AppointmentCalendar({
                               <span
                                 className={cn(
                                   "mt-0.5 h-2 w-2 shrink-0 rounded-full",
-                                  appointment.status === "confirmed"
-                                    ? "bg-sage"
-                                    : appointment.status === "pending"
-                                      ? "bg-clinical"
-                                      : "bg-clay",
+                                  getStatusDotTone(appointment.status),
                                 )}
                               />
                             </div>
@@ -1044,14 +1079,10 @@ function AppointmentCalendar({
                               )}{" "}
                               min
                             </p>
-                            {appointment.wantsEarlier ? (
-                              <p className="text-sage mt-1 truncate text-[11px] font-medium">
-                                Lista de espera
-                              </p>
-                            ) : null}
                             <p className="text-muted-foreground mt-1 truncate">
                               {resolveTherapist(appointment.therapistId)}
                             </p>
+                            <AppointmentBadges appointment={appointment} />
                           </button>
                         ))}
                       </div>
@@ -1400,31 +1431,6 @@ export function DoctorAgenda() {
     }
   }
 
-  async function handleMove(appointment: Appointment) {
-    const [slot] = findAvailableSlots(appointments, {
-      treatmentId: appointment.treatmentId,
-    });
-
-    if (!slot) {
-      setError("No hay huecos disponibles para mover esta cita.");
-      return;
-    }
-
-    const updated = await patchAgenda({
-      action: "move",
-      appointmentId: appointment.id,
-      slot,
-    });
-    const moved = updated?.find((item) => item.id === appointment.id);
-
-    if (moved) {
-      setSelectedAppointment(moved);
-      markFreedSlot(appointment);
-      setActionMessage("Cita movida al siguiente hueco disponible.");
-      addEmailLog(await sendEmail("modification", moved, pin));
-    }
-  }
-
   async function handleMoveToSlot(appointment: Appointment, slot: FreeSlot) {
     if (appointment.status === "cancelled") {
       return;
@@ -1525,14 +1531,6 @@ export function DoctorAgenda() {
   function getStatusMessage(status: AppointmentStatus) {
     if (status === "awaiting_response") {
       return "Marcada como respuesta pendiente.";
-    }
-
-    if (status === "payment_pending") {
-      return "Marcada como pago pendiente.";
-    }
-
-    if (status === "completed") {
-      return "Cita finalizada.";
     }
 
     if (status === "no_show") {
@@ -1951,7 +1949,6 @@ export function DoctorAgenda() {
                   setSelectedAppointment(null);
                   setEditingAppointment(appointment);
                 }}
-                onMove={handleMove}
                 onSendReminder={handleSendReminder}
                 onStatusChange={handleStatusChange}
                 statusMessage={actionMessage}

@@ -64,11 +64,11 @@ describe("agenda", () => {
     expect(appointments[0]?.status).toBe("cancelled");
   });
 
-  it("does not block slots for completed or no-show appointments", () => {
+  it("does not block slots for no-show appointments", () => {
     const appointments = updateAppointmentStatus(
       seedAppointments,
       "apt-demo-1",
-      "completed",
+      "no_show",
     );
     expect(
       isSlotAvailable(appointments, {

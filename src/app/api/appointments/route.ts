@@ -52,10 +52,8 @@ const appointmentStatusSchema = z.enum([
   "confirmed",
   "patient_confirmed",
   "reschedule_proposed",
-  "payment_pending",
   "cancelled",
   "no_show",
-  "completed",
   "blocked",
 ]);
 

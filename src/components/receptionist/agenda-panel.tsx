@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  CalendarDays,
-  CheckCircle2,
-  RotateCcw,
-  Shuffle,
-  XCircle,
-} from "lucide-react";
+import { CalendarDays, CheckCircle2, RotateCcw, XCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { therapists, treatments } from "@/lib/receptionist/demo-data";
@@ -16,7 +10,6 @@ type AgendaPanelProps = {
   appointments: Appointment[];
   onConfirm: (appointment: Appointment) => void;
   onCancel: (appointment: Appointment) => void;
-  onMove: (appointment: Appointment) => void;
   onReset: () => void;
 };
 
@@ -38,7 +31,6 @@ export function AgendaPanel({
   appointments,
   onConfirm,
   onCancel,
-  onMove,
   onReset,
 }: AgendaPanelProps) {
   return (
@@ -115,16 +107,6 @@ export function AgendaPanel({
                     Confirmar
                   </Button>
                 ) : null}
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  className="h-8"
-                  onClick={() => onMove(appointment)}
-                >
-                  <Shuffle className="size-4" aria-hidden="true" />
-                  Mover
-                </Button>
                 <Button
                   type="button"
                   size="sm"

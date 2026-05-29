@@ -195,7 +195,7 @@ export const seedAppointments: Appointment[] = [
     therapistId: "alvaro",
     date: "2026-06-04",
     time: "16:00",
-    status: "payment_pending",
+    status: "confirmed",
     notes: "Dolor de hombro derecho.",
   },
   {

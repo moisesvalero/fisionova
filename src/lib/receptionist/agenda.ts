@@ -14,7 +14,6 @@ const blockingStatuses: Appointment["status"][] = [
   "confirmed",
   "patient_confirmed",
   "reschedule_proposed",
-  "payment_pending",
   "blocked",
 ];
 

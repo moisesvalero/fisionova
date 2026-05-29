@@ -7,7 +7,7 @@ create table if not exists public.appointments (
   therapist_id text not null,
   date date not null,
   time text not null,
-  status text not null check (status in ('pending', 'awaiting_response', 'confirmed', 'patient_confirmed', 'reschedule_proposed', 'payment_pending', 'cancelled', 'no_show', 'completed', 'blocked')),
+  status text not null check (status in ('pending', 'awaiting_response', 'confirmed', 'patient_confirmed', 'reschedule_proposed', 'cancelled', 'no_show', 'blocked')),
   notes text,
   wants_earlier boolean not null default false,
   created_at timestamptz not null default now(),
@@ -22,13 +22,13 @@ alter table public.appointments
 
 alter table public.appointments
   add constraint appointments_status_check
-  check (status in ('pending', 'awaiting_response', 'confirmed', 'patient_confirmed', 'reschedule_proposed', 'payment_pending', 'cancelled', 'no_show', 'completed', 'blocked'));
+  check (status in ('pending', 'awaiting_response', 'confirmed', 'patient_confirmed', 'reschedule_proposed', 'cancelled', 'no_show', 'blocked'));
 
 drop index if exists appointments_active_slot_idx;
 
 create unique index appointments_active_slot_idx
   on public.appointments (date, time, therapist_id)
-  where status in ('pending', 'awaiting_response', 'confirmed', 'patient_confirmed', 'reschedule_proposed', 'payment_pending', 'blocked');
+  where status in ('pending', 'awaiting_response', 'confirmed', 'patient_confirmed', 'reschedule_proposed', 'blocked');
 
 create index if not exists appointments_status_idx
   on public.appointments (status, date, time);

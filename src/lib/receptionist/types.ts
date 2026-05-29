@@ -18,10 +18,8 @@ export type AppointmentStatus =
   | "confirmed"
   | "patient_confirmed"
   | "reschedule_proposed"
-  | "payment_pending"
   | "cancelled"
   | "no_show"
-  | "completed"
   | "blocked";
 
 export type Appointment = {
