@@ -64,7 +64,7 @@ export async function POST(request: Request) {
   const emailHtml = env.RESEND_TEST_RECIPIENT
     ? email.html.replace(
         "</body>",
-        `<p style="font-family:Arial,Helvetica,sans-serif;color:#69756f;font-size:12px;text-align:center;">Destinatario original: ${body.appointment.patientEmail}</p></body>`,
+        `<p style="font-family:Verdana,sans-serif;color:#69756f;font-size:12px;text-align:center;">Destinatario original: ${body.appointment.patientEmail}</p></body>`,
       )
     : email.html;
 

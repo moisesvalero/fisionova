@@ -57,6 +57,7 @@ type EmailPayload = {
 
 type StatusFilter = AppointmentStatus | "all";
 type TherapistFilter = "all" | string;
+type CalendarView = "day" | "week" | "month";
 type FreeSlot = Pick<AppointmentSlot, "date" | "time"> & {
   therapistId?: string;
 };
@@ -128,6 +129,19 @@ function normalizeSearchText(value: string) {
     .toLowerCase()
     .normalize("NFD")
     .replace(/\p{Diacritic}/gu, "");
+}
+
+function formatMonthLabel(date: string) {
+  const value = new Date(`${date}T00:00:00`);
+
+  if (Number.isNaN(value.getTime())) {
+    return date;
+  }
+
+  return new Intl.DateTimeFormat("es-ES", {
+    month: "long",
+    year: "numeric",
+  }).format(value);
 }
 
 function getStatusTone(status: Appointment["status"]) {
@@ -882,20 +896,31 @@ function FreeSlotModal({
 
 function AppointmentCalendar({
   appointments,
+  view,
   selectedDay,
   selectedTherapist,
+  onViewChange,
   onMoveToSlot,
   onSelectAppointment,
   onSelectSlot,
 }: {
   appointments: Appointment[];
+  view: CalendarView;
   selectedDay: string;
   selectedTherapist: TherapistFilter;
+  onViewChange: (view: CalendarView) => void;
   onMoveToSlot: (appointment: Appointment, slot: FreeSlot) => void;
   onSelectAppointment: (appointment: Appointment) => void;
   onSelectSlot: (slot: FreeSlot) => void;
 }) {
-  const days = selectedDay === "all" ? demoDates : [selectedDay];
+  const selectedDateForView =
+    selectedDay === "all" ? demoDates[0]! : selectedDay;
+  const days =
+    view === "day"
+      ? [selectedDateForView]
+      : selectedDay === "all"
+        ? demoDates
+        : [selectedDay];
   const appointmentsBySlot = useMemo(() => {
     const grouped = new Map<string, Appointment[]>();
 
@@ -906,22 +931,87 @@ function AppointmentCalendar({
 
     return grouped;
   }, [appointments]);
+  const appointmentsByDate = useMemo(() => {
+    const grouped = new Map<string, Appointment[]>();
+
+    for (const appointment of appointments) {
+      grouped.set(appointment.date, [
+        ...(grouped.get(appointment.date) ?? []),
+        appointment,
+      ]);
+    }
+
+    return grouped;
+  }, [appointments]);
+  const monthDays = useMemo(() => {
+    const monthStart = new Date(`${selectedDateForView}T00:00:00`);
+
+    if (Number.isNaN(monthStart.getTime())) {
+      return [];
+    }
+
+    const year = monthStart.getFullYear();
+    const month = monthStart.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const startOffset = (firstDay.getDay() + 6) % 7;
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const cells: Array<{ date: string; dayNumber: number | null }> = [];
+
+    for (let index = 0; index < startOffset; index += 1) {
+      cells.push({ date: "", dayNumber: null });
+    }
+
+    for (let day = 1; day <= daysInMonth; day += 1) {
+      const date = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      cells.push({ date, dayNumber: day });
+    }
+
+    while (cells.length % 7 !== 0) {
+      cells.push({ date: "", dayNumber: null });
+    }
+
+    return cells;
+  }, [selectedDateForView]);
+  const viewOptions: Array<{ label: string; value: CalendarView }> = [
+    { label: "Dia", value: "day" },
+    { label: "Semana", value: "week" },
+    { label: "Mes", value: "month" },
+  ];
 
   return (
-    <section className="glass shadow-elegant border-border/60 overflow-hidden rounded-xl border">
-      <header className="border-border/60 flex flex-col gap-2 border-b px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+    <section className="glass shadow-elegant border-border/60 flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border">
+      <header className="border-border/60 flex shrink-0 flex-col gap-2 border-b px-4 py-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="text-muted-foreground inline-flex items-center gap-2 text-xs font-medium tracking-[0.16em] uppercase">
             <CalendarCheck2 className="size-4" aria-hidden="true" />
             Calendario semanal
           </div>
-          <h2 className="font-display mt-2 text-3xl leading-tight">
-            Agenda semanal
+          <h2 className="font-display mt-1 text-xl leading-tight">
+            {view === "month"
+              ? formatMonthLabel(selectedDateForView)
+              : view === "day"
+                ? formatAppointmentDate(selectedDateForView)
+                : "Agenda semanal"}
           </h2>
         </div>
-        <p className="text-muted-foreground text-sm">
-          Horas bloqueadas, pacientes y profesional asignado.
-        </p>
+        <div className="border-border/70 bg-background/70 grid grid-cols-3 rounded-md border p-1">
+          {viewOptions.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              aria-pressed={view === option.value}
+              className={cn(
+                "rounded px-3 py-1.5 text-xs font-medium transition-colors",
+                view === option.value
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+              onClick={() => onViewChange(option.value)}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
       </header>
 
       <div className="grid gap-3 px-4 py-4 md:hidden">
@@ -1014,143 +1104,255 @@ function AppointmentCalendar({
         ))}
       </div>
 
-      <div className="hidden overflow-x-auto md:block">
-        <div className="min-w-[920px]">
-          <div
-            className="border-border/60 grid border-b"
-            style={{
-              gridTemplateColumns: `88px repeat(${days.length}, minmax(160px, 1fr))`,
-            }}
-          >
-            <div className="bg-background/70 border-border/60 text-muted-foreground border-r px-4 py-3 text-xs font-medium tracking-[0.14em] uppercase">
-              Hora
-            </div>
-            {days.map((day) => (
+      {view === "month" ? (
+        <div className="hidden min-h-0 flex-1 grid-rows-[auto_1fr] md:grid">
+          <div className="border-border/60 grid grid-cols-7 border-b">
+            {["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"].map((day) => (
               <div
                 key={day}
-                className="bg-background/70 border-border/60 border-r px-4 py-3 last:border-r-0"
+                className="bg-background/70 border-border/60 text-muted-foreground border-r px-3 py-2 text-xs font-medium tracking-[0.14em] uppercase last:border-r-0"
               >
-                <p className="font-display text-xl capitalize">
-                  {formatAppointmentDate(day)}
-                </p>
-                <p className="text-muted-foreground mt-1 text-xs tabular-nums">
-                  {day}
-                </p>
+                {day}
               </div>
             ))}
           </div>
+          <div
+            className="grid min-h-0"
+            style={{
+              gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
+              gridTemplateRows: `repeat(${Math.max(monthDays.length / 7, 1)}, minmax(0, 1fr))`,
+            }}
+          >
+            {monthDays.map((cell, index) => {
+              const dayAppointments = cell.date
+                ? (appointmentsByDate.get(cell.date) ?? [])
+                : [];
+              const activeCount = dayAppointments.filter(
+                (appointment) =>
+                  appointment.status !== "cancelled" &&
+                  appointment.status !== "no_show",
+              ).length;
 
-          {availableTimes.map((time) => (
-            <div
-              key={time}
-              className="border-border/50 grid min-h-32 border-b last:border-b-0"
-              style={{
-                gridTemplateColumns: `88px repeat(${days.length}, minmax(160px, 1fr))`,
-              }}
-            >
-              <div className="bg-background/45 border-border/60 text-muted-foreground border-r px-4 py-4 text-sm font-medium tabular-nums">
-                {time}
-              </div>
-              {days.map((day) => {
-                const slotAppointments =
-                  appointmentsBySlot.get(`${day}-${time}`) ?? [];
+              return (
+                <button
+                  key={`${cell.date || "empty"}-${index}`}
+                  type="button"
+                  disabled={!cell.date}
+                  className={cn(
+                    "border-border/50 bg-background/25 min-h-0 border-r border-b p-2 text-left transition-colors last:border-r-0",
+                    cell.date
+                      ? "hover:bg-sage/10 cursor-pointer"
+                      : "bg-background/10 cursor-default",
+                  )}
+                  onClick={() => {
+                    if (!cell.date) {
+                      return;
+                    }
 
-                return (
-                  <div
-                    key={`${day}-${time}`}
-                    className="border-border/50 bg-background/25 min-h-32 border-r p-2 last:border-r-0"
-                    onDragOver={(event) => event.preventDefault()}
-                    onDrop={(event) => {
-                      event.preventDefault();
-                      const appointmentId =
-                        event.dataTransfer.getData("text/plain");
-                      const appointment = appointments.find(
-                        (item) => item.id === appointmentId,
-                      );
-
-                      if (appointment) {
-                        onMoveToSlot(appointment, { date: day, time });
-                      }
-                    }}
-                  >
-                    {slotAppointments.length > 0 ? (
-                      <div className="space-y-2">
-                        {slotAppointments.map((appointment) => (
-                          <button
+                    onSelectSlot({
+                      date: cell.date,
+                      time: availableTimes[0]!,
+                      therapistId:
+                        selectedTherapist === "all"
+                          ? undefined
+                          : selectedTherapist,
+                    });
+                  }}
+                >
+                  {cell.dayNumber ? (
+                    <>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-medium tabular-nums">
+                          {cell.dayNumber}
+                        </span>
+                        {activeCount > 0 ? (
+                          <span className="bg-sage/15 text-sage rounded-full px-2 py-0.5 text-[11px] font-semibold">
+                            {activeCount}
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="mt-2 space-y-1">
+                        {dayAppointments.slice(0, 3).map((appointment) => (
+                          <span
                             key={appointment.id}
-                            type="button"
-                            draggable={canDragAppointment(appointment)}
                             className={cn(
-                              "focus:ring-ring/40 w-full rounded-md border px-3 py-2 text-left text-xs shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus:ring-2 focus:outline-none",
-                              canDragAppointment(appointment)
-                                ? "cursor-grab active:cursor-grabbing"
-                                : "cursor-pointer",
+                              "block truncate rounded px-2 py-1 text-[11px] font-medium",
                               getAppointmentCardTone(appointment.status),
                             )}
-                            onClick={() => onSelectAppointment(appointment)}
-                            onDragStart={(event) => {
-                              if (!canDragAppointment(appointment)) {
-                                event.preventDefault();
-                                return;
-                              }
-
-                              event.dataTransfer.setData(
-                                "text/plain",
-                                appointment.id,
-                              );
-                              event.dataTransfer.effectAllowed = "move";
-                            }}
                           >
-                            <div className="flex items-start justify-between gap-2">
-                              <p className="leading-snug font-medium">
-                                {appointment.patientName}
-                              </p>
-                              <span
-                                className={cn(
-                                  "mt-0.5 h-2 w-2 shrink-0 rounded-full",
-                                  getStatusDotTone(appointment.status),
-                                )}
-                              />
-                            </div>
-                            <p className="text-muted-foreground mt-1 truncate">
-                              {resolveTreatment(appointment.treatmentId)} ·{" "}
-                              {resolveTreatmentDuration(
-                                appointment.treatmentId,
-                              )}{" "}
-                              min
-                            </p>
-                            <p className="text-muted-foreground mt-1 truncate">
-                              {resolveTherapist(appointment.therapistId)}
-                            </p>
-                            <AppointmentBadges appointment={appointment} />
-                          </button>
+                            {appointment.time} {appointment.patientName}
+                          </span>
                         ))}
+                        {dayAppointments.length > 3 ? (
+                          <span className="text-muted-foreground block text-[11px]">
+                            +{dayAppointments.length - 3} mas
+                          </span>
+                        ) : null}
                       </div>
-                    ) : (
-                      <button
-                        type="button"
-                        className="border-border/50 text-muted-foreground/70 hover:border-sage/40 hover:bg-sage/10 hover:text-foreground flex h-full min-h-28 w-full items-center justify-center rounded-md border border-dashed text-xs transition-colors"
-                        onClick={() =>
-                          onSelectSlot({
-                            date: day,
-                            time,
-                            therapistId:
-                              selectedTherapist === "all"
-                                ? undefined
-                                : selectedTherapist,
-                          })
-                        }
-                      >
-                        Libre
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          ))}
+                    </>
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      ) : (
+        <div
+          className="hidden min-h-0 flex-1 grid-rows-[auto_repeat(9,minmax(0,1fr))] md:grid"
+          style={{
+            gridTemplateRows: `auto repeat(${availableTimes.length}, minmax(0, 1fr))`,
+          }}
+        >
+          <div className="min-w-0">
+            <div
+              className="border-border/60 grid border-b"
+              style={{
+                gridTemplateColumns: `72px repeat(${days.length}, minmax(0, 1fr))`,
+              }}
+            >
+              <div className="bg-background/70 border-border/60 text-muted-foreground border-r px-3 py-2 text-xs font-medium tracking-[0.14em] uppercase">
+                Hora
+              </div>
+              {days.map((day) => (
+                <div
+                  key={day}
+                  className="bg-background/70 border-border/60 border-r px-3 py-1.5 last:border-r-0"
+                >
+                  <p className="font-display text-base capitalize">
+                    {formatAppointmentDate(day)}
+                  </p>
+                  <p className="text-muted-foreground mt-1 text-xs tabular-nums">
+                    {day}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            {availableTimes.map((time) => (
+              <div
+                key={time}
+                className="border-border/50 grid min-h-0 border-b last:border-b-0"
+                style={{
+                  gridTemplateColumns: `72px repeat(${days.length}, minmax(0, 1fr))`,
+                }}
+              >
+                <div className="bg-background/45 border-border/60 text-muted-foreground border-r px-3 py-2 text-xs font-medium tabular-nums">
+                  {time}
+                </div>
+                {days.map((day) => {
+                  const slotAppointments =
+                    appointmentsBySlot.get(`${day}-${time}`) ?? [];
+
+                  return (
+                    <div
+                      key={`${day}-${time}`}
+                      className="border-border/50 bg-background/25 min-h-0 overflow-hidden border-r p-1 last:border-r-0"
+                      onDragOver={(event) => event.preventDefault()}
+                      onDrop={(event) => {
+                        event.preventDefault();
+                        const appointmentId =
+                          event.dataTransfer.getData("text/plain");
+                        const appointment = appointments.find(
+                          (item) => item.id === appointmentId,
+                        );
+
+                        if (appointment) {
+                          onMoveToSlot(appointment, { date: day, time });
+                        }
+                      }}
+                    >
+                      {slotAppointments.length > 0 ? (
+                        <div className="space-y-1.5">
+                          {slotAppointments.slice(0, 1).map((appointment) => (
+                            <button
+                              key={appointment.id}
+                              type="button"
+                              draggable={canDragAppointment(appointment)}
+                              className={cn(
+                                "focus:ring-ring/40 w-full rounded-md border px-2 py-1 text-left text-[10px] shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus:ring-2 focus:outline-none",
+                                canDragAppointment(appointment)
+                                  ? "cursor-grab active:cursor-grabbing"
+                                  : "cursor-pointer",
+                                getAppointmentCardTone(appointment.status),
+                              )}
+                              onClick={() => onSelectAppointment(appointment)}
+                              onDragStart={(event) => {
+                                if (!canDragAppointment(appointment)) {
+                                  event.preventDefault();
+                                  return;
+                                }
+
+                                event.dataTransfer.setData(
+                                  "text/plain",
+                                  appointment.id,
+                                );
+                                event.dataTransfer.effectAllowed = "move";
+                              }}
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <p className="leading-snug font-medium">
+                                  {appointment.patientName}
+                                </p>
+                                <span
+                                  className={cn(
+                                    "mt-0.5 h-2 w-2 shrink-0 rounded-full",
+                                    getStatusDotTone(appointment.status),
+                                  )}
+                                />
+                              </div>
+                              <p className="text-muted-foreground truncate">
+                                {resolveTreatment(appointment.treatmentId)} ·{" "}
+                                {resolveTreatmentDuration(
+                                  appointment.treatmentId,
+                                )}{" "}
+                                min
+                              </p>
+                              <p className="text-muted-foreground hidden truncate 2xl:block">
+                                {resolveTherapist(appointment.therapistId)}
+                              </p>
+                              <div className="hidden 2xl:block">
+                                <AppointmentBadges appointment={appointment} />
+                              </div>
+                            </button>
+                          ))}
+                          {slotAppointments.length > 1 ? (
+                            <button
+                              type="button"
+                              className="bg-background/70 text-muted-foreground border-border/60 w-full rounded-md border px-2 py-1 text-left text-[10px] font-medium"
+                              onClick={() =>
+                                onSelectAppointment(slotAppointments[1]!)
+                              }
+                            >
+                              +{slotAppointments.length - 1} mas
+                            </button>
+                          ) : null}
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          className="border-border/50 text-muted-foreground/70 hover:border-sage/40 hover:bg-sage/10 hover:text-foreground flex h-full min-h-0 w-full items-center justify-center rounded-md border border-dashed text-xs transition-colors"
+                          onClick={() =>
+                            onSelectSlot({
+                              date: day,
+                              time,
+                              therapistId:
+                                selectedTherapist === "all"
+                                  ? undefined
+                                  : selectedTherapist,
+                            })
+                          }
+                        >
+                          Libre
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </section>
   );
 }
@@ -1262,6 +1464,7 @@ export function DoctorAgenda() {
   const [therapistFilter, setTherapistFilter] =
     useState<TherapistFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [calendarView, setCalendarView] = useState<CalendarView>("week");
   const [selectedAppointment, setSelectedAppointment] =
     useState<Appointment | null>(null);
   const [editingAppointment, setEditingAppointment] =
@@ -1648,26 +1851,28 @@ export function DoctorAgenda() {
   }
 
   return (
-    <main className="bg-background text-foreground min-h-screen px-4 py-6 sm:px-6 sm:py-8 lg:px-12">
-      <div className="mx-auto max-w-[1600px]">
+    <main className="bg-background text-foreground min-h-screen px-3 py-4 sm:px-5 lg:overflow-hidden lg:px-8">
+      <div className="mx-auto flex min-h-[calc(100svh-2rem)] max-w-[1760px] flex-col">
         <Link
           href="/"
-          className="text-muted-foreground hover:text-foreground mb-8 inline-flex items-center gap-2 text-sm transition-colors"
+          className="text-muted-foreground hover:text-foreground mb-4 inline-flex items-center gap-2 text-sm transition-colors"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           Volver a la web pública
         </Link>
 
-        <header className="mb-8 max-w-3xl sm:mb-10">
-          <span className="text-sage text-xs tracking-[0.18em] uppercase">
-            Recepcion privada
-          </span>
-          <h1 className="font-display mt-3 text-4xl leading-tight sm:text-5xl lg:text-6xl">
-            Panel de recepcion
-          </h1>
-          <p className="text-muted-foreground mt-4 text-base leading-relaxed sm:text-lg">
-            Zona privada para revisar solicitudes, confirmar citas, bloquear
-            huecos, mandar recordatorios y rellenar cancelaciones.
+        <header className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <span className="text-sage text-xs tracking-[0.18em] uppercase">
+              Recepcion privada
+            </span>
+            <h1 className="font-display mt-2 text-3xl leading-tight sm:text-4xl lg:text-5xl">
+              Panel de recepcion
+            </h1>
+          </div>
+          <p className="text-muted-foreground max-w-2xl text-sm leading-relaxed sm:text-base">
+            Solicitudes, agenda, cambios y emails en una sola pantalla de
+            trabajo.
           </p>
         </header>
 
@@ -1711,26 +1916,24 @@ export function DoctorAgenda() {
             </form>
           </section>
         ) : (
-          <section className="grid gap-5 xl:grid-cols-[340px_minmax(0,1fr)]">
+          <section className="reception-workspace grid flex-1 gap-4 xl:min-h-0 xl:grid-cols-[320px_minmax(0,1fr)]">
             {error ? (
               <p className="text-clay text-sm xl:col-span-2" role="alert">
                 {error}
               </p>
             ) : null}
-            <aside className="glass shadow-elegant border-border/60 overflow-hidden rounded-xl border xl:sticky xl:top-6 xl:max-h-[calc(100svh-3rem)] xl:self-start xl:overflow-y-auto">
-              <div className="flex flex-col">
-                <div className="flex flex-col gap-5 p-5 lg:p-6">
-                  <div className="flex flex-col gap-3">
+            <aside className="glass shadow-elegant border-border/60 rounded-xl border xl:min-h-0 xl:overflow-hidden">
+              <div className="flex h-full flex-col">
+                <div className="flex flex-col gap-2 p-3">
+                  <div className="flex flex-col gap-2">
                     <div>
                       <div className="text-muted-foreground inline-flex items-center gap-2 text-xs font-medium tracking-[0.16em] uppercase">
                         <CalendarClock className="size-4" aria-hidden="true" />
                         Vista operativa
                       </div>
-                      <h2 className="font-display mt-3 text-3xl leading-tight">
-                        Cuadro de citas
-                      </h2>
+                      <h2 className="sr-only">Cuadro de citas</h2>
                     </div>
-                    <div className="border-border/70 bg-background/70 rounded-md border px-3 py-2 text-sm">
+                    <div className="hidden">
                       <span className="text-muted-foreground block text-[11px] tracking-[0.12em] uppercase">
                         Proxima visita
                       </span>
@@ -1742,10 +1945,10 @@ export function DoctorAgenda() {
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-2">
+                  <div className="grid grid-cols-3 gap-2">
                     <Button
                       type="button"
-                      className="h-10"
+                      className="h-9 justify-center"
                       disabled={loading}
                       onClick={() =>
                         setSelectedSlot({
@@ -1764,7 +1967,7 @@ export function DoctorAgenda() {
                     <Button
                       type="button"
                       variant="ghost"
-                      className="border-border/70 bg-background/60 h-10 border"
+                      className="border-border/70 bg-background/60 h-9 justify-center border"
                       disabled={loading}
                       onClick={() => loadAgenda(pin)}
                     >
@@ -1772,128 +1975,114 @@ export function DoctorAgenda() {
                     </Button>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-3 gap-2">
                     <button
                       type="button"
-                      className="border-border/70 bg-background/65 hover:border-clinical/40 hover:bg-clinical/10 rounded-lg border p-4 text-left transition-all"
+                      className="border-border/70 bg-background/65 hover:border-clinical/40 hover:bg-clinical/10 rounded-lg border p-2 text-left transition-all"
                       onClick={() => setStatusFilter("pending")}
                     >
                       <div className="text-clinical flex items-center justify-between text-xs font-medium uppercase">
                         Pendientes
                         <CalendarCheck2 className="size-4" aria-hidden="true" />
                       </div>
-                      <p className="font-display mt-3 text-3xl leading-none tabular-nums sm:text-4xl">
+                      <p className="font-display mt-2 text-xl leading-none tabular-nums">
                         {pendingCount}
                       </p>
-                      <p className="text-muted-foreground mt-2 text-xs">
-                        necesitan confirmación humana
-                      </p>
+                      <p className="sr-only">confirmar</p>
                     </button>
                     <button
                       type="button"
-                      className="border-border/70 bg-sage/10 hover:border-sage/40 rounded-lg border p-4 text-left transition-all"
+                      className="border-border/70 bg-sage/10 hover:border-sage/40 rounded-lg border p-2 text-left transition-all"
                       onClick={() => setStatusFilter("confirmed")}
                     >
                       <div className="text-sage flex items-center justify-between text-xs font-medium uppercase">
                         Confirmadas
                         <CheckCircle2 className="size-4" aria-hidden="true" />
                       </div>
-                      <p className="font-display mt-3 text-3xl leading-none tabular-nums sm:text-4xl">
+                      <p className="font-display mt-2 text-xl leading-none tabular-nums">
                         {confirmedCount}
                       </p>
-                      <p className="text-muted-foreground mt-2 text-xs">
-                        agenda bloqueada
-                      </p>
+                      <p className="sr-only">agenda</p>
                     </button>
                     <button
                       type="button"
-                      className="rounded-lg border border-red-700/35 bg-red-600/15 p-4 text-left transition-all hover:border-red-700/55 hover:bg-red-600/20"
+                      className="rounded-lg border border-red-700/35 bg-red-600/15 p-2 text-left transition-all hover:border-red-700/55 hover:bg-red-600/20"
                       onClick={() => setStatusFilter("cancelled")}
                     >
                       <div className="flex items-center justify-between text-xs font-medium text-red-800 uppercase">
                         Canceladas
                         <XCircle className="size-4" aria-hidden="true" />
                       </div>
-                      <p className="font-display mt-3 text-3xl leading-none tabular-nums sm:text-4xl">
+                      <p className="font-display mt-2 text-xl leading-none tabular-nums">
                         {cancelledCount}
                       </p>
-                      <p className="text-muted-foreground mt-2 text-xs">
-                        no ocupan agenda
-                      </p>
+                      <p className="sr-only">liberadas</p>
                     </button>
                     <button
                       type="button"
-                      className="border-border/70 rounded-lg border bg-amber-500/10 p-4 text-left transition-all hover:border-amber-500/40"
+                      className="border-border/70 rounded-lg border bg-amber-500/10 p-2 text-left transition-all hover:border-amber-500/40"
                       onClick={() => setStatusFilter("awaiting_response")}
                     >
                       <div className="flex items-center justify-between text-xs font-medium text-amber-700 uppercase">
-                        Respuesta pendiente
+                        Respuesta
                         <Mail className="size-4" aria-hidden="true" />
                       </div>
-                      <p className="font-display mt-3 text-3xl leading-none tabular-nums sm:text-4xl">
+                      <p className="font-display mt-2 text-xl leading-none tabular-nums">
                         {waitingCount}
                       </p>
-                      <p className="text-muted-foreground mt-2 text-xs">
-                        falta respuesta del paciente
-                      </p>
+                      <p className="sr-only">avisos</p>
                     </button>
                     <button
                       type="button"
-                      className="border-border/70 bg-background/65 hover:border-sage/40 hover:bg-sage/10 rounded-lg border p-4 text-left transition-all"
+                      className="border-border/70 bg-background/65 hover:border-sage/40 hover:bg-sage/10 rounded-lg border p-2 text-left transition-all"
                       onClick={() => setStatusFilter("all")}
                     >
                       <div className="text-sage flex items-center justify-between text-xs font-medium uppercase">
                         Lista espera
                         <Shuffle className="size-4" aria-hidden="true" />
                       </div>
-                      <p className="font-display mt-3 text-3xl leading-none tabular-nums sm:text-4xl">
+                      <p className="font-display mt-2 text-xl leading-none tabular-nums">
                         {waitlistCount}
                       </p>
-                      <p className="text-muted-foreground mt-2 text-xs">
-                        quieren venir antes
-                      </p>
+                      <p className="sr-only">adelantar</p>
                     </button>
                     <button
                       type="button"
-                      className="border-border/70 bg-background/65 rounded-lg border p-4 text-left transition-all hover:border-amber-500/40 hover:bg-amber-500/10"
+                      className="border-border/70 bg-background/65 rounded-lg border p-2 text-left transition-all hover:border-amber-500/40 hover:bg-amber-500/10"
                       onClick={() => setStatusFilter("blocked")}
                     >
                       <div className="flex items-center justify-between text-xs font-medium text-amber-700 uppercase">
                         Bloqueos
                         <XCircle className="size-4" aria-hidden="true" />
                       </div>
-                      <p className="font-display mt-3 text-3xl leading-none tabular-nums sm:text-4xl">
+                      <p className="font-display mt-2 text-xl leading-none tabular-nums">
                         {blockCount}
                       </p>
-                      <p className="text-muted-foreground mt-2 text-xs">
-                        huecos no disponibles
-                      </p>
+                      <p className="sr-only">bloqueados</p>
                     </button>
-                    <div className="border-border/70 bg-background/65 rounded-lg border p-4 text-left">
+                    <div className="border-border/70 bg-background/65 rounded-lg border p-2 text-left">
                       <div className="text-muted-foreground flex items-center justify-between text-xs font-medium uppercase">
-                        Tiempo ahorrado
+                        Ahorro
                         <CalendarClock className="size-4" aria-hidden="true" />
                       </div>
-                      <p className="font-display mt-3 text-3xl leading-none tabular-nums sm:text-4xl">
+                      <p className="font-display mt-2 text-xl leading-none tabular-nums">
                         {estimatedMinutesSaved}
                       </p>
-                      <p className="text-muted-foreground mt-2 text-xs">
-                        minutos estimados en demo
-                      </p>
+                      <p className="sr-only">min. demo</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="border-border/60 flex flex-col justify-between gap-5 border-t p-5 lg:p-6">
+                <div className="border-border/60 flex flex-1 flex-col justify-between gap-3 border-t p-3">
                   <div>
                     <div className="text-muted-foreground mb-3 flex items-center gap-2 text-xs font-medium tracking-[0.16em] uppercase">
                       <Filter className="size-4" aria-hidden="true" />
                       Filtros
                     </div>
-                    <div className="flex flex-col gap-4">
-                      <label className="flex flex-col gap-2 text-sm font-medium">
+                    <div className="grid grid-cols-2 gap-3">
+                      <label className="col-span-2 flex flex-col gap-2 text-sm font-medium">
                         Buscar
-                        <div className="border-input bg-background focus-within:ring-ring/40 flex h-10 items-center gap-2 rounded-md border px-3 text-sm transition-shadow focus-within:ring-2">
+                        <div className="border-input bg-background focus-within:ring-ring/40 flex h-9 items-center gap-2 rounded-md border px-3 text-sm transition-shadow focus-within:ring-2">
                           <Search
                             className="text-muted-foreground size-4 shrink-0"
                             aria-hidden="true"
@@ -1922,7 +2111,7 @@ export function DoctorAgenda() {
                       <label className="flex flex-col gap-2 text-sm font-medium">
                         Dia
                         <select
-                          className="border-input bg-background focus:ring-ring/40 h-10 rounded-md border px-3 text-sm outline-none focus:ring-2"
+                          className="border-input bg-background focus:ring-ring/40 h-9 rounded-md border px-3 text-sm outline-none focus:ring-2"
                           value={dayFilter}
                           onChange={(event) => setDayFilter(event.target.value)}
                         >
@@ -1938,7 +2127,7 @@ export function DoctorAgenda() {
                       <label className="flex flex-col gap-2 text-sm font-medium">
                         Profesional
                         <select
-                          className="border-input bg-background focus:ring-ring/40 h-10 rounded-md border px-3 text-sm outline-none focus:ring-2"
+                          className="border-input bg-background focus:ring-ring/40 h-9 rounded-md border px-3 text-sm outline-none focus:ring-2"
                           value={therapistFilter}
                           onChange={(event) =>
                             setTherapistFilter(event.target.value)
@@ -1953,44 +2142,46 @@ export function DoctorAgenda() {
                         </select>
                       </label>
 
-                      <div className="flex flex-col gap-2">
+                      <div className="col-span-2 flex flex-col gap-2">
                         <span className="text-sm font-medium">Estado</span>
-                        <div className="bg-background/70 border-border/70 grid grid-cols-2 rounded-md border p-1">
+                        <select
+                          className="border-input bg-background focus:ring-ring/40 h-9 rounded-md border px-3 text-sm outline-none focus:ring-2"
+                          value={statusFilter}
+                          onChange={(event) =>
+                            setStatusFilter(event.target.value as StatusFilter)
+                          }
+                        >
                           {statusOptions.map((option) => (
-                            <button
-                              key={option.value}
-                              type="button"
-                              aria-pressed={statusFilter === option.value}
-                              className={cn(
-                                "rounded px-2 py-2 text-xs font-medium transition-colors",
-                                statusFilter === option.value
-                                  ? "bg-primary text-primary-foreground"
-                                  : "text-muted-foreground hover:text-foreground",
-                              )}
-                              onClick={() => setStatusFilter(option.value)}
-                            >
+                            <option key={option.value} value={option.value}>
                               {option.label}
-                            </button>
+                            </option>
                           ))}
-                        </div>
+                        </select>
                       </div>
                     </div>
                   </div>
 
-                  <div className="border-border/60 bg-background/55 rounded-lg border px-4 py-3 text-sm">
-                    <span className="text-muted-foreground block text-xs">
-                      Mostrando
-                    </span>
-                    <strong className="font-display text-2xl font-normal tabular-nums">
-                      {filteredAppointments.length}
-                    </strong>{" "}
-                    de {appointments.length} citas
+                  <div className="hidden gap-3 2xl:grid">
+                    <div className="border-border/60 bg-background/55 rounded-lg border px-4 py-3 text-sm">
+                      <span className="text-muted-foreground block text-xs">
+                        Mostrando
+                      </span>
+                      <strong className="font-display text-2xl font-normal tabular-nums">
+                        {filteredAppointments.length}
+                      </strong>{" "}
+                      de {appointments.length} citas
+                    </div>
+                    <EmailLog
+                      emails={emails}
+                      compact
+                      className="hidden 2xl:block"
+                    />
                   </div>
                 </div>
               </div>
             </aside>
 
-            <div className="flex min-w-0 flex-col gap-5">
+            <div className="flex min-h-0 min-w-0 flex-col gap-4">
               {freedSlot ? (
                 <FreedSlotPanel
                   candidates={waitlistCandidates}
@@ -2003,8 +2194,10 @@ export function DoctorAgenda() {
 
               <AppointmentCalendar
                 appointments={filteredAppointments}
+                view={calendarView}
                 selectedDay={dayFilter}
                 selectedTherapist={therapistFilter}
+                onViewChange={setCalendarView}
                 onMoveToSlot={handleMoveToSlot}
                 onSelectAppointment={(appointment) => {
                   setSelectedSlot(null);
@@ -2019,8 +2212,6 @@ export function DoctorAgenda() {
                   setSelectedSlot(slot);
                 }}
               />
-
-              <EmailLog emails={emails} />
             </div>
 
             {selectedAppointment ? (

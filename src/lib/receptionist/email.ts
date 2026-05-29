@@ -103,7 +103,7 @@ export function buildAppointmentEmail(
     ].join("\n"),
     html: `<!doctype html>
 <html lang="es">
-  <body style="margin:0;background:#f4f0e8;font-family:Arial,Helvetica,sans-serif;color:#24302e;">
+  <body style="margin:0;background:#f4f0e8;font-family:Verdana,sans-serif;color:#24302e;">
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f0e8;padding:28px 12px;">
       <tr>
         <td align="center">
