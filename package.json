@@ -2,6 +2,7 @@
   "name": "next-agent-template",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://proyecto-ia-recepcionista.vercel.app/",
   "license": "CC-BY-NC-4.0",
   "scripts": {
     "dev": "next dev",

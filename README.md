@@ -1,6 +1,14 @@
 # FisioNova Clinica, recepcionista IA para fisioterapia
 
+[![Demo en Vercel](https://img.shields.io/badge/Demo-Vercel-black?logo=vercel)](https://proyecto-ia-recepcionista.vercel.app/)
+![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=nextdotjs)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=111)
+![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
+![License](https://img.shields.io/badge/license-CC--BY--NC--4.0-lightgrey)
+
 Demo publica para portfolio tecnico: una web app de una clinica de fisioterapia ficticia con recepcionista IA, solicitud de citas, agenda privada para el medico y confirmaciones por email.
+
+**Demo online:** [https://proyecto-ia-recepcionista.vercel.app/](https://proyecto-ia-recepcionista.vercel.app/)
 
 ![Captura de FisioNova Clinica](docs/images/home-screenshot.png)
 
