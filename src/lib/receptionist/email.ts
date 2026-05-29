@@ -61,9 +61,8 @@ export function buildAppointmentEmail(
       `Clinica: ${clinicProfile.address}`,
       `Telefono: ${clinicProfile.phone}`,
       "",
-      "Proyecto demo desarrollado por Moises Valero.",
-      "Si te gusta este trabajo y quieres algo parecido para tu empresa, puedes contratarme aqui:",
-      "moisesvalero.es",
+      "Este email pertenece a una demo tecnica de Moises Valero.",
+      `Portfolio: ${portfolioUrl}`,
     ].join("\n"),
     html: `<!doctype html>
 <html lang="es">
@@ -101,15 +100,12 @@ export function buildAppointmentEmail(
                   </tr>
                 </table>
                 ${changeFallbackHtml}
-                <div style="background:#eef5ed;border:1px solid #d7e6d5;border-radius:12px;padding:18px;">
-                  <p style="margin:0 0 12px;font-size:14px;line-height:1.55;color:#31413b;">Esta demo ha sido desarrollada por <strong>Moises Valero</strong>. Si te gusta este trabajo y quieres algo parecido para tu empresa, puedes ver mi portfolio aqui:</p>
-                  <a href="${portfolioUrl}" style="display:inline-block;background:#22312d;color:#fffaf2;text-decoration:none;border-radius:8px;padding:11px 16px;font-size:14px;font-weight:700;">Ver portfolio</a>
-                </div>
+                <p style="margin:0;font-size:12px;line-height:1.5;color:#7b857f;">Demo tecnica desarrollada por Moises Valero. Portfolio: <a href="${portfolioUrl}" style="color:#4f625b;text-decoration:underline;">moisesvalero.es</a></p>
               </td>
             </tr>
             <tr>
               <td style="padding:18px 28px;background:#f7f2ea;color:#7b857f;font-size:12px;line-height:1.5;">
-                ${escapeHtml(clinicProfile.phone)} · Proyecto demo de portfolio tecnico
+                ${escapeHtml(clinicProfile.phone)} · Email transaccional de cita
               </td>
             </tr>
           </table>

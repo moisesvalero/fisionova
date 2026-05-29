@@ -113,6 +113,7 @@ DOCTOR_DASHBOARD_PIN=1234
 # Resend opcional
 RESEND_API_KEY=
 RESEND_FROM_EMAIL=onboarding@resend.dev
+RESEND_REPLY_TO_EMAIL=
 ```
 
 Sin `OPENAI_API_KEY`, se usa fallback local basado en reglas. Sin `SUPABASE_SERVICE_ROLE_KEY`, las citas viven en memoria durante la sesion del servidor. Sin `RESEND_API_KEY`, los emails se simulan.
@@ -129,11 +130,23 @@ Sin `OPENAI_API_KEY`, se usa fallback local basado en reglas. Sin `SUPABASE_SERV
 4. Para emails reales:
    - `RESEND_API_KEY`
    - `RESEND_FROM_EMAIL`
+   - `RESEND_REPLY_TO_EMAIL` si quieres que las respuestas vayan a otra cuenta.
 5. Para persistencia real:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
    - `SUPABASE_SERVICE_ROLE_KEY`
    - Ejecuta `supabase/appointments.sql` en tu proyecto Supabase.
+
+### Entregabilidad de emails
+
+Para reducir la probabilidad de spam en Resend:
+
+- Usa un dominio verificado con SPF y DKIM activos.
+- Mantén DMARC publicado en DNS. Para empezar: `v=DMARC1; p=none; rua=mailto:tu-email@tu-dominio.com;`.
+- Envía desde una cuenta real del dominio, por ejemplo `FisioNova <citas@moisesvalero.es>`, y configura `RESEND_REPLY_TO_EMAIL`.
+- Evita mezclar emails transaccionales con llamadas comerciales agresivas. El email de cita mantiene el portfolio como firma pequeña.
+- En Resend, revisa cada envío en **Emails > Insights** para confirmar que pasan SPF, DKIM y DMARC.
+
 6. Ejecuta antes:
 
 ```bash

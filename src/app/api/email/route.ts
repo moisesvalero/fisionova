@@ -30,6 +30,10 @@ function unauthorized() {
   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 }
 
+function formatSender(email: string) {
+  return `FisioNova <${email}>`;
+}
+
 export async function POST(request: Request) {
   if (!isAuthorized(request)) {
     return unauthorized();
@@ -61,13 +65,30 @@ export async function POST(request: Request) {
     headers: {
       Authorization: `Bearer ${env.RESEND_API_KEY}`,
       "Content-Type": "application/json",
+      "Idempotency-Key": `${body.type}-${body.appointment.id}`,
+      "User-Agent": "FisioNova-Appointment-Emails/1.0",
     },
     body: JSON.stringify({
-      from: env.RESEND_FROM_EMAIL,
+      from: formatSender(env.RESEND_FROM_EMAIL),
       to: recipient,
+      reply_to: env.RESEND_REPLY_TO_EMAIL ?? env.RESEND_FROM_EMAIL,
       subject: email.subject,
       text: emailBody,
       html: emailHtml,
+      headers: {
+        "X-Entity-Ref-ID": `${body.type}-${body.appointment.id}`,
+        "X-Auto-Response-Suppress": "All",
+      },
+      tags: [
+        {
+          name: "category",
+          value: "appointment",
+        },
+        {
+          name: "event",
+          value: body.type,
+        },
+      ],
     }),
   });
 

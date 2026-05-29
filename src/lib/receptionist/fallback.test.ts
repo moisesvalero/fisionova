@@ -110,7 +110,8 @@ describe("fallback receptionist", () => {
 
     expect(email.subject).toContain("confirmada");
     expect(email.body).toContain("moisesvalero.es");
-    expect(email.html).toContain("Ver portfolio");
+    expect(email.html).not.toContain("Ver portfolio");
+    expect(email.html).not.toContain("contratarme");
     expect(email.html).toContain("https://moisesvalero.es/");
     expect(email.body).toContain("Laura Gómez");
   });
