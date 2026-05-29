@@ -1059,13 +1059,13 @@ function AppointmentCalendar({
   return (
     <>
       <section className="glass shadow-elegant border-border/60 flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border">
-        <header className="border-border/60 flex shrink-0 flex-col gap-2 border-b px-4 py-2 sm:flex-row sm:items-center sm:justify-between">
+        <header className="border-border/60 flex shrink-0 flex-col gap-2 border-b px-4 py-2 sm:flex-row sm:items-center sm:justify-between lg:py-1.5">
           <div>
             <div className="text-muted-foreground inline-flex items-center gap-2 text-xs font-medium tracking-[0.16em] uppercase">
               <CalendarCheck2 className="size-4" aria-hidden="true" />
               Calendario semanal
             </div>
-            <h2 className="font-display mt-1 text-xl leading-tight">
+            <h2 className="font-display mt-1 text-xl leading-tight lg:text-lg">
               {view === "month"
                 ? formatMonthLabel(selectedDateForView)
                 : view === "day"
@@ -1080,7 +1080,7 @@ function AppointmentCalendar({
                 type="button"
                 aria-pressed={view === option.value}
                 className={cn(
-                  "rounded px-3 py-1.5 text-xs font-medium transition-colors",
+                  "rounded px-3 py-1.5 text-xs font-medium transition-colors lg:py-1",
                   view === option.value
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:text-foreground",
@@ -1285,9 +1285,9 @@ function AppointmentCalendar({
                 {days.map((day) => (
                   <div
                     key={day}
-                    className="bg-background/70 border-border/60 border-r px-3 py-1.5 last:border-r-0"
+                    className="bg-background/70 border-border/60 border-r px-3 py-1.5 last:border-r-0 lg:py-1"
                   >
-                    <p className="font-display text-base capitalize">
+                    <p className="font-display text-base capitalize lg:text-sm">
                       {formatAppointmentDate(day)}
                     </p>
                     <p className="text-muted-foreground mt-1 text-xs tabular-nums">
@@ -1338,7 +1338,7 @@ function AppointmentCalendar({
                                 type="button"
                                 draggable={canDragAppointment(appointment)}
                                 className={cn(
-                                  "focus:ring-ring/40 w-full rounded-md border px-2 py-1 text-left text-[10px] shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus:ring-2 focus:outline-none",
+                                  "focus:ring-ring/40 w-full rounded-md border px-1.5 py-0.5 text-left text-[10px] shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus:ring-2 focus:outline-none",
                                   canDragAppointment(appointment)
                                     ? "cursor-grab active:cursor-grabbing"
                                     : "cursor-pointer",
@@ -1375,7 +1375,7 @@ function AppointmentCalendar({
                                     />
                                   </div>
                                 </div>
-                                <p className="text-muted-foreground truncate">
+                                <p className="text-muted-foreground hidden truncate min-[1600px]:block">
                                   {resolveTreatment(appointment.treatmentId)} ·{" "}
                                   {resolveTreatmentDuration(
                                     appointment.treatmentId,
@@ -2094,21 +2094,28 @@ export function DoctorAgenda() {
       <div className="mx-auto flex min-h-[calc(100svh-2rem)] max-w-[1760px] flex-col lg:h-full lg:min-h-0">
         <Link
           href="/"
-          className="text-muted-foreground hover:text-foreground mb-4 inline-flex items-center gap-2 text-sm transition-colors lg:mb-2"
+          className="text-muted-foreground hover:text-foreground mb-4 inline-flex items-center gap-2 text-sm transition-colors lg:hidden"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           Volver a la web pública
         </Link>
 
-        <header className="mb-4 flex flex-col gap-3 lg:mb-2 lg:flex-row lg:items-end lg:justify-between">
+        <header className="mb-4 flex flex-col gap-3 lg:mb-2 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <span className="text-sage text-xs tracking-[0.18em] uppercase">
               Recepcion privada
             </span>
-            <h1 className="font-display mt-1 text-2xl leading-tight sm:mt-2 sm:text-4xl lg:text-4xl">
+            <h1 className="font-display mt-1 text-2xl leading-tight sm:mt-2 sm:text-4xl lg:mt-0.5 lg:text-3xl">
               Panel de recepcion
             </h1>
           </div>
+          <Link
+            href="/"
+            className="text-muted-foreground hover:text-foreground hidden items-center gap-1.5 text-xs transition-colors lg:inline-flex"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
+            Volver a la web publica
+          </Link>
         </header>
 
         {!authorized ? (
@@ -2491,14 +2498,14 @@ export function DoctorAgenda() {
 
               <section
                 className={cn(
-                  "glass shadow-elegant border-border/60 shrink-0 rounded-xl border p-3",
+                  "glass shadow-elegant border-border/60 shrink-0 rounded-xl border p-3 lg:p-2",
                   mobilePanel !== "filters" && "hidden xl:block",
                 )}
               >
-                <div className="grid gap-3 lg:grid-cols-[minmax(220px,1fr)_150px_190px_150px_auto] lg:items-end 2xl:grid-cols-[minmax(260px,1.1fr)_180px_220px_180px_auto]">
-                  <label className="flex flex-col gap-1.5 text-xs font-medium">
+                <div className="grid gap-3 lg:grid-cols-[minmax(220px,1fr)_150px_190px_150px_auto] lg:items-end lg:gap-2 2xl:grid-cols-[minmax(260px,1.1fr)_180px_220px_180px_auto]">
+                  <label className="flex flex-col gap-1.5 text-xs font-medium lg:gap-1 lg:text-[11px]">
                     Buscar
-                    <div className="border-input bg-background focus-within:ring-ring/40 flex h-9 items-center gap-2 rounded-md border px-3 text-sm transition-shadow focus-within:ring-2">
+                    <div className="border-input bg-background focus-within:ring-ring/40 flex h-9 items-center gap-2 rounded-md border px-3 text-sm transition-shadow focus-within:ring-2 lg:h-8 lg:px-2 lg:text-xs">
                       <Search
                         className="text-muted-foreground size-4 shrink-0"
                         aria-hidden="true"
@@ -2522,10 +2529,10 @@ export function DoctorAgenda() {
                     </div>
                   </label>
 
-                  <label className="flex flex-col gap-1.5 text-xs font-medium">
+                  <label className="flex flex-col gap-1.5 text-xs font-medium lg:gap-1 lg:text-[11px]">
                     Dia
                     <select
-                      className="border-input bg-background focus:ring-ring/40 h-9 rounded-md border px-3 text-sm outline-none focus:ring-2"
+                      className="border-input bg-background focus:ring-ring/40 h-9 rounded-md border px-3 text-sm outline-none focus:ring-2 lg:h-8 lg:px-2 lg:text-xs"
                       value={dayFilter}
                       onChange={(event) => setDayFilter(event.target.value)}
                     >
@@ -2538,10 +2545,10 @@ export function DoctorAgenda() {
                     </select>
                   </label>
 
-                  <label className="flex flex-col gap-1.5 text-xs font-medium">
+                  <label className="flex flex-col gap-1.5 text-xs font-medium lg:gap-1 lg:text-[11px]">
                     Profesional
                     <select
-                      className="border-input bg-background focus:ring-ring/40 h-9 rounded-md border px-3 text-sm outline-none focus:ring-2"
+                      className="border-input bg-background focus:ring-ring/40 h-9 rounded-md border px-3 text-sm outline-none focus:ring-2 lg:h-8 lg:px-2 lg:text-xs"
                       value={therapistFilter}
                       onChange={(event) =>
                         setTherapistFilter(event.target.value)
@@ -2556,10 +2563,10 @@ export function DoctorAgenda() {
                     </select>
                   </label>
 
-                  <label className="flex flex-col gap-1.5 text-xs font-medium">
+                  <label className="flex flex-col gap-1.5 text-xs font-medium lg:gap-1 lg:text-[11px]">
                     Estado
                     <select
-                      className="border-input bg-background focus:ring-ring/40 h-9 rounded-md border px-3 text-sm outline-none focus:ring-2"
+                      className="border-input bg-background focus:ring-ring/40 h-9 rounded-md border px-3 text-sm outline-none focus:ring-2 lg:h-8 lg:px-2 lg:text-xs"
                       value={statusFilter}
                       onChange={(event) =>
                         setStatusFilter(event.target.value as StatusFilter)
@@ -2573,11 +2580,11 @@ export function DoctorAgenda() {
                     </select>
                   </label>
 
-                  <div className="border-border/60 bg-background/55 rounded-md border px-3 py-2 text-sm lg:text-right">
+                  <div className="border-border/60 bg-background/55 rounded-md border px-3 py-2 text-sm lg:px-2 lg:py-1 lg:text-right lg:text-xs">
                     <span className="text-muted-foreground block text-[11px] tracking-[0.12em] uppercase">
                       Mostrando
                     </span>
-                    <strong className="font-display text-xl font-normal tabular-nums">
+                    <strong className="font-display text-xl font-normal tabular-nums lg:text-base">
                       {filteredAppointments.length}
                     </strong>{" "}
                     de {appointments.length}
