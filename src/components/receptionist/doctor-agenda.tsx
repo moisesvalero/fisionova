@@ -1621,6 +1621,58 @@ function FreedSlotPanel({
   );
 }
 
+function EmailLogModal({
+  emails,
+  onClose,
+}: {
+  emails: EmailLogItem[];
+  onClose: () => void;
+}) {
+  return (
+    <div
+      className="modal-backdrop bg-charcoal/70 fixed inset-0 z-50 flex items-end justify-center px-3 py-3 backdrop-blur-sm sm:items-center sm:px-4 sm:py-6"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="email-log-title"
+    >
+      <article className="modal-panel glass shadow-elegant border-border/60 relative max-h-[calc(100dvh-1.5rem)] w-full max-w-2xl overflow-y-auto rounded-2xl border">
+        <button
+          type="button"
+          className="text-muted-foreground hover:text-foreground hover:bg-background/70 absolute top-4 right-4 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full transition-colors"
+          onClick={onClose}
+        >
+          <X className="size-5" aria-hidden="true" />
+          <span className="sr-only">Cerrar historial de emails</span>
+        </button>
+
+        <header className="border-border/60 bg-background/85 border-b px-5 py-5 pr-16 sm:px-7">
+          <span className="text-sage inline-flex items-center gap-2 text-xs font-medium tracking-[0.16em] uppercase">
+            <Mail className="size-4" aria-hidden="true" />
+            Comunicaciones
+          </span>
+          <h2
+            id="email-log-title"
+            className="font-display mt-3 text-2xl leading-tight sm:text-3xl"
+          >
+            Historial de emails
+          </h2>
+          <p className="text-muted-foreground mt-2 text-sm">
+            Confirmaciones, cambios, cancelaciones y recordatorios enviados
+            durante esta sesion.
+          </p>
+        </header>
+
+        <div className="px-5 py-5 sm:px-7">
+          <EmailLog
+            emails={emails}
+            className="border-0 bg-transparent shadow-none"
+          />
+        </div>
+      </article>
+    </div>
+  );
+}
+
 async function sendEmail(
   type: EmailEventType,
   appointment: Appointment,
@@ -1667,6 +1719,7 @@ export function DoctorAgenda() {
   const [editingPreset, setEditingPreset] =
     useState<AppointmentEditPreset | null>(null);
   const [emails, setEmails] = useState<EmailLogItem[]>([]);
+  const [showEmailLog, setShowEmailLog] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<FreeSlot | null>(null);
   const [freedSlot, setFreedSlot] = useState<FreedSlot | null>(null);
   const [actionMessage, setActionMessage] = useState("");
@@ -2204,6 +2257,20 @@ export function DoctorAgenda() {
                     >
                       Actualizar
                     </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="border-border/70 bg-background/60 col-span-2 h-9 justify-center border"
+                      onClick={() => setShowEmailLog(true)}
+                    >
+                      <Mail className="size-4" aria-hidden="true" />
+                      Emails
+                      {emails.length > 0 ? (
+                        <span className="bg-sage/15 text-sage ml-1 rounded-full px-2 py-0.5 text-[11px] font-semibold">
+                          {emails.length}
+                        </span>
+                      ) : null}
+                    </Button>
                   </div>
 
                   <div className="border-border/60 bg-background/50 overflow-hidden rounded-lg border">
@@ -2406,13 +2473,7 @@ export function DoctorAgenda() {
                   </div>
                 </div>
 
-                <div className="border-border/60 flex flex-1 flex-col justify-between gap-3 border-t p-3">
-                  <EmailLog
-                    emails={emails}
-                    compact
-                    className="hidden 2xl:block"
-                  />
-                </div>
+                <div className="hidden flex-1 xl:block" />
               </div>
             </aside>
 
@@ -2581,6 +2642,13 @@ export function DoctorAgenda() {
                 onSendReminder={handleSendReminder}
                 onStatusChange={handleStatusChange}
                 statusMessage={actionMessage}
+              />
+            ) : null}
+
+            {showEmailLog ? (
+              <EmailLogModal
+                emails={emails}
+                onClose={() => setShowEmailLog(false)}
               />
             ) : null}
 
