@@ -984,6 +984,9 @@ function AppointmentCalendar({
   onSelectAppointment: (appointment: Appointment) => void;
   onSelectSlot: (slot: FreeSlot) => void;
 }) {
+  const [selectedMonthDate, setSelectedMonthDate] = useState<string | null>(
+    null,
+  );
   const selectedDateForView =
     selectedDay === "all" ? demoDates[0]! : selectedDay;
   const days =
@@ -1049,369 +1052,115 @@ function AppointmentCalendar({
     { label: "Semana", value: "week" },
     { label: "Mes", value: "month" },
   ];
+  const selectedMonthAppointments = selectedMonthDate
+    ? sortAppointments(appointmentsByDate.get(selectedMonthDate) ?? [])
+    : [];
 
   return (
-    <section className="glass shadow-elegant border-border/60 flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border">
-      <header className="border-border/60 flex shrink-0 flex-col gap-2 border-b px-4 py-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="text-muted-foreground inline-flex items-center gap-2 text-xs font-medium tracking-[0.16em] uppercase">
-            <CalendarCheck2 className="size-4" aria-hidden="true" />
-            Calendario semanal
-          </div>
-          <h2 className="font-display mt-1 text-xl leading-tight">
-            {view === "month"
-              ? formatMonthLabel(selectedDateForView)
-              : view === "day"
-                ? formatAppointmentDate(selectedDateForView)
-                : "Agenda semanal"}
-          </h2>
-        </div>
-        <div className="border-border/70 bg-background/70 grid grid-cols-3 rounded-md border p-1">
-          {viewOptions.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              aria-pressed={view === option.value}
-              className={cn(
-                "rounded px-3 py-1.5 text-xs font-medium transition-colors",
-                view === option.value
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-              onClick={() => onViewChange(option.value)}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-      </header>
-
-      <div className="grid gap-3 px-3 py-3 md:hidden">
-        {mobileDays.map((day) => (
-          <article
-            key={day}
-            className="border-border/60 bg-background/45 overflow-hidden rounded-xl border"
-          >
-            <header className="border-border/60 bg-background/70 border-b px-4 py-3">
-              <p className="font-display text-xl capitalize">
-                {formatAppointmentDate(day)}
-              </p>
-              <p className="text-muted-foreground mt-1 text-xs tabular-nums">
-                {day}
-              </p>
-            </header>
-            <div className="divide-border/50 divide-y">
-              {availableTimes.map((time) => {
-                const slotAppointments =
-                  appointmentsBySlot.get(`${day}-${time}`) ?? [];
-
-                return (
-                  <div
-                    key={`${day}-${time}`}
-                    className="grid grid-cols-[4.25rem_1fr] gap-3 px-4 py-3"
-                  >
-                    <span className="text-muted-foreground pt-2 text-sm font-medium tabular-nums">
-                      {time}
-                    </span>
-                    {slotAppointments.length > 0 ? (
-                      <div className="space-y-2">
-                        {slotAppointments.map((appointment) => (
-                          <button
-                            key={appointment.id}
-                            type="button"
-                            className={cn(
-                              "focus:ring-ring/40 w-full cursor-pointer rounded-lg border px-3 py-3 text-left text-sm shadow-sm transition-all focus:ring-2 focus:outline-none",
-                              getAppointmentCardTone(appointment.status),
-                            )}
-                            onClick={() => onSelectAppointment(appointment)}
-                          >
-                            <div className="flex items-start justify-between gap-3">
-                              <p className="leading-snug font-medium">
-                                {appointment.patientName}
-                              </p>
-                              <span
-                                className={cn(
-                                  "mt-1 h-2.5 w-2.5 shrink-0 rounded-full",
-                                  getStatusDotTone(appointment.status),
-                                )}
-                              />
-                            </div>
-                            <p className="text-muted-foreground mt-1 leading-snug">
-                              {resolveTreatment(appointment.treatmentId)} ·{" "}
-                              {resolveTreatmentDuration(
-                                appointment.treatmentId,
-                              )}{" "}
-                              min
-                            </p>
-                            <p className="text-muted-foreground mt-1 leading-snug">
-                              {resolveTherapist(appointment.therapistId)}
-                            </p>
-                            <AppointmentBadges appointment={appointment} />
-                          </button>
-                        ))}
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        className="border-border/50 text-muted-foreground hover:border-sage/40 hover:bg-sage/10 hover:text-foreground min-h-12 w-full rounded-lg border border-dashed px-3 py-3 text-sm transition-colors"
-                        onClick={() =>
-                          onSelectSlot({
-                            date: day,
-                            time,
-                            therapistId:
-                              selectedTherapist === "all"
-                                ? undefined
-                                : selectedTherapist,
-                          })
-                        }
-                      >
-                        Libre
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
+    <>
+      <section className="glass shadow-elegant border-border/60 flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border">
+        <header className="border-border/60 flex shrink-0 flex-col gap-2 border-b px-4 py-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="text-muted-foreground inline-flex items-center gap-2 text-xs font-medium tracking-[0.16em] uppercase">
+              <CalendarCheck2 className="size-4" aria-hidden="true" />
+              Calendario semanal
             </div>
-          </article>
-        ))}
-      </div>
-
-      {view === "month" ? (
-        <div className="hidden min-h-0 flex-1 grid-rows-[auto_1fr] md:grid">
-          <div className="border-border/60 grid grid-cols-7 border-b">
-            {["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"].map((day) => (
-              <div
-                key={day}
-                className="bg-background/70 border-border/60 text-muted-foreground border-r px-3 py-2 text-xs font-medium tracking-[0.14em] uppercase last:border-r-0"
+            <h2 className="font-display mt-1 text-xl leading-tight">
+              {view === "month"
+                ? formatMonthLabel(selectedDateForView)
+                : view === "day"
+                  ? formatAppointmentDate(selectedDateForView)
+                  : "Agenda semanal"}
+            </h2>
+          </div>
+          <div className="border-border/70 bg-background/70 grid grid-cols-3 rounded-md border p-1">
+            {viewOptions.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                aria-pressed={view === option.value}
+                className={cn(
+                  "rounded px-3 py-1.5 text-xs font-medium transition-colors",
+                  view === option.value
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+                onClick={() => onViewChange(option.value)}
               >
-                {day}
-              </div>
+                {option.label}
+              </button>
             ))}
           </div>
-          <div
-            className="grid min-h-0"
-            style={{
-              gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
-              gridTemplateRows: `repeat(${Math.max(monthDays.length / 7, 1)}, minmax(0, 1fr))`,
-            }}
-          >
-            {monthDays.map((cell, index) => {
-              const dayAppointments = cell.date
-                ? (appointmentsByDate.get(cell.date) ?? [])
-                : [];
-              const activeCount = dayAppointments.filter(
-                (appointment) =>
-                  appointment.status !== "cancelled" &&
-                  appointment.status !== "no_show",
-              ).length;
+        </header>
 
-              return (
-                <button
-                  key={`${cell.date || "empty"}-${index}`}
-                  type="button"
-                  disabled={!cell.date}
-                  className={cn(
-                    "border-border/50 bg-background/25 min-h-0 border-r border-b p-2 text-left transition-colors last:border-r-0",
-                    cell.date
-                      ? "hover:bg-sage/10 cursor-pointer"
-                      : "bg-background/10 cursor-default",
-                  )}
-                  onClick={() => {
-                    if (!cell.date) {
-                      return;
-                    }
-
-                    onSelectSlot({
-                      date: cell.date,
-                      time: availableTimes[0]!,
-                      therapistId:
-                        selectedTherapist === "all"
-                          ? undefined
-                          : selectedTherapist,
-                    });
-                  }}
-                >
-                  {cell.dayNumber ? (
-                    <>
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-medium tabular-nums">
-                          {cell.dayNumber}
-                        </span>
-                        {activeCount > 0 ? (
-                          <span className="bg-sage/15 text-sage rounded-full px-2 py-0.5 text-[11px] font-semibold">
-                            {activeCount}
-                          </span>
-                        ) : null}
-                      </div>
-                      <div className="mt-2 space-y-1">
-                        {dayAppointments.slice(0, 3).map((appointment) => (
-                          <span
-                            key={appointment.id}
-                            className={cn(
-                              "block truncate rounded px-2 py-1 text-[11px] font-medium",
-                              getAppointmentCardTone(appointment.status),
-                            )}
-                          >
-                            {getAppointmentSource(appointment) === "manual"
-                              ? "M"
-                              : "IA"}{" "}
-                            · {appointment.time} {appointment.patientName}
-                          </span>
-                        ))}
-                        {dayAppointments.length > 3 ? (
-                          <span className="text-muted-foreground block text-[11px]">
-                            +{dayAppointments.length - 3} mas
-                          </span>
-                        ) : null}
-                      </div>
-                    </>
-                  ) : null}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      ) : (
-        <div
-          className="hidden min-h-0 flex-1 grid-rows-[auto_repeat(9,minmax(0,1fr))] md:grid"
-          style={{
-            gridTemplateRows: `auto repeat(${availableTimes.length}, minmax(0, 1fr))`,
-          }}
-        >
-          <div className="min-w-0">
-            <div
-              className="border-border/60 grid border-b"
-              style={{
-                gridTemplateColumns: `72px repeat(${days.length}, minmax(0, 1fr))`,
-              }}
+        <div className="grid gap-3 px-3 py-3 md:hidden">
+          {mobileDays.map((day) => (
+            <article
+              key={day}
+              className="border-border/60 bg-background/45 overflow-hidden rounded-xl border"
             >
-              <div className="bg-background/70 border-border/60 text-muted-foreground border-r px-3 py-2 text-xs font-medium tracking-[0.14em] uppercase">
-                Hora
-              </div>
-              {days.map((day) => (
-                <div
-                  key={day}
-                  className="bg-background/70 border-border/60 border-r px-3 py-1.5 last:border-r-0"
-                >
-                  <p className="font-display text-base capitalize">
-                    {formatAppointmentDate(day)}
-                  </p>
-                  <p className="text-muted-foreground mt-1 text-xs tabular-nums">
-                    {day}
-                  </p>
-                </div>
-              ))}
-            </div>
-
-            {availableTimes.map((time) => (
-              <div
-                key={time}
-                className="border-border/50 grid min-h-0 border-b last:border-b-0"
-                style={{
-                  gridTemplateColumns: `72px repeat(${days.length}, minmax(0, 1fr))`,
-                }}
-              >
-                <div className="bg-background/45 border-border/60 text-muted-foreground border-r px-3 py-2 text-xs font-medium tabular-nums">
-                  {time}
-                </div>
-                {days.map((day) => {
+              <header className="border-border/60 bg-background/70 border-b px-4 py-3">
+                <p className="font-display text-xl capitalize">
+                  {formatAppointmentDate(day)}
+                </p>
+                <p className="text-muted-foreground mt-1 text-xs tabular-nums">
+                  {day}
+                </p>
+              </header>
+              <div className="divide-border/50 divide-y">
+                {availableTimes.map((time) => {
                   const slotAppointments =
                     appointmentsBySlot.get(`${day}-${time}`) ?? [];
 
                   return (
                     <div
                       key={`${day}-${time}`}
-                      className="border-border/50 bg-background/25 min-h-0 overflow-hidden border-r p-1 last:border-r-0"
-                      onDragOver={(event) => event.preventDefault()}
-                      onDrop={(event) => {
-                        event.preventDefault();
-                        const appointmentId =
-                          event.dataTransfer.getData("text/plain");
-                        const appointment = appointments.find(
-                          (item) => item.id === appointmentId,
-                        );
-
-                        if (appointment) {
-                          onMoveToSlot(appointment, { date: day, time });
-                        }
-                      }}
+                      className="grid grid-cols-[4.25rem_1fr] gap-3 px-4 py-3"
                     >
+                      <span className="text-muted-foreground pt-2 text-sm font-medium tabular-nums">
+                        {time}
+                      </span>
                       {slotAppointments.length > 0 ? (
-                        <div className="space-y-1.5">
-                          {slotAppointments.slice(0, 1).map((appointment) => (
+                        <div className="space-y-2">
+                          {slotAppointments.map((appointment) => (
                             <button
                               key={appointment.id}
                               type="button"
-                              draggable={canDragAppointment(appointment)}
                               className={cn(
-                                "focus:ring-ring/40 w-full rounded-md border px-2 py-1 text-left text-[10px] shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus:ring-2 focus:outline-none",
-                                canDragAppointment(appointment)
-                                  ? "cursor-grab active:cursor-grabbing"
-                                  : "cursor-pointer",
+                                "focus:ring-ring/40 w-full cursor-pointer rounded-lg border px-3 py-3 text-left text-sm shadow-sm transition-all focus:ring-2 focus:outline-none",
                                 getAppointmentCardTone(appointment.status),
                               )}
                               onClick={() => onSelectAppointment(appointment)}
-                              onDragStart={(event) => {
-                                if (!canDragAppointment(appointment)) {
-                                  event.preventDefault();
-                                  return;
-                                }
-
-                                event.dataTransfer.setData(
-                                  "text/plain",
-                                  appointment.id,
-                                );
-                                event.dataTransfer.effectAllowed = "move";
-                              }}
                             >
-                              <div className="flex items-start justify-between gap-2">
+                              <div className="flex items-start justify-between gap-3">
                                 <p className="leading-snug font-medium">
                                   {appointment.patientName}
                                 </p>
-                                <div className="flex items-center gap-1">
-                                  <AppointmentSourceBadge
-                                    appointment={appointment}
-                                    compact
-                                  />
-                                  <span
-                                    className={cn(
-                                      "h-2 w-2 shrink-0 rounded-full",
-                                      getStatusDotTone(appointment.status),
-                                    )}
-                                  />
-                                </div>
+                                <span
+                                  className={cn(
+                                    "mt-1 h-2.5 w-2.5 shrink-0 rounded-full",
+                                    getStatusDotTone(appointment.status),
+                                  )}
+                                />
                               </div>
-                              <p className="text-muted-foreground truncate">
+                              <p className="text-muted-foreground mt-1 leading-snug">
                                 {resolveTreatment(appointment.treatmentId)} ·{" "}
                                 {resolveTreatmentDuration(
                                   appointment.treatmentId,
                                 )}{" "}
                                 min
                               </p>
-                              <p className="text-muted-foreground hidden truncate 2xl:block">
+                              <p className="text-muted-foreground mt-1 leading-snug">
                                 {resolveTherapist(appointment.therapistId)}
                               </p>
-                              <div className="hidden 2xl:block">
-                                <AppointmentBadges appointment={appointment} />
-                              </div>
+                              <AppointmentBadges appointment={appointment} />
                             </button>
                           ))}
-                          {slotAppointments.length > 1 ? (
-                            <button
-                              type="button"
-                              className="bg-background/70 text-muted-foreground border-border/60 w-full rounded-md border px-2 py-1 text-left text-[10px] font-medium"
-                              onClick={() =>
-                                onSelectAppointment(slotAppointments[1]!)
-                              }
-                            >
-                              +{slotAppointments.length - 1} mas
-                            </button>
-                          ) : null}
                         </div>
                       ) : (
                         <button
                           type="button"
-                          className="border-border/50 text-muted-foreground/70 hover:border-sage/40 hover:bg-sage/10 hover:text-foreground flex h-full min-h-0 w-full items-center justify-center rounded-md border border-dashed text-xs transition-colors"
+                          className="border-border/50 text-muted-foreground hover:border-sage/40 hover:bg-sage/10 hover:text-foreground min-h-12 w-full rounded-lg border border-dashed px-3 py-3 text-sm transition-colors"
                           onClick={() =>
                             onSelectSlot({
                               date: day,
@@ -1430,11 +1179,372 @@ function AppointmentCalendar({
                   );
                 })}
               </div>
-            ))}
-          </div>
+            </article>
+          ))}
         </div>
-      )}
-    </section>
+
+        {view === "month" ? (
+          <div className="hidden min-h-0 flex-1 grid-rows-[auto_1fr] md:grid">
+            <div className="border-border/60 grid grid-cols-7 border-b">
+              {["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"].map((day) => (
+                <div
+                  key={day}
+                  className="bg-background/70 border-border/60 text-muted-foreground border-r px-3 py-2 text-xs font-medium tracking-[0.14em] uppercase last:border-r-0"
+                >
+                  {day}
+                </div>
+              ))}
+            </div>
+            <div
+              className="grid min-h-0"
+              style={{
+                gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
+                gridTemplateRows: `repeat(${Math.max(monthDays.length / 7, 1)}, minmax(0, 1fr))`,
+              }}
+            >
+              {monthDays.map((cell, index) => {
+                const dayAppointments = cell.date
+                  ? (appointmentsByDate.get(cell.date) ?? [])
+                  : [];
+                const activeCount = dayAppointments.filter(
+                  (appointment) =>
+                    appointment.status !== "cancelled" &&
+                    appointment.status !== "no_show",
+                ).length;
+
+                return (
+                  <button
+                    key={`${cell.date || "empty"}-${index}`}
+                    type="button"
+                    disabled={!cell.date}
+                    className={cn(
+                      "border-border/50 bg-background/25 min-h-0 border-r border-b p-2 text-left transition-colors last:border-r-0",
+                      cell.date
+                        ? "hover:bg-sage/10 cursor-pointer"
+                        : "bg-background/10 cursor-default",
+                    )}
+                    onClick={() => cell.date && setSelectedMonthDate(cell.date)}
+                  >
+                    {cell.dayNumber ? (
+                      <>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-medium tabular-nums">
+                            {cell.dayNumber}
+                          </span>
+                          {activeCount > 0 ? (
+                            <span className="bg-sage/15 text-sage rounded-full px-2 py-0.5 text-[11px] font-semibold">
+                              {activeCount}
+                            </span>
+                          ) : null}
+                        </div>
+                        <div className="mt-2 space-y-1">
+                          {dayAppointments.slice(0, 3).map((appointment) => (
+                            <span
+                              key={appointment.id}
+                              className={cn(
+                                "block truncate rounded px-2 py-1 text-[11px] font-medium",
+                                getAppointmentCardTone(appointment.status),
+                              )}
+                            >
+                              {getAppointmentSource(appointment) === "manual"
+                                ? "M"
+                                : "IA"}{" "}
+                              · {appointment.time} {appointment.patientName}
+                            </span>
+                          ))}
+                          {dayAppointments.length > 3 ? (
+                            <span className="text-muted-foreground block text-[11px]">
+                              +{dayAppointments.length - 3} mas
+                            </span>
+                          ) : null}
+                        </div>
+                      </>
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <div
+            className="hidden min-h-0 flex-1 grid-rows-[auto_repeat(9,minmax(0,1fr))] md:grid"
+            style={{
+              gridTemplateRows: `auto repeat(${availableTimes.length}, minmax(0, 1fr))`,
+            }}
+          >
+            <div className="min-w-0">
+              <div
+                className="border-border/60 grid border-b"
+                style={{
+                  gridTemplateColumns: `72px repeat(${days.length}, minmax(0, 1fr))`,
+                }}
+              >
+                <div className="bg-background/70 border-border/60 text-muted-foreground border-r px-3 py-2 text-xs font-medium tracking-[0.14em] uppercase">
+                  Hora
+                </div>
+                {days.map((day) => (
+                  <div
+                    key={day}
+                    className="bg-background/70 border-border/60 border-r px-3 py-1.5 last:border-r-0"
+                  >
+                    <p className="font-display text-base capitalize">
+                      {formatAppointmentDate(day)}
+                    </p>
+                    <p className="text-muted-foreground mt-1 text-xs tabular-nums">
+                      {day}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {availableTimes.map((time) => (
+                <div
+                  key={time}
+                  className="border-border/50 grid min-h-0 border-b last:border-b-0"
+                  style={{
+                    gridTemplateColumns: `72px repeat(${days.length}, minmax(0, 1fr))`,
+                  }}
+                >
+                  <div className="bg-background/45 border-border/60 text-muted-foreground border-r px-3 py-2 text-xs font-medium tabular-nums">
+                    {time}
+                  </div>
+                  {days.map((day) => {
+                    const slotAppointments =
+                      appointmentsBySlot.get(`${day}-${time}`) ?? [];
+
+                    return (
+                      <div
+                        key={`${day}-${time}`}
+                        className="border-border/50 bg-background/25 min-h-0 overflow-hidden border-r p-1 last:border-r-0"
+                        onDragOver={(event) => event.preventDefault()}
+                        onDrop={(event) => {
+                          event.preventDefault();
+                          const appointmentId =
+                            event.dataTransfer.getData("text/plain");
+                          const appointment = appointments.find(
+                            (item) => item.id === appointmentId,
+                          );
+
+                          if (appointment) {
+                            onMoveToSlot(appointment, { date: day, time });
+                          }
+                        }}
+                      >
+                        {slotAppointments.length > 0 ? (
+                          <div className="space-y-1.5">
+                            {slotAppointments.slice(0, 1).map((appointment) => (
+                              <button
+                                key={appointment.id}
+                                type="button"
+                                draggable={canDragAppointment(appointment)}
+                                className={cn(
+                                  "focus:ring-ring/40 w-full rounded-md border px-2 py-1 text-left text-[10px] shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus:ring-2 focus:outline-none",
+                                  canDragAppointment(appointment)
+                                    ? "cursor-grab active:cursor-grabbing"
+                                    : "cursor-pointer",
+                                  getAppointmentCardTone(appointment.status),
+                                )}
+                                onClick={() => onSelectAppointment(appointment)}
+                                onDragStart={(event) => {
+                                  if (!canDragAppointment(appointment)) {
+                                    event.preventDefault();
+                                    return;
+                                  }
+
+                                  event.dataTransfer.setData(
+                                    "text/plain",
+                                    appointment.id,
+                                  );
+                                  event.dataTransfer.effectAllowed = "move";
+                                }}
+                              >
+                                <div className="flex items-start justify-between gap-2">
+                                  <p className="leading-snug font-medium">
+                                    {appointment.patientName}
+                                  </p>
+                                  <div className="flex items-center gap-1">
+                                    <AppointmentSourceBadge
+                                      appointment={appointment}
+                                      compact
+                                    />
+                                    <span
+                                      className={cn(
+                                        "h-2 w-2 shrink-0 rounded-full",
+                                        getStatusDotTone(appointment.status),
+                                      )}
+                                    />
+                                  </div>
+                                </div>
+                                <p className="text-muted-foreground truncate">
+                                  {resolveTreatment(appointment.treatmentId)} ·{" "}
+                                  {resolveTreatmentDuration(
+                                    appointment.treatmentId,
+                                  )}{" "}
+                                  min
+                                </p>
+                                <p className="text-muted-foreground hidden truncate 2xl:block">
+                                  {resolveTherapist(appointment.therapistId)}
+                                </p>
+                                <div className="hidden 2xl:block">
+                                  <AppointmentBadges
+                                    appointment={appointment}
+                                  />
+                                </div>
+                              </button>
+                            ))}
+                            {slotAppointments.length > 1 ? (
+                              <button
+                                type="button"
+                                className="bg-background/70 text-muted-foreground border-border/60 w-full rounded-md border px-2 py-1 text-left text-[10px] font-medium"
+                                onClick={() =>
+                                  onSelectAppointment(slotAppointments[1]!)
+                                }
+                              >
+                                +{slotAppointments.length - 1} mas
+                              </button>
+                            ) : null}
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            className="border-border/50 text-muted-foreground/70 hover:border-sage/40 hover:bg-sage/10 hover:text-foreground flex h-full min-h-0 w-full items-center justify-center rounded-md border border-dashed text-xs transition-colors"
+                            onClick={() =>
+                              onSelectSlot({
+                                date: day,
+                                time,
+                                therapistId:
+                                  selectedTherapist === "all"
+                                    ? undefined
+                                    : selectedTherapist,
+                              })
+                            }
+                          >
+                            Libre
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </section>
+
+      {selectedMonthDate ? (
+        <div
+          className="modal-backdrop bg-charcoal/70 fixed inset-0 z-50 hidden items-center justify-center px-4 py-6 backdrop-blur-sm md:flex"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="month-day-title"
+        >
+          <article className="modal-panel glass shadow-elegant border-border/60 relative max-h-[calc(100dvh-3rem)] w-full max-w-2xl overflow-y-auto rounded-2xl border">
+            <button
+              type="button"
+              className="text-muted-foreground hover:text-foreground hover:bg-background/70 absolute top-4 right-4 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full transition-colors"
+              onClick={() => setSelectedMonthDate(null)}
+            >
+              <X className="size-5" aria-hidden="true" />
+              <span className="sr-only">Cerrar citas del dia</span>
+            </button>
+
+            <header className="border-border/60 bg-background/85 border-b px-5 py-5 pr-16 sm:px-7">
+              <span className="text-sage inline-flex items-center gap-2 text-xs font-medium tracking-[0.16em] uppercase">
+                <CalendarCheck2 className="size-4" aria-hidden="true" />
+                Citas del dia
+              </span>
+              <h2
+                id="month-day-title"
+                className="font-display mt-3 text-2xl leading-tight sm:text-3xl"
+              >
+                {formatAppointmentDate(selectedMonthDate)}
+              </h2>
+              <p className="text-muted-foreground mt-2 text-sm">
+                {selectedMonthAppointments.length} cita
+                {selectedMonthAppointments.length === 1 ? "" : "s"} en agenda.
+              </p>
+            </header>
+
+            <div className="grid gap-3 px-5 py-5 sm:px-7">
+              {selectedMonthAppointments.length > 0 ? (
+                selectedMonthAppointments.map((appointment) => (
+                  <button
+                    key={appointment.id}
+                    type="button"
+                    className="border-border/60 bg-background/65 hover:bg-background/90 focus:ring-ring/40 grid gap-3 rounded-xl border p-4 text-left transition-colors focus:ring-2 focus:outline-none sm:grid-cols-[5rem_1fr_auto] sm:items-center"
+                    onClick={() => {
+                      setSelectedMonthDate(null);
+                      onSelectAppointment(appointment);
+                    }}
+                  >
+                    <span className="font-display text-xl tabular-nums">
+                      {appointment.time}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="flex flex-wrap items-center gap-2">
+                        <span className="font-semibold">
+                          {appointment.patientName}
+                        </span>
+                        <span
+                          className={cn(
+                            "rounded-full border px-2 py-0.5 text-[11px] font-medium",
+                            getStatusTone(appointment.status),
+                          )}
+                        >
+                          {formatStatus(appointment.status)}
+                        </span>
+                      </span>
+                      <span className="text-muted-foreground mt-1 block text-sm">
+                        {resolveTreatment(appointment.treatmentId)} ·{" "}
+                        {resolveTreatmentDuration(appointment.treatmentId)} min
+                      </span>
+                      <span className="text-muted-foreground mt-1 block text-sm">
+                        {resolveTherapist(appointment.therapistId)}
+                      </span>
+                    </span>
+                    <span className="justify-self-start sm:justify-self-end">
+                      <AppointmentSourceBadge appointment={appointment} />
+                    </span>
+                  </button>
+                ))
+              ) : (
+                <p className="border-border/60 bg-background/65 text-muted-foreground rounded-xl border px-4 py-5 text-sm">
+                  No hay citas en este dia.
+                </p>
+              )}
+
+              <div className="border-border/60 flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-end">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setSelectedMonthDate(null)}
+                >
+                  Cerrar
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => {
+                    onSelectSlot({
+                      date: selectedMonthDate,
+                      time: availableTimes[0]!,
+                      therapistId:
+                        selectedTherapist === "all"
+                          ? undefined
+                          : selectedTherapist,
+                    });
+                    setSelectedMonthDate(null);
+                  }}
+                >
+                  <Plus className="size-4" aria-hidden="true" />
+                  Nueva cita este dia
+                </Button>
+              </div>
+            </div>
+          </article>
+        </div>
+      ) : null}
+    </>
   );
 }
 
