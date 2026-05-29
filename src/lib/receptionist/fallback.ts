@@ -4,7 +4,9 @@ import type { Appointment, ReceptionAction } from "./types";
 
 type FallbackContext = {
   completedBooking?: boolean;
+  hasPendingSlotProposal?: boolean;
   pendingAppointmentTriage?: boolean;
+  pendingTreatmentId?: string | null;
   requestedDate?: string | null;
 };
 
@@ -148,6 +150,23 @@ function getManageOperation(text: string): "cancel" | "modify" | null {
   return null;
 }
 
+function wantsToAdjustActiveProposal(text: string) {
+  return (
+    text.includes("mejor") ||
+    text.includes("otra") ||
+    text.includes("otro") ||
+    text.includes("cambiar") ||
+    text.includes("modificar") ||
+    text.includes("mover") ||
+    text.includes("reprogram") ||
+    text.includes("viernes") ||
+    text.includes("jueves") ||
+    text.includes("miercoles") ||
+    text.includes("martes") ||
+    text.includes("lunes")
+  );
+}
+
 export function getFallbackReceptionAction(
   message: string,
   appointments: Appointment[],
@@ -169,6 +188,27 @@ export function getFallbackReceptionAction(
     return {
       type: "reply",
       message: "A ti. Recibirás la confirmación por email. Que vaya muy bien.",
+    };
+  }
+
+  if (
+    context.hasPendingSlotProposal &&
+    context.pendingTreatmentId &&
+    wantsToAdjustActiveProposal(text)
+  ) {
+    const slots = findAvailableSlots(appointments, {
+      treatmentId: context.pendingTreatmentId,
+      date: requestedDate ?? undefined,
+    });
+    const requestedDateLabel = formatRequestedDate(requestedDate);
+
+    return {
+      type: "propose_slots",
+      message: requestedDateLabel
+        ? `Claro, te miro opciones para el ${requestedDateLabel}. Elige la que mejor te venga.`
+        : "Claro, te miro otras opciones con lo que ya me contaste. Elige la que mejor te venga.",
+      slots,
+      requestedDate,
     };
   }
 

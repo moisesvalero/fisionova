@@ -105,6 +105,9 @@ export function ReceptionistExperience() {
   const [pendingRequestedDate, setPendingRequestedDate] = useState<
     string | null
   >(null);
+  const [pendingTreatmentId, setPendingTreatmentId] = useState<string | null>(
+    null,
+  );
 
   useEffect(() => {
     const page = pageRef.current;
@@ -260,7 +263,10 @@ export function ReceptionistExperience() {
           message,
           context: {
             completedBooking,
+            hasPendingSlotProposal:
+              proposedSlots.length > 0 || selectedSlot !== null,
             pendingAppointmentTriage,
+            pendingTreatmentId: selectedSlot?.treatmentId ?? pendingTreatmentId,
             requestedDate: pendingRequestedDate,
           },
         }),
@@ -292,6 +298,9 @@ export function ReceptionistExperience() {
       if (payload.action.type === "propose_slots") {
         setCompletedBooking(false);
         setPendingRequestedDate(null);
+        setPendingTreatmentId(
+          payload.action.slots[0]?.treatmentId ?? pendingTreatmentId,
+        );
       }
     } catch {
       addAssistantMessage(
@@ -329,6 +338,7 @@ export function ReceptionistExperience() {
         setManagedAppointment(null);
         setProposedSlots([]);
         setPendingRequestedDate(null);
+        setPendingTreatmentId(null);
         setCompletedBooking(true);
         addAssistantMessage(
           `Hecho, te he cambiado la cita al ${payload.appointment.date} a las ${payload.appointment.time}. Te llega la actualización por email.`,
@@ -346,6 +356,7 @@ export function ReceptionistExperience() {
 
     setPendingAppointmentTriage(false);
     setPendingRequestedDate(null);
+    setPendingTreatmentId(slot.treatmentId);
     setCompletedBooking(false);
     setSelectedSlot(slot);
     setProposedSlots([]);
@@ -376,6 +387,7 @@ export function ReceptionistExperience() {
       setProposedSlots([]);
       setPendingAppointmentTriage(false);
       setPendingRequestedDate(null);
+      setPendingTreatmentId(null);
       setCompletedBooking(true);
       addAssistantMessage(
         `Listo, ${details.patientName}. Te dejo apuntado para el ${payload.appointment.date} a las ${payload.appointment.time}. Recibirás la confirmación por email.`,
@@ -422,6 +434,7 @@ export function ReceptionistExperience() {
         setManageOperation(null);
         setManagedAppointment(null);
         setProposedSlots([]);
+        setPendingTreatmentId(null);
         setCompletedBooking(true);
         addAssistantMessage(
           `Listo, ${payload.appointment.patientName}. Tu cita queda anulada y te llega el aviso por email.`,
@@ -435,6 +448,7 @@ export function ReceptionistExperience() {
         contact: details,
       });
       setProposedSlots(payload.slots ?? []);
+      setPendingTreatmentId(payload.appointment.treatmentId);
       setSelectedSlot(null);
       addAssistantMessage(
         payload.slots?.length

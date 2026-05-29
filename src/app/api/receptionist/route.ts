@@ -17,7 +17,12 @@ const receptionRequestSchema = z.object({
   context: z
     .object({
       completedBooking: z.boolean().optional(),
+      hasPendingSlotProposal: z.boolean().optional(),
       pendingAppointmentTriage: z.boolean().optional(),
+      pendingTreatmentId: z
+        .enum(["general", "sports", "postural"])
+        .nullable()
+        .optional(),
       requestedDate: z.string().nullable().optional(),
     })
     .optional(),
@@ -281,6 +286,10 @@ export async function POST(request: Request) {
               body.context?.pendingAppointmentTriage
                 ? "Contexto: el paciente ya pidió cita y Virgi ya le preguntó una vez qué le molesta. Interpreta este mensaje como respuesta corta a esa pregunta y, si hay cualquier pista mínima, usa request_appointment. No hagas otra pregunta de triaje."
                 : "",
+              body.context?.hasPendingSlotProposal &&
+              body.context?.pendingTreatmentId
+                ? `Contexto: Virgi ya propuso huecos para el tratamiento ${body.context.pendingTreatmentId}. Si el paciente pide cambiar esa propuesta, otra hora u otro día, usa request_appointment con ese mismo treatmentId. No vuelvas a preguntar qué le pasa.`
+                : "",
               requestedDate
                 ? `Contexto: el paciente pidió la cita para ${requestedDate}. Mantén esa fecha aunque ahora solo responda qué le duele.`
                 : "",
@@ -305,8 +314,24 @@ export async function POST(request: Request) {
 
     const data = (await response.json()) as OpenAIResponse;
     const intent = parseOpenAIIntent(data);
+    const pendingTreatmentId = body.context?.pendingTreatmentId ?? null;
+    const shouldReuseProposedTreatment = Boolean(
+      body.context?.hasPendingSlotProposal &&
+      pendingTreatmentId &&
+      (intent?.intent === "modify_appointment" ||
+        (intent?.intent === "request_appointment" && !intent.treatmentId)),
+    );
     const datedIntent = intent
-      ? { ...intent, requestedDate: requestedDate ?? intent.requestedDate }
+      ? {
+          ...intent,
+          intent: shouldReuseProposedTreatment
+            ? ("request_appointment" as const)
+            : intent.intent,
+          treatmentId:
+            intent.treatmentId ??
+            (shouldReuseProposedTreatment ? pendingTreatmentId : null),
+          requestedDate: requestedDate ?? intent.requestedDate,
+        }
       : null;
     const action = datedIntent
       ? createReceptionActionFromOpenAIIntent(datedIntent, appointments)

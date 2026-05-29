@@ -111,6 +111,26 @@ describe("fallback receptionist", () => {
     }
   });
 
+  it("reuses the active proposed treatment when the patient asks for another day", () => {
+    const action = getFallbackReceptionAction(
+      "mejor el viernes",
+      seedAppointments,
+      {
+        hasPendingSlotProposal: true,
+        pendingTreatmentId: "sports",
+        requestedDate: "2026-06-04",
+      },
+    );
+
+    expect(action.type).toBe("propose_slots");
+    if (action.type === "propose_slots") {
+      expect(action.requestedDate).toBe("2026-06-05");
+      expect(action.slots.every((slot) => slot.treatmentId === "sports")).toBe(
+        true,
+      );
+    }
+  });
+
   it("answers thanks as a closing message after a booking", () => {
     const action = getFallbackReceptionAction("gracias", seedAppointments, {
       completedBooking: true,
