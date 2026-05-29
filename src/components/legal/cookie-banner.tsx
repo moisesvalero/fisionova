@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 
@@ -35,6 +36,7 @@ function saveConsent(consent: CookieConsent) {
 }
 
 export function CookieBanner() {
+  const pathname = usePathname();
   const [isVisible, setIsVisible] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [analytics, setAnalytics] = useState(false);
@@ -94,7 +96,7 @@ export function CookieBanner() {
     setIsVisible(false);
   }
 
-  if (!isVisible) {
+  if (!isVisible || pathname?.startsWith("/medico")) {
     return null;
   }
 

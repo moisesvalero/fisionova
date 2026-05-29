@@ -59,6 +59,7 @@ type EmailPayload = {
 type StatusFilter = AppointmentStatus | "all";
 type TherapistFilter = "all" | string;
 type CalendarView = "day" | "week" | "month";
+type MobileWorkspacePanel = "agenda" | "filters" | "inbox";
 type FreeSlot = Pick<AppointmentSlot, "date" | "time"> & {
   therapistId?: string;
 };
@@ -977,6 +978,7 @@ function AppointmentCalendar({
       : selectedDay === "all"
         ? demoDates
         : [selectedDay];
+  const mobileDays = selectedDay === "all" ? [selectedDateForView] : days;
   const appointmentsBySlot = useMemo(() => {
     const grouped = new Map<string, Appointment[]>();
 
@@ -1070,8 +1072,8 @@ function AppointmentCalendar({
         </div>
       </header>
 
-      <div className="grid gap-3 px-4 py-4 md:hidden">
-        {days.map((day) => (
+      <div className="grid gap-3 px-3 py-3 md:hidden">
+        {mobileDays.map((day) => (
           <article
             key={day}
             className="border-border/60 bg-background/45 overflow-hidden rounded-xl border"
@@ -1113,18 +1115,12 @@ function AppointmentCalendar({
                               <p className="leading-snug font-medium">
                                 {appointment.patientName}
                               </p>
-                              <div className="flex items-center gap-1">
-                                <AppointmentSourceBadge
-                                  appointment={appointment}
-                                  compact
-                                />
-                                <span
-                                  className={cn(
-                                    "h-2.5 w-2.5 shrink-0 rounded-full",
-                                    getStatusDotTone(appointment.status),
-                                  )}
-                                />
-                              </div>
+                              <span
+                                className={cn(
+                                  "mt-1 h-2.5 w-2.5 shrink-0 rounded-full",
+                                  getStatusDotTone(appointment.status),
+                                )}
+                              />
                             </div>
                             <p className="text-muted-foreground mt-1 leading-snug">
                               {resolveTreatment(appointment.treatmentId)} ·{" "}
@@ -1536,6 +1532,8 @@ export function DoctorAgenda() {
     useState<TherapistFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [calendarView, setCalendarView] = useState<CalendarView>("week");
+  const [mobilePanel, setMobilePanel] =
+    useState<MobileWorkspacePanel>("agenda");
   const [selectedAppointment, setSelectedAppointment] =
     useState<Appointment | null>(null);
   const [editingAppointment, setEditingAppointment] =
@@ -1933,11 +1931,11 @@ export function DoctorAgenda() {
             <span className="text-sage text-xs tracking-[0.18em] uppercase">
               Recepcion privada
             </span>
-            <h1 className="font-display mt-2 text-3xl leading-tight sm:text-4xl lg:text-5xl">
+            <h1 className="font-display mt-1 text-2xl leading-tight sm:mt-2 sm:text-4xl lg:text-5xl">
               Panel de recepcion
             </h1>
           </div>
-          <p className="text-muted-foreground max-w-2xl text-sm leading-relaxed sm:text-base">
+          <p className="text-muted-foreground hidden max-w-2xl text-sm leading-relaxed sm:block sm:text-base">
             Solicitudes, agenda, cambios y emails en una sola pantalla de
             trabajo.
           </p>
@@ -1989,7 +1987,52 @@ export function DoctorAgenda() {
                 {error}
               </p>
             ) : null}
-            <aside className="glass shadow-elegant border-border/60 rounded-xl border xl:min-h-0 xl:overflow-hidden">
+            <nav
+              className="glass shadow-elegant border-border/60 sticky top-2 z-20 grid grid-cols-3 rounded-xl border p-1 xl:hidden"
+              aria-label="Vista del panel de recepcion"
+            >
+              {[
+                {
+                  label: "Agenda",
+                  value: "agenda",
+                  count: filteredAppointments.length,
+                },
+                { label: "Filtros", value: "filters", count: null },
+                {
+                  label: "Bandeja",
+                  value: "inbox",
+                  count: pendingCount + waitingCount,
+                },
+              ].map((item) => (
+                <button
+                  key={item.value}
+                  type="button"
+                  aria-pressed={mobilePanel === item.value}
+                  className={cn(
+                    "min-h-11 rounded-lg px-2 py-2 text-center text-xs font-semibold transition-colors",
+                    mobilePanel === item.value
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:bg-background/70 hover:text-foreground",
+                  )}
+                  onClick={() =>
+                    setMobilePanel(item.value as MobileWorkspacePanel)
+                  }
+                >
+                  <span className="block">{item.label}</span>
+                  {item.count !== null ? (
+                    <span className="block text-[10px] font-medium opacity-75">
+                      {item.count}
+                    </span>
+                  ) : null}
+                </button>
+              ))}
+            </nav>
+            <aside
+              className={cn(
+                "glass shadow-elegant border-border/60 rounded-xl border xl:min-h-0 xl:overflow-hidden",
+                mobilePanel !== "inbox" && "hidden xl:block",
+              )}
+            >
               <div className="flex h-full flex-col">
                 <div className="flex flex-col gap-2 p-3">
                   <div className="flex flex-col gap-2">
@@ -2055,7 +2098,10 @@ export function DoctorAgenda() {
                       <button
                         type="button"
                         className="hover:bg-clinical/10 grid w-full grid-cols-[1fr_auto] items-center gap-3 px-3 py-2 text-left transition-colors"
-                        onClick={() => setStatusFilter("pending")}
+                        onClick={() => {
+                          setStatusFilter("pending");
+                          setMobilePanel("agenda");
+                        }}
                       >
                         <span className="flex min-w-0 items-center gap-2">
                           <CalendarCheck2
@@ -2078,7 +2124,10 @@ export function DoctorAgenda() {
                       <button
                         type="button"
                         className="grid w-full grid-cols-[1fr_auto] items-center gap-3 px-3 py-2 text-left transition-colors hover:bg-amber-500/10"
-                        onClick={() => setStatusFilter("awaiting_response")}
+                        onClick={() => {
+                          setStatusFilter("awaiting_response");
+                          setMobilePanel("agenda");
+                        }}
                       >
                         <span className="flex min-w-0 items-center gap-2">
                           <Mail
@@ -2101,7 +2150,10 @@ export function DoctorAgenda() {
                       <button
                         type="button"
                         className="hover:bg-sage/10 grid w-full grid-cols-[1fr_auto] items-center gap-3 px-3 py-2 text-left transition-colors"
-                        onClick={() => setStatusFilter("confirmed")}
+                        onClick={() => {
+                          setStatusFilter("confirmed");
+                          setMobilePanel("agenda");
+                        }}
                       >
                         <span className="flex min-w-0 items-center gap-2">
                           <CheckCircle2
@@ -2124,7 +2176,10 @@ export function DoctorAgenda() {
                       <button
                         type="button"
                         className="hover:bg-sage/10 grid w-full grid-cols-[1fr_auto] items-center gap-3 px-3 py-2 text-left transition-colors"
-                        onClick={() => setStatusFilter("all")}
+                        onClick={() => {
+                          setStatusFilter("all");
+                          setMobilePanel("agenda");
+                        }}
                       >
                         <span className="flex min-w-0 items-center gap-2">
                           <Shuffle
@@ -2147,7 +2202,10 @@ export function DoctorAgenda() {
                       <button
                         type="button"
                         className="grid w-full grid-cols-[1fr_auto] items-center gap-3 px-3 py-2 text-left transition-colors hover:bg-red-600/10"
-                        onClick={() => setStatusFilter("cancelled")}
+                        onClick={() => {
+                          setStatusFilter("cancelled");
+                          setMobilePanel("agenda");
+                        }}
                       >
                         <span className="flex min-w-0 items-center gap-2">
                           <XCircle
@@ -2170,7 +2228,10 @@ export function DoctorAgenda() {
                       <button
                         type="button"
                         className="grid w-full grid-cols-[1fr_auto] items-center gap-3 px-3 py-2 text-left transition-colors hover:bg-amber-500/10"
-                        onClick={() => setStatusFilter("blocked")}
+                        onClick={() => {
+                          setStatusFilter("blocked");
+                          setMobilePanel("agenda");
+                        }}
                       >
                         <span className="flex min-w-0 items-center gap-2">
                           <XCircle
@@ -2215,7 +2276,12 @@ export function DoctorAgenda() {
               </div>
             </aside>
 
-            <div className="flex min-h-0 min-w-0 flex-col gap-4">
+            <div
+              className={cn(
+                "flex min-h-0 min-w-0 flex-col gap-4",
+                mobilePanel === "inbox" && "hidden xl:flex",
+              )}
+            >
               {freedSlot ? (
                 <FreedSlotPanel
                   candidates={waitlistCandidates}
@@ -2226,8 +2292,13 @@ export function DoctorAgenda() {
                 />
               ) : null}
 
-              <section className="glass shadow-elegant border-border/60 shrink-0 rounded-xl border p-3">
-                <div className="grid gap-3 lg:grid-cols-[minmax(260px,1.1fr)_180px_220px_180px_auto] lg:items-end">
+              <section
+                className={cn(
+                  "glass shadow-elegant border-border/60 shrink-0 rounded-xl border p-3",
+                  mobilePanel !== "filters" && "hidden xl:block",
+                )}
+              >
+                <div className="grid gap-3 lg:grid-cols-[minmax(220px,1fr)_150px_190px_150px_auto] lg:items-end 2xl:grid-cols-[minmax(260px,1.1fr)_180px_220px_180px_auto]">
                   <label className="flex flex-col gap-1.5 text-xs font-medium">
                     Buscar
                     <div className="border-input bg-background focus-within:ring-ring/40 flex h-9 items-center gap-2 rounded-md border px-3 text-sm transition-shadow focus-within:ring-2">
@@ -2314,29 +2385,43 @@ export function DoctorAgenda() {
                     </strong>{" "}
                     de {appointments.length}
                   </div>
+                  <Button
+                    type="button"
+                    className="h-10 justify-center xl:hidden"
+                    onClick={() => setMobilePanel("agenda")}
+                  >
+                    Ver agenda
+                  </Button>
                 </div>
               </section>
 
-              <AppointmentCalendar
-                appointments={filteredAppointments}
-                view={calendarView}
-                selectedDay={dayFilter}
-                selectedTherapist={therapistFilter}
-                onViewChange={setCalendarView}
-                onMoveToSlot={handleMoveToSlot}
-                onSelectAppointment={(appointment) => {
-                  setSelectedSlot(null);
-                  setEditingAppointment(null);
-                  setActionMessage("");
-                  setSelectedAppointment(appointment);
-                }}
-                onSelectSlot={(slot) => {
-                  setSelectedAppointment(null);
-                  setEditingAppointment(null);
-                  setActionMessage("");
-                  setSelectedSlot(slot);
-                }}
-              />
+              <div
+                className={cn(
+                  "flex min-h-0 flex-1",
+                  mobilePanel !== "agenda" && "hidden xl:flex",
+                )}
+              >
+                <AppointmentCalendar
+                  appointments={filteredAppointments}
+                  view={calendarView}
+                  selectedDay={dayFilter}
+                  selectedTherapist={therapistFilter}
+                  onViewChange={setCalendarView}
+                  onMoveToSlot={handleMoveToSlot}
+                  onSelectAppointment={(appointment) => {
+                    setSelectedSlot(null);
+                    setEditingAppointment(null);
+                    setActionMessage("");
+                    setSelectedAppointment(appointment);
+                  }}
+                  onSelectSlot={(slot) => {
+                    setSelectedAppointment(null);
+                    setEditingAppointment(null);
+                    setActionMessage("");
+                    setSelectedSlot(slot);
+                  }}
+                />
+              </div>
             </div>
 
             {selectedAppointment ? (
