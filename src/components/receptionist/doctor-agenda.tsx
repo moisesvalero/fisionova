@@ -186,6 +186,10 @@ function getStatusDotTone(status: Appointment["status"]) {
   return "bg-clay";
 }
 
+export function getResponsePendingToggleStatus(status: AppointmentStatus) {
+  return status === "awaiting_response" ? "confirmed" : "awaiting_response";
+}
+
 function AppointmentBadges({ appointment }: { appointment: Appointment }) {
   return (
     <div className="mt-2 flex flex-wrap items-center gap-1.5">
@@ -380,10 +384,15 @@ function AppointmentDetailModal({
                         }
                         disabled={loading}
                         onClick={() =>
-                          onStatusChange(appointment, "awaiting_response")
+                          onStatusChange(
+                            appointment,
+                            getResponsePendingToggleStatus(appointment.status),
+                          )
                         }
                       >
-                        Respuesta pendiente
+                        {appointment.status === "awaiting_response"
+                          ? "Marcar respondida"
+                          : "Respuesta pendiente"}
                       </Button>
                       <Button
                         type="button"
@@ -1531,6 +1540,10 @@ export function DoctorAgenda() {
   function getStatusMessage(status: AppointmentStatus) {
     if (status === "awaiting_response") {
       return "Marcada como respuesta pendiente.";
+    }
+
+    if (status === "confirmed") {
+      return "Marcada como respondida.";
     }
 
     if (status === "no_show") {
