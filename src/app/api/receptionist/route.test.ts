@@ -24,7 +24,7 @@ describe("/api/receptionist", () => {
     };
 
     expect(payload.provider).toBe("fallback");
-    expect(payload.action.type).toBe("propose_slots");
+    expect(payload.action.type).toBe("reply");
   });
 
   it("turns an OpenAI appointment intent into backend-controlled slots", () => {
@@ -45,5 +45,35 @@ describe("/api/receptionist", () => {
         true,
       );
     }
+  });
+
+  it("asks what the patient needs when appointment intent lacks treatment context", () => {
+    const action = createReceptionActionFromOpenAIIntent(
+      {
+        intent: "request_appointment",
+        message: "Claro, te ayudo con la cita.",
+        treatmentId: null,
+      },
+      seedAppointments,
+    );
+
+    expect(action.type).toBe("reply");
+    expect(action.message).toContain("molesta");
+  });
+
+  it("keeps serious medical advice inside a demo safety boundary", () => {
+    const action = createReceptionActionFromOpenAIIntent(
+      {
+        intent: "reply",
+        message:
+          "Esto es una demo ficticia de portfolio. Si tienes dolor fuerte en el pecho o te cuesta respirar, llama a urgencias o acude a un centro sanitario real.",
+        treatmentId: null,
+      },
+      seedAppointments,
+    );
+
+    expect(action.type).toBe("reply");
+    expect(action.message).toContain("demo ficticia");
+    expect(action.message).toContain("urgencias");
   });
 });

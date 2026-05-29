@@ -10,36 +10,52 @@ import type { Appointment } from "./types";
 
 type BookingInput = Omit<Appointment, "id" | "status">;
 
-let appointments = resetAgenda();
+const globalForAppointments = globalThis as typeof globalThis & {
+  __fisionovaDemoAppointments?: Appointment[];
+};
+
+function getAppointmentsRef() {
+  globalForAppointments.__fisionovaDemoAppointments ??= resetAgenda();
+
+  return globalForAppointments.__fisionovaDemoAppointments;
+}
+
+function setAppointments(nextAppointments: Appointment[]) {
+  globalForAppointments.__fisionovaDemoAppointments = nextAppointments;
+}
 
 export function getDemoAppointments() {
-  return appointments.map((appointment) => ({ ...appointment }));
+  return getAppointmentsRef().map((appointment) => ({ ...appointment }));
 }
 
 export function resetDemoAppointmentStore() {
-  appointments = resetAgenda();
+  setAppointments(resetAgenda());
 
   return getDemoAppointments();
 }
 
 export function bookDemoAppointment(input: BookingInput) {
+  const appointments = getAppointmentsRef();
   const appointment = bookAppointment(appointments, input);
-  appointments = [...appointments, appointment];
+  setAppointments([...appointments, appointment]);
 
   return appointment;
 }
 
 export function requestDemoAppointment(input: BookingInput) {
+  const appointments = getAppointmentsRef();
   const appointment = requestAppointment(appointments, input);
-  appointments = [...appointments, appointment];
+  setAppointments([...appointments, appointment]);
 
   return appointment;
 }
 
 export function confirmDemoAppointment(appointmentId: string) {
-  appointments = confirmAppointment(appointments, appointmentId);
+  setAppointments(confirmAppointment(getAppointmentsRef(), appointmentId));
 
-  const appointment = appointments.find((item) => item.id === appointmentId);
+  const appointment = getAppointmentsRef().find(
+    (item) => item.id === appointmentId,
+  );
 
   if (!appointment) {
     throw new Error("Appointment not found");
@@ -52,7 +68,7 @@ export function confirmDemoAppointment(appointmentId: string) {
 }
 
 export function cancelDemoAppointment(appointmentId: string) {
-  appointments = cancelAppointment(appointments, appointmentId);
+  setAppointments(cancelAppointment(getAppointmentsRef(), appointmentId));
 
   return getDemoAppointments();
 }
@@ -63,7 +79,9 @@ export function moveDemoAppointment(
     Pick<Appointment, "date" | "time" | "therapistId" | "treatmentId" | "notes">
   >,
 ) {
-  appointments = updateAppointment(appointments, appointmentId, changes);
+  setAppointments(
+    updateAppointment(getAppointmentsRef(), appointmentId, changes),
+  );
 
   return getDemoAppointments();
 }

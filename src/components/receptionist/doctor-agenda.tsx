@@ -8,12 +8,15 @@ import {
   CheckCircle2,
   Filter,
   LockKeyhole,
-  SearchX,
+  Mail,
+  Phone,
+  Shuffle,
+  UserRound,
+  X,
   XCircle,
 } from "lucide-react";
 import Link from "next/link";
 
-import { AgendaPanel } from "@/components/receptionist/agenda-panel";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { findAvailableSlots } from "@/lib/receptionist/agenda";
@@ -23,7 +26,11 @@ import {
   therapists,
   treatments,
 } from "@/lib/receptionist/demo-data";
-import type { Appointment, EmailEventType } from "@/lib/receptionist/types";
+import type {
+  Appointment,
+  AppointmentSlot,
+  EmailEventType,
+} from "@/lib/receptionist/types";
 
 type AppointmentsPayload = {
   appointments: Appointment[];
@@ -74,12 +81,219 @@ function resolveTherapist(id: string) {
   return therapists.find((therapist) => therapist.id === id)?.name ?? id;
 }
 
+function formatStatus(status: Appointment["status"]) {
+  if (status === "pending") {
+    return "Pendiente";
+  }
+
+  if (status === "confirmed") {
+    return "Confirmada";
+  }
+
+  return "Cancelada";
+}
+
+function getStatusTone(status: Appointment["status"]) {
+  if (status === "pending") {
+    return "border-clinical/30 bg-clinical/10 text-clinical";
+  }
+
+  if (status === "confirmed") {
+    return "border-sage/30 bg-sage/10 text-sage";
+  }
+
+  return "border-clay/30 bg-clay/10 text-clay";
+}
+
+function AppointmentDetailModal({
+  appointment,
+  loading,
+  onCancel,
+  onClose,
+  onConfirm,
+  onMove,
+}: {
+  appointment: Appointment;
+  loading: boolean;
+  onCancel: (appointment: Appointment) => void;
+  onClose: () => void;
+  onConfirm: (appointment: Appointment) => void;
+  onMove: (appointment: Appointment) => void;
+}) {
+  return (
+    <div
+      className="modal-backdrop bg-charcoal/70 fixed inset-0 z-50 flex items-center justify-center px-4 py-6 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="appointment-detail-title"
+    >
+      <article className="modal-panel glass shadow-elegant border-border/60 relative w-full max-w-3xl overflow-hidden rounded-2xl border">
+        <button
+          type="button"
+          className="text-muted-foreground hover:text-foreground hover:bg-background/70 absolute top-4 right-4 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full transition-colors"
+          onClick={onClose}
+        >
+          <X className="size-5" aria-hidden="true" />
+          <span className="sr-only">Cerrar ficha de cita</span>
+        </button>
+
+        <header className="border-border/60 bg-background/85 border-b px-5 py-5 pr-16 sm:px-7">
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              className={cn(
+                "rounded-full border px-2.5 py-1 text-xs font-medium",
+                getStatusTone(appointment.status),
+              )}
+            >
+              {formatStatus(appointment.status)}
+            </span>
+            <span className="text-muted-foreground text-xs tabular-nums">
+              {formatAppointmentDate(appointment.date)} · {appointment.time}
+            </span>
+          </div>
+          <h2
+            id="appointment-detail-title"
+            className="font-display mt-3 text-3xl leading-tight"
+          >
+            {appointment.patientName}
+          </h2>
+          <p className="text-muted-foreground mt-2 text-sm">
+            {resolveTreatment(appointment.treatmentId)} con{" "}
+            {resolveTherapist(appointment.therapistId)}
+          </p>
+        </header>
+
+        <div className="grid gap-5 px-5 py-5 sm:px-7 lg:grid-cols-[1fr_0.85fr]">
+          <section className="border-border/60 bg-background/65 rounded-xl border p-4">
+            <h3 className="text-sm font-semibold">Ficha del paciente</h3>
+            <div className="mt-4 grid gap-3 text-sm">
+              <p className="text-muted-foreground flex items-center gap-2">
+                <UserRound className="size-4" aria-hidden="true" />
+                {appointment.patientName}
+              </p>
+              <p className="text-muted-foreground flex min-w-0 items-center gap-2">
+                <Mail className="size-4 shrink-0" aria-hidden="true" />
+                <span className="truncate">{appointment.patientEmail}</span>
+              </p>
+              <p className="text-muted-foreground flex items-center gap-2">
+                <Phone className="size-4" aria-hidden="true" />
+                {appointment.patientPhone}
+              </p>
+            </div>
+            {appointment.notes ? (
+              <p className="text-muted-foreground mt-4 text-sm leading-relaxed">
+                {appointment.notes}
+              </p>
+            ) : null}
+          </section>
+
+          <section className="border-border/60 bg-background/65 rounded-xl border p-4">
+            <h3 className="text-sm font-semibold">Acciones</h3>
+            <div className="mt-4 flex flex-col gap-2">
+              {appointment.status === "pending" ? (
+                <Button
+                  type="button"
+                  disabled={loading}
+                  onClick={() => onConfirm(appointment)}
+                >
+                  <CheckCircle2 className="size-4" aria-hidden="true" />
+                  Confirmar cita
+                </Button>
+              ) : null}
+              {appointment.status !== "cancelled" ? (
+                <>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    disabled={loading}
+                    onClick={() => onMove(appointment)}
+                  >
+                    <Shuffle className="size-4" aria-hidden="true" />
+                    Mover al siguiente hueco
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    disabled={loading}
+                    onClick={() => onCancel(appointment)}
+                  >
+                    <XCircle className="size-4" aria-hidden="true" />
+                    Cancelar cita
+                  </Button>
+                </>
+              ) : (
+                <p className="text-muted-foreground text-sm">
+                  Esta cita queda como histórico cancelado.
+                </p>
+              )}
+            </div>
+          </section>
+        </div>
+      </article>
+    </div>
+  );
+}
+
+function FreeSlotModal({
+  slot,
+  onClose,
+}: {
+  slot: Pick<AppointmentSlot, "date" | "time">;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      className="modal-backdrop bg-charcoal/70 fixed inset-0 z-50 flex items-center justify-center px-4 py-6 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="free-slot-title"
+    >
+      <article className="modal-panel glass shadow-elegant border-border/60 relative w-full max-w-xl overflow-hidden rounded-2xl border">
+        <button
+          type="button"
+          className="text-muted-foreground hover:text-foreground hover:bg-background/70 absolute top-4 right-4 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full transition-colors"
+          onClick={onClose}
+        >
+          <X className="size-5" aria-hidden="true" />
+          <span className="sr-only">Cerrar hueco libre</span>
+        </button>
+
+        <div className="px-5 py-5 pr-16 sm:px-7">
+          <span className="text-sage text-xs font-medium tracking-[0.16em] uppercase">
+            Hueco libre
+          </span>
+          <h2
+            id="free-slot-title"
+            className="font-display mt-3 text-3xl leading-tight"
+          >
+            {formatAppointmentDate(slot.date)} · {slot.time}
+          </h2>
+          <p className="text-muted-foreground mt-3 text-sm leading-relaxed">
+            Puedes arrastrar una cita hasta este hueco para moverla manteniendo
+            su terapeuta y tratamiento. La demo aún no crea citas manuales desde
+            este modal.
+          </p>
+        </div>
+      </article>
+    </div>
+  );
+}
+
 function AppointmentCalendar({
   appointments,
   selectedDay,
+  onMoveToSlot,
+  onSelectAppointment,
+  onSelectSlot,
 }: {
   appointments: Appointment[];
   selectedDay: string;
+  onMoveToSlot: (
+    appointment: Appointment,
+    slot: Pick<AppointmentSlot, "date" | "time">,
+  ) => void;
+  onSelectAppointment: (appointment: Appointment) => void;
+  onSelectSlot: (slot: Pick<AppointmentSlot, "date" | "time">) => void;
 }) {
   const days = selectedDay === "all" ? demoDates : [selectedDay];
   const appointmentsBySlot = useMemo(() => {
@@ -102,7 +316,7 @@ function AppointmentCalendar({
             Calendario semanal
           </div>
           <h2 className="font-display mt-2 text-3xl leading-tight">
-            Vista tipo Google Calendar
+            Agenda semanal
           </h2>
         </div>
         <p className="text-muted-foreground text-sm">
@@ -155,20 +369,43 @@ function AppointmentCalendar({
                   <div
                     key={`${day}-${time}`}
                     className="border-border/50 bg-background/25 min-h-32 border-r p-2 last:border-r-0"
+                    onDragOver={(event) => event.preventDefault()}
+                    onDrop={(event) => {
+                      event.preventDefault();
+                      const appointmentId =
+                        event.dataTransfer.getData("text/plain");
+                      const appointment = appointments.find(
+                        (item) => item.id === appointmentId,
+                      );
+
+                      if (appointment) {
+                        onMoveToSlot(appointment, { date: day, time });
+                      }
+                    }}
                   >
                     {slotAppointments.length > 0 ? (
                       <div className="space-y-2">
                         {slotAppointments.map((appointment) => (
-                          <div
+                          <button
                             key={appointment.id}
+                            type="button"
+                            draggable={appointment.status !== "cancelled"}
                             className={cn(
-                              "rounded-md border px-3 py-2 text-xs shadow-sm",
+                              "focus:ring-ring/40 w-full rounded-md border px-3 py-2 text-left text-xs shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus:ring-2 focus:outline-none",
                               appointment.status === "confirmed"
                                 ? "border-sage/30 bg-sage/15"
                                 : appointment.status === "pending"
                                   ? "border-clinical/30 bg-clinical/10"
                                   : "border-clay/30 bg-clay/10 opacity-75",
                             )}
+                            onClick={() => onSelectAppointment(appointment)}
+                            onDragStart={(event) => {
+                              event.dataTransfer.setData(
+                                "text/plain",
+                                appointment.id,
+                              );
+                              event.dataTransfer.effectAllowed = "move";
+                            }}
                           >
                             <div className="flex items-start justify-between gap-2">
                               <p className="leading-snug font-medium">
@@ -191,13 +428,17 @@ function AppointmentCalendar({
                             <p className="text-muted-foreground mt-1 truncate">
                               {resolveTherapist(appointment.therapistId)}
                             </p>
-                          </div>
+                          </button>
                         ))}
                       </div>
                     ) : (
-                      <div className="border-border/50 text-muted-foreground/70 flex h-full min-h-28 items-center justify-center rounded-md border border-dashed text-xs">
+                      <button
+                        type="button"
+                        className="border-border/50 text-muted-foreground/70 hover:border-sage/40 hover:bg-sage/10 hover:text-foreground flex h-full min-h-28 w-full items-center justify-center rounded-md border border-dashed text-xs transition-colors"
+                        onClick={() => onSelectSlot({ date: day, time })}
+                      >
                         Libre
-                      </div>
+                      </button>
                     )}
                   </div>
                 );
@@ -210,10 +451,14 @@ function AppointmentCalendar({
   );
 }
 
-async function sendEmail(type: EmailEventType, appointment: Appointment) {
+async function sendEmail(
+  type: EmailEventType,
+  appointment: Appointment,
+  pin: string,
+) {
   await fetch("/api/email", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "x-doctor-pin": pin },
     body: JSON.stringify({ type, appointment }),
   });
 }
@@ -226,6 +471,12 @@ export function DoctorAgenda() {
   const [loading, setLoading] = useState(false);
   const [dayFilter, setDayFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [selectedAppointment, setSelectedAppointment] =
+    useState<Appointment | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<Pick<
+    AppointmentSlot,
+    "date" | "time"
+  > | null>(null);
 
   const confirmedCount = useMemo(
     () => countByStatus(appointments, "confirmed"),
@@ -323,8 +574,21 @@ export function DoctorAgenda() {
   }
 
   async function handleCancel(appointment: Appointment) {
-    await patchAgenda({ action: "cancel", appointmentId: appointment.id });
-    await sendEmail("cancellation", { ...appointment, status: "cancelled" });
+    const updated = await patchAgenda({
+      action: "cancel",
+      appointmentId: appointment.id,
+    });
+    const cancelled = updated?.find((item) => item.id === appointment.id);
+
+    if (cancelled) {
+      setSelectedAppointment(cancelled);
+    }
+
+    await sendEmail(
+      "cancellation",
+      { ...appointment, status: "cancelled" },
+      pin,
+    );
   }
 
   async function handleConfirm(appointment: Appointment) {
@@ -335,7 +599,8 @@ export function DoctorAgenda() {
     const confirmed = updated?.find((item) => item.id === appointment.id);
 
     if (confirmed) {
-      await sendEmail("confirmation", confirmed);
+      setSelectedAppointment(confirmed);
+      await sendEmail("confirmation", confirmed, pin);
     }
   }
 
@@ -357,12 +622,35 @@ export function DoctorAgenda() {
     const moved = updated?.find((item) => item.id === appointment.id);
 
     if (moved) {
-      await sendEmail("modification", moved);
+      setSelectedAppointment(moved);
+      await sendEmail("modification", moved, pin);
     }
   }
 
-  async function handleReset() {
-    await patchAgenda({ action: "reset" });
+  async function handleMoveToSlot(
+    appointment: Appointment,
+    slot: Pick<AppointmentSlot, "date" | "time">,
+  ) {
+    if (appointment.status === "cancelled") {
+      return;
+    }
+
+    const updated = await patchAgenda({
+      action: "move",
+      appointmentId: appointment.id,
+      slot: {
+        date: slot.date,
+        time: slot.time,
+        therapistId: appointment.therapistId,
+        treatmentId: appointment.treatmentId,
+      },
+    });
+    const moved = updated?.find((item) => item.id === appointment.id);
+
+    if (moved) {
+      setSelectedAppointment(moved);
+      await sendEmail("modification", moved, pin);
+    }
   }
 
   return (
@@ -456,8 +744,24 @@ export function DoctorAgenda() {
                     </div>
                   </div>
 
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="h-10"
+                      disabled={loading}
+                      onClick={() => loadAgenda(pin)}
+                    >
+                      Actualizar
+                    </Button>
+                  </div>
+
                   <div className="grid gap-3 sm:grid-cols-3">
-                    <div className="border-border/70 bg-background/65 rounded-lg border p-4">
+                    <button
+                      type="button"
+                      className="border-border/70 bg-background/65 hover:border-clinical/40 hover:bg-clinical/10 rounded-lg border p-4 text-left transition-all"
+                      onClick={() => setStatusFilter("pending")}
+                    >
                       <div className="text-clinical flex items-center justify-between text-xs font-medium uppercase">
                         Pendientes
                         <CalendarCheck2 className="size-4" aria-hidden="true" />
@@ -468,8 +772,12 @@ export function DoctorAgenda() {
                       <p className="text-muted-foreground mt-2 text-xs">
                         necesitan confirmación humana
                       </p>
-                    </div>
-                    <div className="border-border/70 bg-sage/10 rounded-lg border p-4">
+                    </button>
+                    <button
+                      type="button"
+                      className="border-border/70 bg-sage/10 hover:border-sage/40 rounded-lg border p-4 text-left transition-all"
+                      onClick={() => setStatusFilter("confirmed")}
+                    >
                       <div className="text-sage flex items-center justify-between text-xs font-medium uppercase">
                         Confirmadas
                         <CheckCircle2 className="size-4" aria-hidden="true" />
@@ -480,8 +788,12 @@ export function DoctorAgenda() {
                       <p className="text-muted-foreground mt-2 text-xs">
                         agenda bloqueada
                       </p>
-                    </div>
-                    <div className="border-border/70 bg-clay/10 rounded-lg border p-4">
+                    </button>
+                    <button
+                      type="button"
+                      className="border-border/70 bg-clay/10 hover:border-clay/40 rounded-lg border p-4 text-left transition-all"
+                      onClick={() => setStatusFilter("cancelled")}
+                    >
                       <div className="text-clay flex items-center justify-between text-xs font-medium uppercase">
                         Canceladas
                         <XCircle className="size-4" aria-hidden="true" />
@@ -492,7 +804,7 @@ export function DoctorAgenda() {
                       <p className="text-muted-foreground mt-2 text-xs">
                         no ocupan agenda
                       </p>
-                    </div>
+                    </button>
                   </div>
                 </div>
 
@@ -559,31 +871,34 @@ export function DoctorAgenda() {
             <AppointmentCalendar
               appointments={filteredAppointments}
               selectedDay={dayFilter}
+              onMoveToSlot={handleMoveToSlot}
+              onSelectAppointment={(appointment) => {
+                setSelectedSlot(null);
+                setSelectedAppointment(appointment);
+              }}
+              onSelectSlot={(slot) => {
+                setSelectedAppointment(null);
+                setSelectedSlot(slot);
+              }}
             />
 
-            {filteredAppointments.length > 0 ? (
-              <AgendaPanel
-                appointments={filteredAppointments}
+            {selectedAppointment ? (
+              <AppointmentDetailModal
+                appointment={selectedAppointment}
+                loading={loading}
+                onClose={() => setSelectedAppointment(null)}
                 onConfirm={handleConfirm}
                 onCancel={handleCancel}
                 onMove={handleMove}
-                onReset={handleReset}
               />
-            ) : (
-              <div className="glass shadow-elegant border-border/60 flex min-h-52 flex-col items-center justify-center rounded-xl border px-6 py-10 text-center">
-                <SearchX
-                  className="text-muted-foreground mb-3 size-8"
-                  aria-hidden="true"
-                />
-                <h2 className="text-base font-semibold">
-                  No hay citas con estos filtros
-                </h2>
-                <p className="text-muted-foreground mt-2 max-w-md text-sm">
-                  Cambia el dia o el estado para revisar el resto de la agenda
-                  privada.
-                </p>
-              </div>
-            )}
+            ) : null}
+
+            {selectedSlot ? (
+              <FreeSlotModal
+                slot={selectedSlot}
+                onClose={() => setSelectedSlot(null)}
+              />
+            ) : null}
           </section>
         )}
       </div>

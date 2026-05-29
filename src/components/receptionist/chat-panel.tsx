@@ -163,7 +163,7 @@ export function ChatPanel({
             onSubmit={handleBookingSubmit}
           >
             <div>
-              <p className="text-sm font-medium">Datos para confirmar</p>
+              <p className="text-sm font-medium">Te tomo los datos</p>
               <p className="text-muted-foreground mt-1 text-xs">
                 {formatShortDate(selectedSlot.date)} · {selectedSlot.time}
               </p>
@@ -201,7 +201,7 @@ export function ChatPanel({
               />
             </label>
             <Button type="submit" size="sm" disabled={bookingPending}>
-              {bookingPending ? "Confirmando..." : "Confirmar cita"}
+              {bookingPending ? "Un momentito..." : "Dejarlo apuntado"}
             </Button>
           </form>
         ) : null}
@@ -210,7 +210,7 @@ export function ChatPanel({
           <div className="animate-fade-up flex justify-start">
             <div className="border-border/60 bg-card text-muted-foreground inline-flex max-w-[85%] items-center gap-2 rounded-2xl rounded-bl-md border px-4 py-2.5 text-sm">
               <span className="animate-pulse-dot bg-sage h-2 w-2 rounded-full" />
-              Buscando huecos disponibles...
+              Un momentito, te leo...
             </div>
           </div>
         ) : null}
@@ -227,6 +227,7 @@ export function ChatPanel({
         </div>
         <form
           className="chat-input-shell border-border/70 bg-background/80 focus-within:ring-ring/40 flex items-center gap-2 rounded-lg border px-2 py-1.5 transition-shadow focus-within:ring-2"
+          suppressHydrationWarning
           onSubmit={handleSubmit}
         >
           <label className="sr-only" htmlFor={inputId}>
@@ -239,6 +240,7 @@ export function ChatPanel({
             placeholder="Escribe un mensaje..."
             disabled={pending}
             autoFocus={mode === "modal"}
+            suppressHydrationWarning
             onClick={mode === "inline" ? onInputFocus : undefined}
             onFocus={mode === "inline" ? onInputFocus : undefined}
           />

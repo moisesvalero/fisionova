@@ -2,15 +2,16 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { env } from "@/lib/env";
+import { checkRateLimit, getClientKey } from "@/lib/rate-limit";
 import { getDemoAppointments } from "@/lib/receptionist/appointment-store";
 import { findAvailableSlots } from "@/lib/receptionist/agenda";
 import { clinicProfile, treatments } from "@/lib/receptionist/demo-data";
 import { getFallbackReceptionAction } from "@/lib/receptionist/fallback";
 import type { Appointment, ReceptionAction } from "@/lib/receptionist/types";
 
-type ReceptionRequest = {
-  message: string;
-};
+const receptionRequestSchema = z.object({
+  message: z.string().trim().min(1).max(700),
+});
 
 const openAIIntentSchema = z.object({
   intent: z.enum(["reply", "request_appointment"]),
@@ -43,13 +44,13 @@ const openAIReceptionIntentJsonSchema = {
     message: {
       type: "string",
       description:
-        "Short, warm Spanish message for the patient. Do not invent booked appointments.",
+        "Short, warm Spanish message for the patient. Do not invent booked appointments. If intent is request_appointment, do not ask for another day unless the user did not mention any scheduling preference.",
     },
     treatmentId: {
       type: ["string", "null"],
       enum: ["general", "sports", "postural", null],
       description:
-        "Best matching treatment. Use sports for deportiva/deporte/lesiones deportivas, postural for postura/espalda/cuello/higiene postural, general otherwise. Null if not relevant.",
+        "Best matching treatment. Use sports for deportiva/deporte/lesiones deportivas/rodilla/tobillo/correr, postural for postura/espalda/cuello/higiene postural, general for pain, massage or physiotherapy needs that do not fit those two. Use null when the patient asks for an appointment but has not explained what hurts or what they want to treat.",
     },
   },
   required: ["intent", "message", "treatmentId"],
@@ -85,10 +86,13 @@ function buildReceptionSystemPrompt() {
     .join("\n");
 
   return [
-    "Eres recepción online de FisioNova Clínica, una clínica de fisioterapia cercana y profesional.",
-    "Responde siempre en español, con tono cálido, breve y natural.",
-    "No digas que eres un modelo de IA. Hablas como recepción de la clínica.",
-    "No confirmes una cita directamente. Si el paciente quiere reservar, marca request_appointment para que el backend proponga huecos reales.",
+    "Eres Clara, la recepcionista online de FisioNova Clínica, una clínica de fisioterapia cercana y profesional.",
+    "Responde siempre en español, con tono cálido, breve y natural. Suenas como Clara: una recepcionista de barrio muy simpática, cercana, amable y resolutiva, sin tecnicismos.",
+    "No uses palabras internas como solicitud, estado pendiente, backend, sistema, base de datos o proceso administrativo cuando hables con el paciente.",
+    "No digas que eres un modelo de IA. Hablas como Clara, la recepcionista de la clínica.",
+    "Si el paciente pide diagnóstico, medicación, valoración médica, habla de urgencias o cuenta síntomas serios como dolor fuerte en el pecho, dificultad para respirar, fiebre, desmayo, embarazo con dolor, pérdida de fuerza o algo parecido, responde que esto es una demo ficticia de portfolio y que debe contactar con urgencias o un profesional sanitario real. No des consejos médicos.",
+    "No confirmes una cita directamente. Si el paciente quiere reservar, marca request_appointment. Si no ha contado qué le duele o qué quiere tratar, deja treatmentId en null para preguntarlo antes de mostrar huecos.",
+    "Si el paciente pide cita para hoy, no preguntes 'quÃ© dÃ­a de hoy'. Pide sÃ³lo la franja si falta, o deja que el backend proponga huecos.",
     "No muestres la agenda interna ni datos de otros pacientes.",
     `Dirección: ${clinicProfile.address}. Teléfono: ${clinicProfile.phone}. Horario: ${clinicProfile.openingHours}.`,
     `Tratamientos:\n${treatmentSummary}`,
@@ -106,27 +110,55 @@ export function createReceptionActionFromOpenAIIntent(
     };
   }
 
+  if (!intent.treatmentId) {
+    return {
+      type: "reply",
+      message:
+        "Claro, te ayudo. Antes de mirar hora, cuéntame qué te molesta o qué quieres tratar.",
+    };
+  }
+
   const slots = findAvailableSlots(appointments, {
-    treatmentId: intent.treatmentId ?? "general",
+    treatmentId: intent.treatmentId,
   });
 
   if (slots.length === 0) {
     return {
       type: "reply",
       message:
-        "Ahora mismo no veo huecos libres para ese tratamiento. Puedes probar con otra franja o escribirnos para revisarlo manualmente.",
+        "Ahora mismo no veo huecos libres para ese tratamiento. Prueba con otra franja y te digo qué opciones tenemos.",
     };
   }
 
   return {
     type: "propose_slots",
-    message: intent.message,
+    message:
+      intent.treatmentId === "sports"
+        ? "Claro. Para fisioterapia deportiva, estos huecos nos encajan bien. Elige el que mejor te venga y lo dejamos apuntado para confirmártelo por email."
+        : intent.treatmentId === "postural"
+          ? "Claro. Para reeducación postural, estos huecos nos encajan bien. Elige el que mejor te venga y lo dejamos apuntado para confirmártelo por email."
+          : "Claro. Estos huecos nos encajan bien. Elige el que mejor te venga y lo dejamos apuntado para confirmártelo por email.",
     slots,
   };
 }
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as ReceptionRequest;
+  const rateLimit = checkRateLimit(getClientKey(request, "receptionist"), {
+    limit: 20,
+    windowMs: 60_000,
+  });
+
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: "Too many requests" },
+      {
+        status: 429,
+        headers: { "Retry-After": String(rateLimit.retryAfter) },
+      },
+    );
+  }
+
+  const body = receptionRequestSchema.parse(await request.json());
   const appointments = getDemoAppointments();
   const fallback = getFallbackReceptionAction(body.message, appointments);
 

@@ -1,8 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   bookDemoAppointment,
   getDemoAppointments,
+  requestDemoAppointment,
   resetDemoAppointmentStore,
 } from "./appointment-store";
 
@@ -22,5 +23,27 @@ describe("appointment store", () => {
     });
 
     expect(getDemoAppointments()).toContainEqual(appointment);
+  });
+
+  it("keeps requested appointments after a route module reload in dev", async () => {
+    resetDemoAppointmentStore();
+
+    const appointment = requestDemoAppointment({
+      patientName: "Paciente Pendiente",
+      patientEmail: "pendiente@example.com",
+      patientPhone: "600 000 001",
+      treatmentId: "general",
+      therapistId: "marta",
+      date: "2026-06-05",
+      time: "18:30",
+      notes: "Cita pendiente creada desde test.",
+    });
+
+    vi.resetModules();
+
+    const { getDemoAppointments: getReloadedDemoAppointments } =
+      await import("./appointment-store");
+
+    expect(getReloadedDemoAppointments()).toContainEqual(appointment);
   });
 });

@@ -1,50 +1,72 @@
-# FisioNova Clinica - Recepcionista IA
+# FisioNova Clinica, recepcionista IA para fisioterapia
 
-Demo publica para portfolio tecnico: una web app de una clinica de fisioterapia ficticia con recepcionista IA, reserva de citas, agenda privada para el medico y confirmaciones por email.
+Demo publica para portfolio tecnico: una web app de una clinica de fisioterapia ficticia con recepcionista IA, solicitud de citas, agenda privada para el medico y confirmaciones por email.
 
 ![Captura de FisioNova Clinica](docs/images/home-screenshot.png)
 
-## Demo
+> FisioNova Clinica no es una clinica real. Es un proyecto de portfolio para demostrar producto, UX, frontend, backend ligero e integracion con IA. El chat incluye una barrera de seguridad: ante urgencias, diagnosticos, medicacion o sintomas serios, informa de que es una demo ficticia y deriva a urgencias o a un profesional sanitario real.
 
-El proyecto simula la experiencia completa de una clinica real:
+## Que demuestra
 
-- Web publica con hero visual, secciones de clinica, tratamientos, equipo, contacto y politica de cookies.
-- Chat de recepcion online integrado en la landing, con apertura ampliada tipo pop-up en escritorio.
-- Recepcionista IA conectable a OpenAI mediante API Key.
-- Flujo supervisado: la IA crea solicitudes pendientes y el humano confirma la cita desde el area privada.
-- Agenda privada para el medico protegida por PIN.
-- Calendario visual con citas precargadas para mostrar el funcionamiento.
-- Envio de emails transaccionales preparado con Resend.
-- Banner y pagina de politica de cookies.
-- Responsive y efectos de aparicion para una presentacion mas premium.
-
-> La clinica es ficticia. El objetivo es mostrar una prueba tecnica realista para portfolio, no vender un producto final en produccion.
+- Landing completa de una clinica local ficticia, con hero visual, tratamientos, equipo, contacto, FAQ y politica de cookies.
+- Chat con Clara, recepcionista IA, integrado en la web y ampliable en modal.
+- Integracion opcional con OpenAI para interpretar mensajes y proponer huecos.
+- Flujo seguro de citas: la IA no confirma citas finales, crea una solicitud pendiente.
+- Panel privado `/medico` protegido por PIN.
+- Calendario operativo tipo agenda, con click en citas, ficha del paciente, acciones y movimiento por drag and drop.
+- Emails transaccionales con Resend solo desde el panel privado.
+- Modo demo sin base de datos, mas opcion Supabase para persistencia real.
+- SEO tecnico: metadata, sitemap, robots, manifest, Open Graph, JSON-LD y `llms.txt`.
+- Verificacion con TypeScript, ESLint, Prettier, Vitest, build y audit.
 
 ## Stack
 
-- Next.js 16 con App Router.
-- React 19 y TypeScript estricto.
+- Next.js 16, App Router y React 19.
+- TypeScript estricto.
 - Tailwind CSS 4.
-- ESLint 9 y Prettier con plugin de Tailwind.
-- Vitest, jsdom y Testing Library.
-- Zod para validar variables de entorno.
-- OpenAI API para la recepcionista IA.
-- Resend para emails de confirmacion y cancelacion.
-- Componentes tipo shadcn con `components.json`, `cn()` y `Button`.
-- SEO base con metadata, sitemap, robots, manifest, Open Graph dinamico, `llms.txt` y JSON-LD.
+- Componentes estilo shadcn con `Button` y utilidad `cn()`.
+- Zod para validar variables de entorno y payloads.
+- OpenAI Responses API para la recepcionista.
+- Resend para emails de confirmacion, cancelacion y cambios.
+- Supabase opcional para guardar citas en produccion.
+- Vitest, Testing Library, ESLint y Prettier.
 
-## Funcionalidades tecnicas
+## Flujo de cita
 
-- `src/app/api/receptionist/route.ts`: endpoint de chat para procesar mensajes de recepcion y consultar huecos disponibles.
-- `src/app/api/appointments/route.ts`: solicitudes pendientes, confirmacion humana, cancelaciones y cambios.
-- `src/app/api/email/route.ts`: endpoint preparado para enviar emails con Resend solo tras confirmacion humana.
-- `src/components/receptionist/receptionist-experience.tsx`: experiencia principal de la landing, chat, modal, agenda y secciones visuales.
-- `src/components/legal/cookie-banner.tsx`: banner de consentimiento con preferencias guardadas en `localStorage`.
-- `src/app/medico/page.tsx`: vista privada de agenda del medico.
-- `supabase/appointments.sql`: esquema opcional para usar Supabase como base de datos real.
-- `src/lib/env.ts`: contrato de variables de entorno validado con Zod.
+1. El paciente habla con Clara.
+2. Si no cuenta que le duele, Clara pregunta antes de mostrar huecos.
+3. Si detecta el motivo, asigna tratamiento: general, deportiva o postural.
+4. La web muestra huecos disponibles.
+5. El paciente deja sus datos.
+6. Se crea una cita `pending`.
+7. El medico entra en `/medico`, revisa el calendario y confirma, mueve o cancela.
+8. Solo al confirmar/cambiar/cancelar desde el panel privado se llama a `/api/email`.
 
-## Arranque rapido
+## Seguridad y limites actuales
+
+Incluido:
+
+- `.env*` ignorado por Git, excepto `.env.example`.
+- Validacion centralizada de env vars en `src/lib/env.ts`.
+- OpenAI y Resend solo se usan desde rutas server-side.
+- `/api/appointments` protege lectura y cambios con `DOCTOR_DASHBOARD_PIN`.
+- `/api/email` protege el envio con `DOCTOR_DASHBOARD_PIN`.
+- Rate limit ligero en memoria para `/api/receptionist` y POST publico de `/api/appointments`.
+- Limites de longitud en mensajes, datos de paciente y payloads de email.
+- Headers de seguridad en `next.config.ts`.
+- `/medico` tiene `noindex` y `robots.ts` bloquea `/api/` y `/medico`.
+- JSON-LD se serializa escapando `<`.
+
+Pendiente para produccion real:
+
+- Cambiar `DOCTOR_DASHBOARD_PIN`, no usar `1234`.
+- Activar Supabase si quieres persistencia real de citas.
+- Configurar reglas/RLS y backups si se usa Supabase.
+- Anadir proteccion perimetral real si el proyecto recibe trafico: Vercel Firewall, WAF, Turnstile, captcha o rate limit persistente.
+- Rotar cualquier API key que se haya pegado en chats, capturas o commits.
+- Revisar textos legales con un profesional si se va a usar comercialmente.
+
+## Arranque local
 
 ```bash
 npm install
@@ -54,14 +76,21 @@ npm run dev
 
 Abre `http://localhost:3000`.
 
+Panel privado local:
+
+```text
+http://localhost:3000/medico
+PIN demo: 1234
+```
+
 ## Variables de entorno
 
-Copia `.env.example` a `.env.local` y rellena solo lo que necesites para la demo.
+Copia `.env.example` a `.env.local` y rellena solo lo necesario.
 
 ```env
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 
-# OpenAI
+# OpenAI opcional
 OPENAI_API_KEY=
 OPENAI_MODEL=gpt-5.4-nano
 
@@ -70,25 +99,38 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 
-# Area privada de agenda
+# Panel privado
 DOCTOR_DASHBOARD_PIN=1234
 
-# Resend
+# Resend opcional
 RESEND_API_KEY=
 RESEND_FROM_EMAIL=onboarding@resend.dev
 ```
 
-Sin `OPENAI_API_KEY`, la app puede seguir funcionando como demo visual, pero la respuesta IA real queda limitada. Sin `SUPABASE_SERVICE_ROLE_KEY`, las citas usan un store demo en memoria. Sin `RESEND_API_KEY`, el flujo de email queda preparado pero no envia correos reales.
+Sin `OPENAI_API_KEY`, se usa fallback local basado en reglas. Sin `SUPABASE_SERVICE_ROLE_KEY`, las citas viven en memoria durante la sesion del servidor. Sin `RESEND_API_KEY`, los emails se simulan.
 
-## Flujo de citas
+## Despliegue en Vercel
 
-1. El paciente escribe a la recepcionista IA.
-2. La IA propone huecos disponibles y recoge nombre, email y telefono.
-3. La web crea una solicitud `pending`; todavia no se envia confirmacion.
-4. El medico o recepcion entra al area privada, revisa la solicitud y pulsa `Confirmar`.
-5. La cita pasa a `confirmed` y se envia el email de confirmacion.
+1. Importa el repositorio en Vercel.
+2. Configura como minimo:
+   - `NEXT_PUBLIC_APP_URL=https://tu-dominio.vercel.app`
+   - `DOCTOR_DASHBOARD_PIN=un-pin-largo-no-obvio`
+3. Para IA real:
+   - `OPENAI_API_KEY`
+   - `OPENAI_MODEL=gpt-5.4-nano` o el modelo gratuito/disponible que quieras probar.
+4. Para emails reales:
+   - `RESEND_API_KEY`
+   - `RESEND_FROM_EMAIL`
+5. Para persistencia real:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+   - Ejecuta `supabase/appointments.sql` en tu proyecto Supabase.
+6. Ejecuta antes:
 
-Este enfoque evita que la IA cierre citas sensibles sin supervision humana.
+```bash
+npm run verify
+```
 
 ## Scripts
 
@@ -97,55 +139,41 @@ npm run dev              # servidor local
 npm run build            # build de produccion
 npm run start            # servir build
 npm run lint             # ESLint
-npm run lint:fix         # ESLint con fixes
-npm run check            # TypeScript sin emitir archivos
+npm run check            # TypeScript sin emitir
 npm run format           # formatear con Prettier
 npm run format:check     # comprobar formato
 npm test                 # tests unitarios
-npm run test:watch       # tests en modo watch
-npm run audit            # auditoria de vulnerabilidades high+
+npm run audit            # npm audit high+
 npm run verify           # formato, lint, tipos, tests, build y audit
 npm run design:audit     # auditoria visual con Impeccable
-npm run agent:skills     # instalar/actualizar skills del agente
 ```
 
-## Estructura
+## Estructura principal
 
 ```text
 src/
-  app/             # rutas, layouts, APIs, sitemap, robots y estilos globales
-  components/      # componentes reutilizables, UI, legal y experiencia principal
-  config/          # configuracion del sitio
-  lib/             # utilidades, env, SEO, servicios y helpers
-  sanity/          # integracion opcional heredada de la plantilla base
-  test/            # setup de tests
+  app/
+    api/appointments/     # citas, agenda privada y acciones
+    api/email/            # emails protegidos por PIN
+    api/receptionist/     # chat IA y fallback local
+    medico/               # panel privado
+  components/
+    receptionist/         # landing, chat, calendario y panel medico
+    legal/                # cookies
+    seo/                  # JSON-LD
+    ui/                   # componentes base
+  lib/
+    receptionist/         # agenda, datos demo, emails y store
+    env.ts                # validacion de entorno
+    rate-limit.ts         # rate limit demo en memoria
+supabase/
+  appointments.sql        # esquema opcional
 ```
 
-## Notas de portfolio
+## Licencia
 
-Este proyecto esta pensado para ensenar:
+Este proyecto esta publicado bajo Creative Commons Attribution-NonCommercial 4.0 International (`CC-BY-NC-4.0`).
 
-- Integracion de IA en una experiencia web realista.
-- Diseno de producto para un negocio local, no una landing generica.
-- Separacion entre web publica y area privada.
-- Manejo de variables de entorno y servicios externos opcionales.
-- Cuidado visual, responsive, accesibilidad basica, SEO y verificacion automatizada.
+Puedes estudiar, compartir y adaptar el codigo con atribucion, pero no puedes usarlo con fines comerciales, revenderlo, desplegarlo para un cliente, ofrecerlo como SaaS, white-label o integrarlo en un producto/servicio de pago sin permiso escrito del autor.
 
-## Verificacion
-
-Antes de publicar o entregar cambios:
-
-```bash
-npm run format:check
-npm run lint
-npm run check
-npm test
-npm run build
-npm run design:audit
-```
-
-O una pasada completa:
-
-```bash
-npm run verify
-```
+Ver [LICENSE](LICENSE).

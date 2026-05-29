@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { env } from "@/lib/env";
+import { checkRateLimit, getClientKey } from "@/lib/rate-limit";
 import {
   cancelAppointmentRequest,
   confirmAppointmentRequest,
@@ -13,18 +14,18 @@ import {
 import type { Appointment } from "@/lib/receptionist/types";
 
 const slotSchema = z.object({
-  date: z.string().min(1),
-  time: z.string().min(1),
-  therapistId: z.string().min(1),
-  treatmentId: z.string().min(1),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  time: z.string().regex(/^\d{2}:\d{2}$/),
+  therapistId: z.string().min(1).max(80),
+  treatmentId: z.string().min(1).max(80),
 });
 
 const bookingSchema = z.object({
   slot: slotSchema,
-  patientName: z.string().min(1).default("Visitante Portfolio"),
+  patientName: z.string().min(1).max(120).default("Visitante Portfolio"),
   patientEmail: z.email().default("visitante@example.com"),
-  patientPhone: z.string().min(1).default("600 000 000"),
-  notes: z.string().default("Cita creada desde recepción online."),
+  patientPhone: z.string().min(1).max(40).default("600 000 000"),
+  notes: z.string().max(500).default("Cita creada desde recepcion online."),
 });
 
 const privateActionSchema = z.discriminatedUnion("action", [
@@ -73,6 +74,21 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const rateLimit = checkRateLimit(getClientKey(request, "appointments"), {
+    limit: 12,
+    windowMs: 60_000,
+  });
+
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: "Too many requests" },
+      {
+        status: 429,
+        headers: { "Retry-After": String(rateLimit.retryAfter) },
+      },
+    );
+  }
+
   const body = bookingSchema.parse(await request.json());
   const appointment = await createAppointmentRequest({
     patientName: body.patientName,

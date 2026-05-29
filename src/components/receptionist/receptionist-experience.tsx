@@ -34,7 +34,7 @@ const assistantGreeting: ChatMessage = {
   id: "assistant-greeting",
   role: "assistant",
   content:
-    "Hola, soy recepción de FisioNova Clínica. Puedo ayudarte a pedir cita, cambiarla, cancelarla o resolver dudas sobre precios y tratamientos.",
+    "¡Hola! Soy Clara, la recepcionista de FisioNova. Cuéntame qué necesitas y te echo una mano con la cita, precios o cualquier duda.",
 };
 
 const therapistPhotos: Record<string, string> = {
@@ -199,7 +199,7 @@ export function ReceptionistExperience() {
       );
     } catch {
       addAssistantMessage(
-        "Ahora mismo no puedo conectar con recepción, pero puedo seguir ayudándote en modo demo. Prueba con pedir cita o consultar precios.",
+        "Uy, ahora mismo se me ha atascado la conexión. Prueba otra vez en un momento y te ayudo con la cita.",
       );
     } finally {
       setPending(false);
@@ -210,7 +210,7 @@ export function ReceptionistExperience() {
     setSelectedSlot(slot);
     setProposedSlots([]);
     addAssistantMessage(
-      `Perfecto. Para reservar el ${slot.date} a las ${slot.time}, necesito tu nombre, email y teléfono.`,
+      `Genial, te apunto ese hueco: ${slot.date} a las ${slot.time}. Pásame tu nombre, email y teléfono y lo dejamos preparado.`,
     );
   }
 
@@ -235,11 +235,11 @@ export function ReceptionistExperience() {
       setSelectedSlot(null);
       setProposedSlots([]);
       addAssistantMessage(
-        `Perfecto, ${details.patientName}. He enviado tu solicitud para el ${payload.appointment.date} a las ${payload.appointment.time}. Recepción la revisará y, cuando la confirme, recibirás el email en ${details.patientEmail}.`,
+        `Listo, ${details.patientName}. Te dejo apuntado para el ${payload.appointment.date} a las ${payload.appointment.time}. Recibirás la confirmación por email.`,
       );
     } catch {
       addAssistantMessage(
-        "No he podido confirmar la cita ahora mismo. Prueba otra vez en unos segundos.",
+        "Ay, no he podido dejarlo apuntado ahora mismo. Prueba otra vez en unos segundos, porfa.",
       );
     } finally {
       setBookingPending(false);
