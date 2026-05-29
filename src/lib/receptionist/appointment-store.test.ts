@@ -18,7 +18,7 @@ describe("appointment store", () => {
       treatmentId: "general",
       therapistId: "marta",
       date: "2026-06-01",
-      time: "09:30",
+      time: "10:00",
       notes: "Cita creada desde test.",
     });
 
@@ -35,7 +35,7 @@ describe("appointment store", () => {
       treatmentId: "general",
       therapistId: "marta",
       date: "2026-06-05",
-      time: "18:30",
+      time: "18:00",
       notes: "Cita pendiente creada desde test.",
     });
 

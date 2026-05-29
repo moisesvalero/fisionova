@@ -19,7 +19,7 @@ describe("agenda", () => {
     expect(slots).not.toContainEqual(
       expect.objectContaining({
         date: "2026-06-02",
-        time: "17:30",
+        time: "17:00",
         therapistId: "marta",
       }),
     );
@@ -33,7 +33,7 @@ describe("agenda", () => {
       treatmentId: "general",
       therapistId: "alvaro",
       date: "2026-06-03",
-      time: "10:30",
+      time: "11:00",
       notes: "Dolor cervical.",
     });
 
@@ -51,7 +51,7 @@ describe("agenda", () => {
         treatmentId: "sports",
         therapistId: "marta",
         date: "2026-06-02",
-        time: "17:30",
+        time: "17:00",
       }),
     ).toThrow("Slot is not available");
   });
@@ -65,13 +65,13 @@ describe("agenda", () => {
   it("updates an appointment to a free slot", () => {
     const appointments = updateAppointment(seedAppointments, "apt-demo-1", {
       date: "2026-06-03",
-      time: "16:30",
+      time: "16:00",
       therapistId: "alvaro",
     });
 
     expect(appointments[0]).toMatchObject({
       date: "2026-06-03",
-      time: "16:30",
+      time: "16:00",
       therapistId: "alvaro",
       status: "confirmed",
     });

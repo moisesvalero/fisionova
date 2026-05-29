@@ -25,6 +25,7 @@ export type Appointment = {
   time: string;
   status: AppointmentStatus;
   notes?: string;
+  wantsEarlier?: boolean;
 };
 
 export type AppointmentSlot = {

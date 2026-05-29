@@ -76,7 +76,10 @@ export function cancelDemoAppointment(appointmentId: string) {
 export function moveDemoAppointment(
   appointmentId: string,
   changes: Partial<
-    Pick<Appointment, "date" | "time" | "therapistId" | "treatmentId" | "notes">
+    Pick<
+      Appointment,
+      "date" | "time" | "therapistId" | "treatmentId" | "notes" | "wantsEarlier"
+    >
   >,
 ) {
   setAppointments(

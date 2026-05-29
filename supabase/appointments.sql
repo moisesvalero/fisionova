@@ -9,9 +9,13 @@ create table if not exists public.appointments (
   time text not null,
   status text not null check (status in ('pending', 'confirmed', 'cancelled')),
   notes text,
+  wants_earlier boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.appointments
+  add column if not exists wants_earlier boolean not null default false;
 
 create unique index if not exists appointments_active_slot_idx
   on public.appointments (date, time, therapist_id)

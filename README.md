@@ -21,7 +21,9 @@ Demo publica para portfolio tecnico: una web app de una clinica de fisioterapia 
 - Integracion opcional con OpenAI para interpretar mensajes y proponer huecos.
 - Flujo seguro de citas: la IA no confirma citas finales, crea una solicitud pendiente.
 - Panel privado `/medico` protegido por PIN.
-- Calendario operativo tipo agenda, con click en citas, ficha del paciente, acciones y movimiento por drag and drop.
+- Calendario operativo tipo agenda, con horario fijo 10:00-19:00, filtro por profesional, click en citas, ficha del paciente, acciones y movimiento por drag and drop.
+- Gestion manual desde `/medico`: crear, modificar, cancelar y confirmar citas sin depender al cien por cien de la IA.
+- Tratamientos con tiempo de sesion y lista de espera para recolocar pacientes que quieren venir antes cuando se libera un hueco.
 - Emails transaccionales con Resend solo desde el panel privado.
 - Modo demo sin base de datos, mas opcion Supabase para persistencia real.
 - SEO tecnico: metadata, sitemap, robots, manifest, Open Graph, JSON-LD y `llms.txt`.
@@ -48,7 +50,8 @@ Demo publica para portfolio tecnico: una web app de una clinica de fisioterapia 
 5. El paciente deja sus datos.
 6. Se crea una cita `pending`.
 7. El medico entra en `/medico`, revisa el calendario y confirma, mueve o cancela.
-8. Solo al confirmar/cambiar/cancelar desde el panel privado se llama a `/api/email`.
+8. Si una cancelacion o cambio libera un hueco, el panel propone pacientes marcados como "quiere venir antes".
+9. Solo al confirmar/cambiar/cancelar/crear desde el panel privado se llama a `/api/email`.
 
 ## Seguridad y limites actuales
 

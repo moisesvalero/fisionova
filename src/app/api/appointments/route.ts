@@ -7,6 +7,7 @@ import { findAvailableSlots } from "@/lib/receptionist/agenda";
 import {
   cancelAppointmentRequest,
   confirmAppointmentRequest,
+  createConfirmedAppointmentRequest,
   createAppointmentRequest,
   listAppointments,
   moveAppointmentRequest,
@@ -28,6 +29,19 @@ const bookingSchema = z.object({
   patientEmail: z.email().default("visitante@example.com"),
   patientPhone: z.string().min(1).max(40).default("600 000 000"),
   notes: z.string().max(500).default("Cita creada desde recepcion online."),
+  wantsEarlier: z.boolean().default(false),
+});
+
+const manualAppointmentSchema = z.object({
+  patientName: z.string().min(1).max(120),
+  patientEmail: z.email(),
+  patientPhone: z.string().min(1).max(40),
+  treatmentId: z.string().min(1).max(80),
+  therapistId: z.string().min(1).max(80),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  time: z.string().regex(/^\d{2}:\d{2}$/),
+  notes: z.string().max(500).default("Cita creada manualmente desde el panel."),
+  wantsEarlier: z.boolean().default(false),
 });
 
 const privateActionSchema = z.discriminatedUnion("action", [
@@ -45,7 +59,12 @@ const privateActionSchema = z.discriminatedUnion("action", [
     slot: slotSchema.omit({ treatmentId: true }).extend({
       treatmentId: z.string().min(1).optional(),
       notes: z.string().max(500).optional(),
+      wantsEarlier: z.boolean().optional(),
     }),
+  }),
+  z.object({
+    action: z.literal("create_manual"),
+    appointment: manualAppointmentSchema,
   }),
   z.object({
     action: z.literal("reset"),
@@ -216,6 +235,7 @@ export async function POST(request: Request) {
     date: body.slot.date,
     time: body.slot.time,
     notes: body.notes,
+    wantsEarlier: body.wantsEarlier,
   });
 
   return NextResponse.json({ appointment });
@@ -331,6 +351,17 @@ export async function PATCH(request: Request) {
     return NextResponse.json({
       appointment: result.appointment,
       appointments: sortAppointments(result.appointments),
+    });
+  }
+
+  if (body.action === "create_manual") {
+    const appointment = await createConfirmedAppointmentRequest(
+      body.appointment,
+    );
+
+    return NextResponse.json({
+      appointment,
+      appointments: sortAppointments(await listAppointments()),
     });
   }
 

@@ -11,6 +11,7 @@ import {
   Mail,
   Pencil,
   Phone,
+  Plus,
   Shuffle,
   UserRound,
   X,
@@ -50,6 +51,15 @@ type EmailPayload = {
 };
 
 type StatusFilter = Appointment["status"] | "all";
+type TherapistFilter = "all" | string;
+type FreeSlot = Pick<AppointmentSlot, "date" | "time"> & {
+  therapistId?: string;
+};
+type FreedSlot = Pick<AppointmentSlot, "date" | "time" | "therapistId"> & {
+  sourceAppointmentId: string;
+  sourcePatient: string;
+};
+type AppointmentFormValues = Omit<Appointment, "id" | "status">;
 
 const statusOptions: Array<{ label: string; value: StatusFilter }> = [
   { label: "Todas", value: "all" },
@@ -90,6 +100,12 @@ function resolveTreatment(id: string) {
   return treatments.find((treatment) => treatment.id === id)?.name ?? id;
 }
 
+function resolveTreatmentDuration(id: string) {
+  return (
+    treatments.find((treatment) => treatment.id === id)?.durationMinutes ?? 50
+  );
+}
+
 function resolveTherapist(id: string) {
   return therapists.find((therapist) => therapist.id === id)?.name ?? id;
 }
@@ -116,6 +132,12 @@ function getStatusTone(status: Appointment["status"]) {
   }
 
   return "border-clay/30 bg-clay/10 text-clay";
+}
+
+function isAfterSlot(appointment: Appointment, slot: FreedSlot) {
+  return (
+    `${appointment.date} ${appointment.time}` > `${slot.date} ${slot.time}`
+  );
 }
 
 function AppointmentDetailModal({
@@ -175,6 +197,11 @@ function AppointmentDetailModal({
           <p className="text-muted-foreground mt-2 text-sm">
             {resolveTreatment(appointment.treatmentId)} con{" "}
             {resolveTherapist(appointment.therapistId)}
+          </p>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Tiempo de sesion:{" "}
+            {resolveTreatmentDuration(appointment.treatmentId)} min
+            {appointment.wantsEarlier ? " · quiere venir antes" : ""}
           </p>
         </header>
 
@@ -270,7 +297,7 @@ function AppointmentEditModal({
     appointment: Appointment,
     changes: Pick<
       Appointment,
-      "date" | "time" | "therapistId" | "treatmentId" | "notes"
+      "date" | "time" | "therapistId" | "treatmentId" | "notes" | "wantsEarlier"
     >,
   ) => void;
 }) {
@@ -279,6 +306,9 @@ function AppointmentEditModal({
   const [therapistId, setTherapistId] = useState(appointment.therapistId);
   const [treatmentId, setTreatmentId] = useState(appointment.treatmentId);
   const [notes, setNotes] = useState(appointment.notes ?? "");
+  const [wantsEarlier, setWantsEarlier] = useState(
+    appointment.wantsEarlier ?? false,
+  );
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -288,6 +318,7 @@ function AppointmentEditModal({
       therapistId,
       treatmentId,
       notes: notes.trim(),
+      wantsEarlier,
     });
   }
 
@@ -383,8 +414,26 @@ function AppointmentEditModal({
                   </option>
                 ))}
               </select>
+              <span className="text-muted-foreground text-xs">
+                Tiempo de sesion: {resolveTreatmentDuration(treatmentId)} min
+              </span>
             </label>
           </div>
+
+          <label className="border-border/60 bg-background/55 flex items-start gap-3 rounded-lg border px-4 py-3 text-sm">
+            <input
+              type="checkbox"
+              className="border-input text-primary focus:ring-ring/40 mt-0.5 size-4 rounded"
+              checked={wantsEarlier}
+              onChange={(event) => setWantsEarlier(event.target.checked)}
+            />
+            <span>
+              <span className="block font-medium">Quiere venir antes</span>
+              <span className="text-muted-foreground">
+                Si se libera un hueco, aparecera en la lista de espera.
+              </span>
+            </span>
+          </label>
 
           <label className="grid gap-2 text-sm font-medium">
             Notas internas
@@ -422,12 +471,45 @@ function AppointmentEditModal({
 }
 
 function FreeSlotModal({
+  loading,
   slot,
   onClose,
+  onCreate,
 }: {
-  slot: Pick<AppointmentSlot, "date" | "time">;
+  loading: boolean;
+  slot: FreeSlot;
   onClose: () => void;
+  onCreate: (values: AppointmentFormValues) => void;
 }) {
+  const [patientName, setPatientName] = useState("");
+  const [patientEmail, setPatientEmail] = useState("");
+  const [patientPhone, setPatientPhone] = useState("");
+  const [date, setDate] = useState(slot.date);
+  const [time, setTime] = useState(slot.time);
+  const [therapistId, setTherapistId] = useState(
+    slot.therapistId ?? therapists[0]?.id ?? "marta",
+  );
+  const [treatmentId, setTreatmentId] = useState(
+    treatments[0]?.id ?? "general",
+  );
+  const [notes, setNotes] = useState("");
+  const [wantsEarlier, setWantsEarlier] = useState(false);
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    onCreate({
+      patientName: patientName.trim(),
+      patientEmail: patientEmail.trim(),
+      patientPhone: patientPhone.trim(),
+      date,
+      time,
+      therapistId,
+      treatmentId,
+      notes: notes.trim() || "Cita creada manualmente desde el panel.",
+      wantsEarlier,
+    });
+  }
+
   return (
     <div
       className="modal-backdrop bg-charcoal/70 fixed inset-0 z-50 flex items-end justify-center px-3 py-3 backdrop-blur-sm sm:items-center sm:px-4 sm:py-6"
@@ -435,32 +517,171 @@ function FreeSlotModal({
       aria-modal="true"
       aria-labelledby="free-slot-title"
     >
-      <article className="modal-panel glass shadow-elegant border-border/60 relative max-h-[calc(100dvh-1.5rem)] w-full max-w-xl overflow-y-auto rounded-2xl border">
+      <article className="modal-panel glass shadow-elegant border-border/60 relative max-h-[calc(100dvh-1.5rem)] w-full max-w-2xl overflow-y-auto rounded-2xl border">
         <button
           type="button"
           className="text-muted-foreground hover:text-foreground hover:bg-background/70 absolute top-4 right-4 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full transition-colors"
           onClick={onClose}
         >
           <X className="size-5" aria-hidden="true" />
-          <span className="sr-only">Cerrar hueco libre</span>
+          <span className="sr-only">Cerrar nueva cita manual</span>
         </button>
 
-        <div className="px-5 py-5 pr-16 sm:px-7">
+        <header className="border-border/60 bg-background/85 border-b px-5 py-5 pr-16 sm:px-7">
           <span className="text-sage text-xs font-medium tracking-[0.16em] uppercase">
-            Hueco libre
+            Nueva cita manual
           </span>
           <h2
             id="free-slot-title"
             className="font-display mt-3 text-2xl leading-tight sm:text-3xl"
           >
-            {formatAppointmentDate(slot.date)} · {slot.time}
+            {formatAppointmentDate(date)} · {time}
           </h2>
           <p className="text-muted-foreground mt-3 text-sm leading-relaxed">
-            Puedes arrastrar una cita hasta este hueco para moverla manteniendo
-            su terapeuta y tratamiento. La demo aún no crea citas manuales desde
-            este modal.
+            Crea una cita desde recepcion sin depender de la IA. Al guardar se
+            envia el email de confirmacion al paciente.
           </p>
-        </div>
+        </header>
+
+        <form className="grid gap-4 px-5 py-5 sm:px-7" onSubmit={handleSubmit}>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="grid gap-2 text-sm font-medium">
+              Paciente
+              <input
+                required
+                className="border-input bg-background focus:ring-ring/40 h-11 rounded-md border px-3 text-base outline-none focus:ring-2 sm:text-sm"
+                value={patientName}
+                onChange={(event) => setPatientName(event.target.value)}
+                placeholder="Nombre y apellidos"
+              />
+            </label>
+
+            <label className="grid gap-2 text-sm font-medium">
+              Email
+              <input
+                required
+                type="email"
+                className="border-input bg-background focus:ring-ring/40 h-11 rounded-md border px-3 text-base outline-none focus:ring-2 sm:text-sm"
+                value={patientEmail}
+                onChange={(event) => setPatientEmail(event.target.value)}
+                placeholder="paciente@email.com"
+              />
+            </label>
+
+            <label className="grid gap-2 text-sm font-medium">
+              Telefono
+              <input
+                required
+                className="border-input bg-background focus:ring-ring/40 h-11 rounded-md border px-3 text-base outline-none focus:ring-2 sm:text-sm"
+                value={patientPhone}
+                onChange={(event) => setPatientPhone(event.target.value)}
+                placeholder="600 000 000"
+              />
+            </label>
+
+            <label className="grid gap-2 text-sm font-medium">
+              Profesional
+              <select
+                className="border-input bg-background focus:ring-ring/40 h-11 rounded-md border px-3 text-base outline-none focus:ring-2 sm:text-sm"
+                value={therapistId}
+                onChange={(event) => setTherapistId(event.target.value)}
+              >
+                {therapists.map((therapist) => (
+                  <option key={therapist.id} value={therapist.id}>
+                    {therapist.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="grid gap-2 text-sm font-medium">
+              Dia
+              <select
+                className="border-input bg-background focus:ring-ring/40 h-11 rounded-md border px-3 text-base outline-none focus:ring-2 sm:text-sm"
+                value={date}
+                onChange={(event) => setDate(event.target.value)}
+              >
+                {demoDates.map((day) => (
+                  <option key={day} value={day}>
+                    {formatAppointmentDate(day)}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="grid gap-2 text-sm font-medium">
+              Hora
+              <select
+                className="border-input bg-background focus:ring-ring/40 h-11 rounded-md border px-3 text-base outline-none focus:ring-2 sm:text-sm"
+                value={time}
+                onChange={(event) => setTime(event.target.value)}
+              >
+                {availableTimes.map((availableTime) => (
+                  <option key={availableTime} value={availableTime}>
+                    {availableTime}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="grid gap-2 text-sm font-medium sm:col-span-2">
+              Tratamiento
+              <select
+                className="border-input bg-background focus:ring-ring/40 h-11 rounded-md border px-3 text-base outline-none focus:ring-2 sm:text-sm"
+                value={treatmentId}
+                onChange={(event) => setTreatmentId(event.target.value)}
+              >
+                {treatments.map((treatment) => (
+                  <option key={treatment.id} value={treatment.id}>
+                    {treatment.name} · {treatment.durationMinutes} min ·{" "}
+                    {treatment.price} €
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <label className="border-border/60 bg-background/55 flex items-start gap-3 rounded-lg border px-4 py-3 text-sm">
+            <input
+              type="checkbox"
+              className="border-input text-primary focus:ring-ring/40 mt-0.5 size-4 rounded"
+              checked={wantsEarlier}
+              onChange={(event) => setWantsEarlier(event.target.checked)}
+            />
+            <span>
+              <span className="block font-medium">Marcar lista de espera</span>
+              <span className="text-muted-foreground">
+                El paciente aparecera para recolocarlo si se libera un hueco
+                anterior.
+              </span>
+            </span>
+          </label>
+
+          <label className="grid gap-2 text-sm font-medium">
+            Notas internas
+            <textarea
+              className="border-input bg-background focus:ring-ring/40 min-h-20 rounded-md border px-3 py-3 text-base outline-none focus:ring-2 sm:text-sm"
+              value={notes}
+              maxLength={500}
+              onChange={(event) => setNotes(event.target.value)}
+              placeholder="Motivo o contexto de recepcion."
+            />
+          </label>
+
+          <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={loading}
+              onClick={onClose}
+            >
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? "Creando..." : "Crear y enviar email"}
+            </Button>
+          </div>
+        </form>
       </article>
     </div>
   );
@@ -469,18 +690,17 @@ function FreeSlotModal({
 function AppointmentCalendar({
   appointments,
   selectedDay,
+  selectedTherapist,
   onMoveToSlot,
   onSelectAppointment,
   onSelectSlot,
 }: {
   appointments: Appointment[];
   selectedDay: string;
-  onMoveToSlot: (
-    appointment: Appointment,
-    slot: Pick<AppointmentSlot, "date" | "time">,
-  ) => void;
+  selectedTherapist: TherapistFilter;
+  onMoveToSlot: (appointment: Appointment, slot: FreeSlot) => void;
   onSelectAppointment: (appointment: Appointment) => void;
-  onSelectSlot: (slot: Pick<AppointmentSlot, "date" | "time">) => void;
+  onSelectSlot: (slot: FreeSlot) => void;
 }) {
   const days = selectedDay === "all" ? demoDates : [selectedDay];
   const appointmentsBySlot = useMemo(() => {
@@ -570,8 +790,17 @@ function AppointmentCalendar({
                               />
                             </div>
                             <p className="text-muted-foreground mt-1 leading-snug">
-                              {resolveTreatment(appointment.treatmentId)}
+                              {resolveTreatment(appointment.treatmentId)} ·{" "}
+                              {resolveTreatmentDuration(
+                                appointment.treatmentId,
+                              )}{" "}
+                              min
                             </p>
+                            {appointment.wantsEarlier ? (
+                              <p className="text-sage mt-1 text-xs font-medium">
+                                Lista de espera
+                              </p>
+                            ) : null}
                             <p className="text-muted-foreground mt-1 leading-snug">
                               {resolveTherapist(appointment.therapistId)}
                             </p>
@@ -582,7 +811,16 @@ function AppointmentCalendar({
                       <button
                         type="button"
                         className="border-border/50 text-muted-foreground hover:border-sage/40 hover:bg-sage/10 hover:text-foreground min-h-12 w-full rounded-lg border border-dashed px-3 py-3 text-sm transition-colors"
-                        onClick={() => onSelectSlot({ date: day, time })}
+                        onClick={() =>
+                          onSelectSlot({
+                            date: day,
+                            time,
+                            therapistId:
+                              selectedTherapist === "all"
+                                ? undefined
+                                : selectedTherapist,
+                          })
+                        }
                       >
                         Libre
                       </button>
@@ -694,8 +932,17 @@ function AppointmentCalendar({
                               />
                             </div>
                             <p className="text-muted-foreground mt-1 truncate">
-                              {resolveTreatment(appointment.treatmentId)}
+                              {resolveTreatment(appointment.treatmentId)} ·{" "}
+                              {resolveTreatmentDuration(
+                                appointment.treatmentId,
+                              )}{" "}
+                              min
                             </p>
+                            {appointment.wantsEarlier ? (
+                              <p className="text-sage mt-1 truncate text-[11px] font-medium">
+                                Lista de espera
+                              </p>
+                            ) : null}
                             <p className="text-muted-foreground mt-1 truncate">
                               {resolveTherapist(appointment.therapistId)}
                             </p>
@@ -706,7 +953,16 @@ function AppointmentCalendar({
                       <button
                         type="button"
                         className="border-border/50 text-muted-foreground/70 hover:border-sage/40 hover:bg-sage/10 hover:text-foreground flex h-full min-h-28 w-full items-center justify-center rounded-md border border-dashed text-xs transition-colors"
-                        onClick={() => onSelectSlot({ date: day, time })}
+                        onClick={() =>
+                          onSelectSlot({
+                            date: day,
+                            time,
+                            therapistId:
+                              selectedTherapist === "all"
+                                ? undefined
+                                : selectedTherapist,
+                          })
+                        }
                       >
                         Libre
                       </button>
@@ -717,6 +973,77 @@ function AppointmentCalendar({
             </div>
           ))}
         </div>
+      </div>
+    </section>
+  );
+}
+
+function FreedSlotPanel({
+  candidates,
+  loading,
+  slot,
+  onDismiss,
+  onMoveCandidate,
+}: {
+  candidates: Appointment[];
+  loading: boolean;
+  slot: FreedSlot;
+  onDismiss: () => void;
+  onMoveCandidate: (appointment: Appointment, slot: FreedSlot) => void;
+}) {
+  return (
+    <section className="glass shadow-elegant border-sage/25 bg-sage/10 overflow-hidden rounded-xl border">
+      <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <div className="text-sage inline-flex items-center gap-2 text-xs font-medium tracking-[0.16em] uppercase">
+            <Shuffle className="size-4" aria-hidden="true" />
+            Hueco liberado
+          </div>
+          <h2 className="font-display mt-2 text-2xl leading-tight">
+            {formatAppointmentDate(slot.date)} · {slot.time}
+          </h2>
+          <p className="text-muted-foreground mt-2 text-sm">
+            Se ha liberado al mover o cancelar la cita de {slot.sourcePatient}.
+          </p>
+        </div>
+        <Button type="button" variant="ghost" onClick={onDismiss}>
+          Cerrar
+        </Button>
+      </div>
+
+      <div className="border-border/60 border-t px-5 py-4">
+        {candidates.length > 0 ? (
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {candidates.map((candidate) => (
+              <article
+                key={candidate.id}
+                className="border-border/60 bg-background/70 rounded-lg border p-4"
+              >
+                <p className="font-medium">{candidate.patientName}</p>
+                <p className="text-muted-foreground mt-1 text-sm">
+                  Ahora: {formatAppointmentDate(candidate.date)} ·{" "}
+                  {candidate.time}
+                </p>
+                <p className="text-muted-foreground mt-1 text-sm">
+                  {resolveTreatment(candidate.treatmentId)} ·{" "}
+                  {resolveTherapist(candidate.therapistId)}
+                </p>
+                <Button
+                  type="button"
+                  className="mt-4 w-full"
+                  disabled={loading}
+                  onClick={() => onMoveCandidate(candidate, slot)}
+                >
+                  Recolocar y avisar
+                </Button>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <p className="text-muted-foreground text-sm">
+            No hay pacientes de este profesional marcados para adelantar.
+          </p>
+        )}
       </div>
     </section>
   );
@@ -755,15 +1082,15 @@ export function DoctorAgenda() {
   const [loading, setLoading] = useState(false);
   const [dayFilter, setDayFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [therapistFilter, setTherapistFilter] =
+    useState<TherapistFilter>("all");
   const [selectedAppointment, setSelectedAppointment] =
     useState<Appointment | null>(null);
   const [editingAppointment, setEditingAppointment] =
     useState<Appointment | null>(null);
   const [emails, setEmails] = useState<EmailLogItem[]>([]);
-  const [selectedSlot, setSelectedSlot] = useState<Pick<
-    AppointmentSlot,
-    "date" | "time"
-  > | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<FreeSlot | null>(null);
+  const [freedSlot, setFreedSlot] = useState<FreedSlot | null>(null);
 
   function addEmailLog(email: EmailLogItem) {
     setEmails((current) => [email, ...current].slice(0, 8));
@@ -799,11 +1126,28 @@ export function DoctorAgenda() {
           dayFilter === "all" || appointment.date === dayFilter;
         const matchesStatus =
           statusFilter === "all" || appointment.status === statusFilter;
+        const matchesTherapist =
+          therapistFilter === "all" ||
+          appointment.therapistId === therapistFilter;
 
-        return matchesDay && matchesStatus;
+        return matchesDay && matchesStatus && matchesTherapist;
       }),
-    [appointments, dayFilter, statusFilter],
+    [appointments, dayFilter, statusFilter, therapistFilter],
   );
+  const waitlistCandidates = useMemo(() => {
+    if (!freedSlot) {
+      return [];
+    }
+
+    return appointments.filter(
+      (appointment) =>
+        appointment.status !== "cancelled" &&
+        appointment.wantsEarlier &&
+        appointment.therapistId === freedSlot.therapistId &&
+        appointment.id !== freedSlot.sourceAppointmentId &&
+        isAfterSlot(appointment, freedSlot),
+    );
+  }, [appointments, freedSlot]);
   const nextAppointment = useMemo(
     () =>
       appointments.find((appointment) => appointment.status === "confirmed") ??
@@ -870,6 +1214,16 @@ export function DoctorAgenda() {
     return payload.appointments;
   }
 
+  function markFreedSlot(appointment: Appointment) {
+    setFreedSlot({
+      date: appointment.date,
+      time: appointment.time,
+      therapistId: appointment.therapistId,
+      sourceAppointmentId: appointment.id,
+      sourcePatient: appointment.patientName,
+    });
+  }
+
   async function handleCancel(appointment: Appointment) {
     const updated = await patchAgenda({
       action: "cancel",
@@ -879,6 +1233,7 @@ export function DoctorAgenda() {
 
     if (cancelled) {
       setSelectedAppointment(cancelled);
+      markFreedSlot(appointment);
     }
 
     addEmailLog(
@@ -922,14 +1277,12 @@ export function DoctorAgenda() {
 
     if (moved) {
       setSelectedAppointment(moved);
+      markFreedSlot(appointment);
       addEmailLog(await sendEmail("modification", moved, pin));
     }
   }
 
-  async function handleMoveToSlot(
-    appointment: Appointment,
-    slot: Pick<AppointmentSlot, "date" | "time">,
-  ) {
+  async function handleMoveToSlot(appointment: Appointment, slot: FreeSlot) {
     if (appointment.status === "cancelled") {
       return;
     }
@@ -948,6 +1301,7 @@ export function DoctorAgenda() {
 
     if (moved) {
       setSelectedAppointment(moved);
+      markFreedSlot(appointment);
       addEmailLog(await sendEmail("modification", moved, pin));
     }
   }
@@ -956,7 +1310,7 @@ export function DoctorAgenda() {
     appointment: Appointment,
     changes: Pick<
       Appointment,
-      "date" | "time" | "therapistId" | "treatmentId" | "notes"
+      "date" | "time" | "therapistId" | "treatmentId" | "notes" | "wantsEarlier"
     >,
   ) {
     const updated = await patchAgenda({
@@ -968,6 +1322,59 @@ export function DoctorAgenda() {
 
     if (moved) {
       setEditingAppointment(null);
+      setSelectedAppointment(moved);
+      if (
+        appointment.date !== moved.date ||
+        appointment.time !== moved.time ||
+        appointment.therapistId !== moved.therapistId
+      ) {
+        markFreedSlot(appointment);
+      }
+      addEmailLog(await sendEmail("modification", moved, pin));
+    }
+  }
+
+  async function handleCreateAppointment(values: AppointmentFormValues) {
+    const updated = await patchAgenda({
+      action: "create_manual",
+      appointment: values,
+    });
+    const created = updated?.find(
+      (appointment) =>
+        appointment.patientEmail === values.patientEmail &&
+        appointment.date === values.date &&
+        appointment.time === values.time &&
+        appointment.therapistId === values.therapistId,
+    );
+
+    if (created) {
+      setSelectedSlot(null);
+      setSelectedAppointment(created);
+      addEmailLog(await sendEmail("confirmation", created, pin));
+    }
+  }
+
+  async function handleMoveCandidateToFreedSlot(
+    appointment: Appointment,
+    slot: FreedSlot,
+  ) {
+    const updated = await patchAgenda({
+      action: "move",
+      appointmentId: appointment.id,
+      slot: {
+        date: slot.date,
+        time: slot.time,
+        therapistId: slot.therapistId,
+        treatmentId: appointment.treatmentId,
+        notes:
+          `Adelantada desde lista de espera. ${appointment.notes ?? ""}`.trim(),
+        wantsEarlier: false,
+      },
+    });
+    const moved = updated?.find((item) => item.id === appointment.id);
+
+    if (moved) {
+      setFreedSlot(null);
       setSelectedAppointment(moved);
       addEmailLog(await sendEmail("modification", moved, pin));
     }
@@ -1071,6 +1478,24 @@ export function DoctorAgenda() {
                   <div className="flex flex-wrap gap-2">
                     <Button
                       type="button"
+                      className="h-10"
+                      disabled={loading}
+                      onClick={() =>
+                        setSelectedSlot({
+                          date: dayFilter === "all" ? demoDates[0]! : dayFilter,
+                          time: availableTimes[0]!,
+                          therapistId:
+                            therapistFilter === "all"
+                              ? undefined
+                              : therapistFilter,
+                        })
+                      }
+                    >
+                      <Plus className="size-4" aria-hidden="true" />
+                      Nueva cita
+                    </Button>
+                    <Button
+                      type="button"
                       variant="ghost"
                       className="border-border/70 bg-background/60 h-10 border"
                       disabled={loading}
@@ -1155,6 +1580,24 @@ export function DoctorAgenda() {
                         </select>
                       </label>
 
+                      <label className="flex flex-col gap-2 text-sm font-medium">
+                        Profesional
+                        <select
+                          className="border-input bg-background focus:ring-ring/40 h-10 rounded-md border px-3 text-sm outline-none focus:ring-2"
+                          value={therapistFilter}
+                          onChange={(event) =>
+                            setTherapistFilter(event.target.value)
+                          }
+                        >
+                          <option value="all">Todos los profesionales</option>
+                          {therapists.map((therapist) => (
+                            <option key={therapist.id} value={therapist.id}>
+                              {therapist.name}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+
                       <div className="flex flex-col gap-2">
                         <span className="text-sm font-medium">Estado</span>
                         <div className="bg-background/70 border-border/70 grid grid-cols-2 rounded-md border p-1 sm:grid-cols-4">
@@ -1192,9 +1635,20 @@ export function DoctorAgenda() {
               </div>
             </div>
 
+            {freedSlot ? (
+              <FreedSlotPanel
+                candidates={waitlistCandidates}
+                loading={loading}
+                slot={freedSlot}
+                onDismiss={() => setFreedSlot(null)}
+                onMoveCandidate={handleMoveCandidateToFreedSlot}
+              />
+            ) : null}
+
             <AppointmentCalendar
               appointments={filteredAppointments}
               selectedDay={dayFilter}
+              selectedTherapist={therapistFilter}
               onMoveToSlot={handleMoveToSlot}
               onSelectAppointment={(appointment) => {
                 setSelectedSlot(null);
@@ -1236,8 +1690,10 @@ export function DoctorAgenda() {
 
             {selectedSlot ? (
               <FreeSlotModal
+                loading={loading}
                 slot={selectedSlot}
                 onClose={() => setSelectedSlot(null)}
+                onCreate={handleCreateAppointment}
               />
             ) : null}
           </section>

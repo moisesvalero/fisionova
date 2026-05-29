@@ -22,7 +22,7 @@ describe("/api/appointments", () => {
         body: JSON.stringify({
           slot: {
             date: "2026-06-01",
-            time: "09:30",
+            time: "10:00",
             therapistId: "marta",
             treatmentId: "general",
           },
@@ -44,7 +44,7 @@ describe("/api/appointments", () => {
     expect(privateRead.status).toBe(200);
     expect(payload.appointments).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ time: "09:30", status: "pending" }),
+        expect.objectContaining({ time: "10:00", status: "pending" }),
       ]),
     );
   });
@@ -61,7 +61,7 @@ describe("/api/appointments", () => {
           patientPhone: "611 222 333",
           slot: {
             date: "2026-06-01",
-            time: "10:30",
+            time: "11:00",
             therapistId: "marta",
             treatmentId: "general",
           },
@@ -119,7 +119,7 @@ describe("/api/appointments", () => {
           patientPhone: "611 222 333",
           slot: {
             date: "2026-06-01",
-            time: "10:30",
+            time: "11:00",
             therapistId: "marta",
             treatmentId: "general",
           },
@@ -156,7 +156,7 @@ describe("/api/appointments", () => {
           appointmentId: "apt-demo-1",
           slot: {
             date: "2026-06-03",
-            time: "16:30",
+            time: "16:00",
             therapistId: "alvaro",
             treatmentId: "postural",
             notes: "Cambio solicitado desde el panel medico.",
@@ -181,10 +181,61 @@ describe("/api/appointments", () => {
         expect.objectContaining({
           id: "apt-demo-1",
           date: "2026-06-03",
-          time: "16:30",
+          time: "16:00",
           therapistId: "alvaro",
           treatmentId: "postural",
           notes: "Cambio solicitado desde el panel medico.",
+        }),
+      ]),
+    );
+  });
+
+  it("lets the private doctor create a confirmed manual appointment", async () => {
+    resetDemoAppointmentStore();
+
+    const response = await PATCH(
+      new Request("http://localhost/api/appointments", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "x-doctor-pin": "1234",
+        },
+        body: JSON.stringify({
+          action: "create_manual",
+          appointment: {
+            patientName: "Paciente Manual",
+            patientEmail: "manual@example.com",
+            patientPhone: "600 123 123",
+            treatmentId: "general",
+            therapistId: "marta",
+            date: "2026-06-04",
+            time: "18:00",
+            notes: "Cita creada desde el panel privado.",
+            wantsEarlier: true,
+          },
+        }),
+      }),
+    );
+    const payload = (await response.json()) as {
+      appointment: {
+        patientName: string;
+        status: string;
+        wantsEarlier?: boolean;
+      };
+      appointments: Array<{ patientName: string; status: string }>;
+    };
+
+    expect(response.status).toBe(200);
+    expect(payload.appointment).toMatchObject({
+      patientName: "Paciente Manual",
+      status: "confirmed",
+      wantsEarlier: true,
+    });
+    expect(payload.appointments).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          patientName: "Paciente Manual",
+          status: "confirmed",
         }),
       ]),
     );
@@ -258,7 +309,7 @@ describe("/api/appointments", () => {
           patientPhone: "600 111 222",
           slot: {
             date: "2026-06-03",
-            time: "16:30",
+            time: "16:00",
             therapistId: "alvaro",
             treatmentId: "sports",
           },
@@ -278,7 +329,7 @@ describe("/api/appointments", () => {
     expect(payload.appointment).toMatchObject({
       id: "apt-demo-1",
       date: "2026-06-03",
-      time: "16:30",
+      time: "16:00",
       therapistId: "alvaro",
     });
   });

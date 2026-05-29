@@ -1,6 +1,7 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 import {
+  bookDemoAppointment,
   cancelDemoAppointment,
   confirmDemoAppointment,
   getDemoAppointments,
@@ -24,6 +25,7 @@ type AppointmentRow = {
   time: string;
   status: Appointment["status"];
   notes: string | null;
+  wants_earlier?: boolean | null;
 };
 
 function getSupabase() {
@@ -42,6 +44,7 @@ function toAppointment(row: AppointmentRow): Appointment {
     time: row.time,
     status: row.status,
     notes: row.notes ?? undefined,
+    wantsEarlier: row.wants_earlier ?? false,
   };
 }
 
@@ -57,6 +60,7 @@ function toRow(appointment: Appointment): AppointmentRow {
     time: appointment.time,
     status: appointment.status,
     notes: appointment.notes ?? null,
+    wants_earlier: appointment.wantsEarlier ?? false,
   };
 }
 
@@ -95,6 +99,33 @@ export async function createAppointmentRequest(input: AppointmentInput) {
     id: `apt-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     ...input,
     status: "pending",
+  };
+  const { data, error } = await supabase
+    .from("appointments")
+    .insert(toRow(appointment))
+    .select("*")
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return toAppointment(data as AppointmentRow);
+}
+
+export async function createConfirmedAppointmentRequest(
+  input: AppointmentInput,
+) {
+  const supabase = getSupabase();
+
+  if (!supabase) {
+    return bookDemoAppointment(input);
+  }
+
+  const appointment: Appointment = {
+    id: `apt-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    ...input,
+    status: "confirmed",
   };
   const { data, error } = await supabase
     .from("appointments")
@@ -156,7 +187,10 @@ export async function cancelAppointmentRequest(appointmentId: string) {
 export async function moveAppointmentRequest(
   appointmentId: string,
   changes: Partial<
-    Pick<Appointment, "date" | "time" | "therapistId" | "treatmentId" | "notes">
+    Pick<
+      Appointment,
+      "date" | "time" | "therapistId" | "treatmentId" | "notes" | "wantsEarlier"
+    >
   >,
 ) {
   const supabase = getSupabase();
@@ -173,6 +207,7 @@ export async function moveAppointmentRequest(
       therapist_id: changes.therapistId,
       treatment_id: changes.treatmentId,
       notes: changes.notes,
+      wants_earlier: changes.wantsEarlier,
       status: "confirmed",
     })
     .eq("id", appointmentId);
