@@ -267,7 +267,7 @@ export function ReceptionistExperience() {
 
   return (
     <div ref={pageRef} className="bg-background text-foreground min-h-screen">
-      <section className="relative min-h-screen w-full overflow-hidden">
+      <section className="relative min-h-[100svh] w-full overflow-hidden">
         <Image
           src="/images/clinic-hero.jpg"
           alt="Sala de tratamiento de fisioterapia moderna y luminosa"
@@ -280,7 +280,7 @@ export function ReceptionistExperience() {
         <div className="hero-overlay from-charcoal/70 via-charcoal/40 to-charcoal/80 absolute inset-0 bg-gradient-to-b" />
         <div className="hero-overlay from-charcoal/60 absolute inset-0 bg-gradient-to-r via-transparent to-transparent" />
 
-        <nav className="hero-nav border-cream/10 bg-charcoal/55 fixed inset-x-0 top-0 z-40 flex items-center justify-between border-b px-6 py-4 backdrop-blur-xl lg:px-12">
+        <nav className="hero-nav border-cream/10 bg-charcoal/55 fixed inset-x-0 top-0 z-40 flex items-center justify-between border-b px-4 py-3 backdrop-blur-xl sm:px-6 sm:py-4 lg:px-12">
           <a href="#" className="text-cream flex items-center gap-2">
             <div className="bg-sage flex h-7 w-7 items-center justify-center rounded-md">
               <Sparkles
@@ -289,7 +289,7 @@ export function ReceptionistExperience() {
                 aria-hidden="true"
               />
             </div>
-            <span className="font-display text-lg tracking-tight">
+            <span className="font-display text-base tracking-tight sm:text-lg">
               FisioNova <span className="opacity-60">Clínica</span>
             </span>
           </a>
@@ -321,37 +321,37 @@ export function ReceptionistExperience() {
           </div>
         </nav>
 
-        <div className="relative z-10 mx-auto grid min-h-screen max-w-7xl items-center gap-8 px-6 pt-28 pb-14 sm:gap-10 sm:pt-32 sm:pb-20 lg:grid-cols-12 lg:gap-8 lg:px-12 lg:pt-40 lg:pb-28">
+        <div className="relative z-10 mx-auto grid min-h-[100svh] max-w-7xl items-center gap-5 px-4 pt-24 pb-6 sm:gap-10 sm:px-6 sm:pt-32 sm:pb-20 lg:grid-cols-12 lg:gap-8 lg:px-12 lg:pt-40 lg:pb-28">
           <div
             className="hero-copy parallax-layer text-cream lg:col-span-6"
             data-parallax="-12"
           >
-            <div className="hero-kicker text-cream/70 mb-6 inline-flex items-center gap-2 text-xs tracking-[0.18em] uppercase">
+            <div className="hero-kicker text-cream/70 mb-3 inline-flex items-center gap-2 text-[10px] tracking-[0.18em] uppercase sm:mb-6 sm:text-xs">
               <span className="animate-pulse-dot bg-sage h-1.5 w-1.5 rounded-full" />
               Fisioterapia en Madrid · cita online
             </div>
-            <h1 className="hero-title font-display text-cream text-4xl leading-[1.05] sm:text-5xl lg:text-6xl">
+            <h1 className="hero-title font-display text-cream text-[2rem] leading-[1.05] sm:text-5xl lg:text-6xl">
               Fisioterapia para
               <br />
               <span className="text-accent italic drop-shadow-[0_2px_14px_rgba(0,0,0,0.65)]">
                 moverte sin dolor
               </span>
             </h1>
-            <p className="hero-text text-cream/80 mt-6 max-w-xl text-lg leading-relaxed">
+            <p className="hero-text text-cream/80 mt-4 max-w-xl text-sm leading-relaxed sm:mt-6 sm:text-lg">
               Tratamientos personalizados para dolor de espalda, lesiones
               deportivas y recuperación funcional. Reserva tu cita hablando con
               recepción, sin llamadas ni formularios largos.
             </p>
-            <div className="hero-actions mt-8 flex flex-wrap gap-3">
+            <div className="hero-actions mt-5 flex flex-wrap gap-2.5 sm:mt-8 sm:gap-3">
               <a
                 href="#chat"
-                className="magic-button bg-cream text-charcoal hover:bg-cream/90 inline-flex items-center gap-2 rounded-md px-5 py-3 text-sm font-medium transition-colors"
+                className="magic-button bg-cream text-charcoal hover:bg-cream/90 inline-flex items-center gap-2 rounded-md px-4 py-2.5 text-xs font-medium transition-colors sm:px-5 sm:py-3 sm:text-sm"
               >
                 Reservar cita <ArrowRight className="h-4 w-4" />
               </a>
               <a
                 href="#treatments"
-                className="magic-button border-cream/30 text-cream hover:bg-cream/10 inline-flex items-center gap-2 rounded-md border px-5 py-3 text-sm font-medium transition-colors"
+                className="magic-button border-cream/30 text-cream hover:bg-cream/10 inline-flex items-center gap-2 rounded-md border px-4 py-2.5 text-xs font-medium transition-colors sm:px-5 sm:py-3 sm:text-sm"
               >
                 Ver tratamientos
               </a>
@@ -360,7 +360,7 @@ export function ReceptionistExperience() {
 
           <div
             id="chat"
-            className="hero-chat parallax-layer flex flex-col items-center gap-4 lg:col-span-6 lg:items-end"
+            className="hero-chat parallax-layer flex flex-col items-center gap-4 pb-2 lg:col-span-6 lg:items-end lg:pb-0"
             data-parallax="18"
           >
             <ChatPanel

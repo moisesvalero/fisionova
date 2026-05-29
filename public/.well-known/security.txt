@@ -1,0 +1,5 @@
+Contact: https://github.com/moisesvalero/fisionova/security/advisories/new
+Policy: https://github.com/moisesvalero/fisionova/blob/main/README.md
+Preferred-Languages: es, en
+Canonical: https://proyecto-ia-recepcionista.vercel.app/.well-known/security.txt
+Expires: 2027-05-29T23:59:59Z

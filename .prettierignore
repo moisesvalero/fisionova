@@ -5,3 +5,4 @@ out
 build
 package-lock.json
 .agents
+public/.well-known/security.txt

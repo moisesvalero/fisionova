@@ -93,9 +93,9 @@ export function ChatPanel({
         className,
       )}
     >
-      <header className="border-border/50 flex items-center gap-3 border-b px-5 py-4">
+      <header className="chat-panel-header border-border/50 flex items-center gap-3 border-b px-4 py-3 sm:px-5 sm:py-4">
         <div className="relative">
-          <div className="bg-sage flex h-9 w-9 items-center justify-center rounded-full">
+          <div className="bg-sage flex h-8 w-8 items-center justify-center rounded-full sm:h-9 sm:w-9">
             <Sparkles
               className="text-sage-foreground h-4 w-4"
               strokeWidth={2}
@@ -105,10 +105,10 @@ export function ChatPanel({
           <span className="animate-pulse-dot border-card bg-sage absolute -right-0.5 -bottom-0.5 h-2.5 w-2.5 rounded-full border-2" />
         </div>
         <div className="flex-1">
-          <p className="text-foreground text-sm font-medium">
+          <p className="text-foreground text-xs font-medium sm:text-sm">
             Recepción online
           </p>
-          <p className="text-muted-foreground text-xs">
+          <p className="text-muted-foreground text-[11px] sm:text-xs">
             En línea, responde al instante
           </p>
         </div>
@@ -116,10 +116,10 @@ export function ChatPanel({
 
       <div
         className={cn(
-          "bg-background/40 space-y-3 overflow-y-auto px-5 py-5",
+          "chat-panel-messages bg-background/40 space-y-3 overflow-y-auto px-4 py-4 sm:px-5 sm:py-5",
           mode === "modal"
             ? "max-h-[min(64vh,680px)] min-h-[420px] md:px-8 md:py-7"
-            : "max-h-[260px] min-h-[180px] sm:max-h-[340px] sm:min-h-[220px]",
+            : "max-h-[184px] min-h-[132px] sm:max-h-[340px] sm:min-h-[220px]",
         )}
       >
         {messages.map((message) => (
@@ -130,7 +130,7 @@ export function ChatPanel({
             }`}
           >
             <div
-              className={`max-w-[85%] px-4 py-2.5 text-sm leading-relaxed ${
+              className={`max-w-[88%] px-3.5 py-2 text-xs leading-relaxed sm:max-w-[85%] sm:px-4 sm:py-2.5 sm:text-sm ${
                 message.role === "user"
                   ? "bg-charcoal text-cream rounded-2xl rounded-br-md"
                   : "border-border/60 bg-card text-foreground rounded-2xl rounded-bl-md border"
@@ -217,8 +217,8 @@ export function ChatPanel({
         <div ref={bottomRef} />
       </div>
 
-      <div className="border-border/50 bg-card/85 border-t px-4 py-3.5">
-        <div className="text-muted-foreground mb-3 flex items-center justify-between gap-3 text-[11px]">
+      <div className="chat-panel-footer border-border/50 bg-card/85 border-t px-3 py-3 sm:px-4 sm:py-3.5">
+        <div className="chat-panel-meta text-muted-foreground mb-2.5 flex items-center justify-between gap-3 text-[10px] sm:mb-3 sm:text-[11px]">
           <span className="inline-flex items-center gap-1.5">
             <Clock3 className="h-3.5 w-3.5" aria-hidden="true" />
             Agenda en tiempo real
@@ -236,7 +236,7 @@ export function ChatPanel({
           <input
             id={inputId}
             name="message"
-            className="text-foreground placeholder:text-muted-foreground flex-1 bg-transparent px-2 py-2 text-sm outline-none"
+            className="text-foreground placeholder:text-muted-foreground flex-1 bg-transparent px-2 py-1.5 text-xs outline-none sm:py-2 sm:text-sm"
             placeholder="Escribe un mensaje..."
             disabled={pending}
             autoFocus={mode === "modal"}
@@ -247,7 +247,7 @@ export function ChatPanel({
           <Button
             type="submit"
             size="icon"
-            className="magic-button bg-primary text-primary-foreground h-9 w-9 hover:opacity-90"
+            className="magic-button bg-primary text-primary-foreground h-8 w-8 hover:opacity-90 sm:h-9 sm:w-9"
             disabled={pending}
           >
             <Send className="size-4" aria-hidden="true" />

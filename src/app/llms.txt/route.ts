@@ -17,13 +17,14 @@ ${siteConfig.description}
 
 ## Useful paths
 
-- /: template homepage
+- /: FisioNova public demo
+- /medico: private doctor agenda demo
 - /sitemap.xml: sitemap
 - /robots.txt: crawler policy
 
 ## Repository
 
-https://github.com/moisesvalero/next-agent-template
+https://github.com/moisesvalero/fisionova
 `;
 
   return new Response(body, {
