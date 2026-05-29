@@ -190,6 +190,17 @@ export function getResponsePendingToggleStatus(status: AppointmentStatus) {
   return status === "awaiting_response" ? "confirmed" : "awaiting_response";
 }
 
+export function didAppointmentFreeSlot(
+  previous: Pick<Appointment, "date" | "time" | "therapistId">,
+  next: Pick<Appointment, "date" | "time" | "therapistId">,
+) {
+  return (
+    previous.date !== next.date ||
+    previous.time !== next.time ||
+    previous.therapistId !== next.therapistId
+  );
+}
+
 function AppointmentBadges({ appointment }: { appointment: Appointment }) {
   return (
     <div className="mt-2 flex flex-wrap items-center gap-1.5">
@@ -1406,7 +1417,7 @@ export function DoctorAgenda() {
     const cancelled = updated?.find((item) => item.id === appointment.id);
 
     if (cancelled) {
-      setSelectedAppointment(cancelled);
+      setSelectedAppointment(null);
       markFreedSlot(appointment);
       setActionMessage(
         appointment.status === "blocked"
@@ -1458,7 +1469,7 @@ export function DoctorAgenda() {
     const moved = updated?.find((item) => item.id === appointment.id);
 
     if (moved) {
-      setSelectedAppointment(moved);
+      setSelectedAppointment(null);
       markFreedSlot(appointment);
       setActionMessage("Cita movida. El paciente recibira el aviso por email.");
       addEmailLog(await sendEmail("modification", moved, pin));
@@ -1481,13 +1492,11 @@ export function DoctorAgenda() {
 
     if (moved) {
       setEditingAppointment(null);
-      setSelectedAppointment(moved);
-      if (
-        appointment.date !== moved.date ||
-        appointment.time !== moved.time ||
-        appointment.therapistId !== moved.therapistId
-      ) {
+      if (didAppointmentFreeSlot(appointment, moved)) {
+        setSelectedAppointment(null);
         markFreedSlot(appointment);
+      } else {
+        setSelectedAppointment(moved);
       }
       setActionMessage("Cambios guardados y email preparado para el paciente.");
       addEmailLog(await sendEmail("modification", moved, pin));
