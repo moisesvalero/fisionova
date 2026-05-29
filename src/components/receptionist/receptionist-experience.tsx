@@ -6,7 +6,9 @@ import {
   CalendarSearch,
   CheckCircle2,
   Clock3,
+  Code2,
   Ear,
+  Globe2,
   Mail,
   MapPin,
   Phone,
@@ -1017,8 +1019,32 @@ function Footer() {
 
   return (
     <footer className="bg-charcoal border-cream/10 text-cream/60 border-t px-6 py-8 lg:px-12">
-      <div className="mx-auto flex max-w-7xl flex-col gap-4 text-sm md:flex-row md:items-center md:justify-between">
-        <p>FisioNova Clínica · Demo portfolio</p>
+      <div className="mx-auto flex max-w-7xl flex-col gap-5 text-sm md:flex-row md:items-center md:justify-between">
+        <div className="space-y-2">
+          <p>FisioNova Clínica · Demo portfolio</p>
+          <div className="text-cream/45 flex flex-wrap items-center gap-3 text-xs">
+            <a
+              href="https://github.com/moisesvalero"
+              target="_blank"
+              rel="noreferrer"
+              className="hover:text-cream inline-flex items-center gap-1.5 transition-colors"
+              aria-label="GitHub de Moisés Valero"
+            >
+              <Code2 className="h-3.5 w-3.5" aria-hidden="true" />
+              GitHub
+            </a>
+            <a
+              href="https://moisesvalero.es/"
+              target="_blank"
+              rel="noreferrer"
+              className="hover:text-cream inline-flex items-center gap-1.5 transition-colors"
+              aria-label="Portfolio de Moisés Valero"
+            >
+              <Globe2 className="h-3.5 w-3.5" aria-hidden="true" />
+              Portfolio
+            </a>
+          </div>
+        </div>
         <div className="flex flex-wrap gap-4">
           <a href="#treatments" className="hover:text-cream transition-colors">
             Tratamientos
