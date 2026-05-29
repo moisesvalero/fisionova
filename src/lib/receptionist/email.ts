@@ -30,6 +30,10 @@ export function buildAppointmentEmail(
       "",
       `Clinica: ${clinicProfile.address}`,
       `Telefono: ${clinicProfile.phone}`,
+      "",
+      "Proyecto demo desarrollado por Moises Valero.",
+      "Si te gusta este trabajo y quieres algo parecido para tu empresa, puedes contactarme aqui:",
+      "https://moisesvalero.es/",
     ].join("\n"),
   };
 }
