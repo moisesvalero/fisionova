@@ -162,6 +162,7 @@ function AppointmentDetailModal({
   onMove,
   onSendReminder,
   onStatusChange,
+  statusMessage,
 }: {
   appointment: Appointment;
   loading: boolean;
@@ -172,6 +173,7 @@ function AppointmentDetailModal({
   onMove: (appointment: Appointment) => void;
   onSendReminder: (appointment: Appointment) => void;
   onStatusChange: (appointment: Appointment, status: AppointmentStatus) => void;
+  statusMessage: string;
 }) {
   const isBlock = appointment.status === "blocked";
 
@@ -249,6 +251,14 @@ function AppointmentDetailModal({
 
           <section className="border-border/60 bg-background/65 rounded-xl border p-4">
             <h3 className="text-sm font-semibold">Acciones</h3>
+            {statusMessage ? (
+              <p
+                className="border-sage/25 bg-sage/10 text-sage mt-3 rounded-lg border px-3 py-2 text-sm font-medium"
+                role="status"
+              >
+                {statusMessage}
+              </p>
+            ) : null}
             <div className="mt-4 flex flex-col gap-2">
               {appointment.status === "pending" ? (
                 <Button
@@ -285,17 +295,25 @@ function AppointmentDetailModal({
                       </Button>
                       <Button
                         type="button"
-                        variant="ghost"
+                        variant={
+                          appointment.status === "awaiting_response"
+                            ? "default"
+                            : "ghost"
+                        }
                         disabled={loading}
                         onClick={() =>
                           onStatusChange(appointment, "awaiting_response")
                         }
                       >
-                        Esperando respuesta
+                        Respuesta pendiente
                       </Button>
                       <Button
                         type="button"
-                        variant="ghost"
+                        variant={
+                          appointment.status === "payment_pending"
+                            ? "default"
+                            : "ghost"
+                        }
                         disabled={loading}
                         onClick={() =>
                           onStatusChange(appointment, "payment_pending")
@@ -1179,6 +1197,7 @@ export function DoctorAgenda() {
   const [emails, setEmails] = useState<EmailLogItem[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<FreeSlot | null>(null);
   const [freedSlot, setFreedSlot] = useState<FreedSlot | null>(null);
+  const [actionMessage, setActionMessage] = useState("");
 
   function addEmailLog(email: EmailLogItem) {
     setEmails((current) => [email, ...current].slice(0, 8));
@@ -1349,6 +1368,11 @@ export function DoctorAgenda() {
     if (cancelled) {
       setSelectedAppointment(cancelled);
       markFreedSlot(appointment);
+      setActionMessage(
+        appointment.status === "blocked"
+          ? "Bloqueo liberado. El hueco vuelve a estar disponible."
+          : "Cita cancelada. El hueco queda libre para recolocar pacientes.",
+      );
     }
 
     if (appointment.status !== "blocked") {
@@ -1371,6 +1395,7 @@ export function DoctorAgenda() {
 
     if (confirmed) {
       setSelectedAppointment(confirmed);
+      setActionMessage("Cita confirmada. Se ha enviado el email al paciente.");
       addEmailLog(await sendEmail("confirmation", confirmed, pin));
     }
   }
@@ -1395,6 +1420,7 @@ export function DoctorAgenda() {
     if (moved) {
       setSelectedAppointment(moved);
       markFreedSlot(appointment);
+      setActionMessage("Cita movida al siguiente hueco disponible.");
       addEmailLog(await sendEmail("modification", moved, pin));
     }
   }
@@ -1419,6 +1445,7 @@ export function DoctorAgenda() {
     if (moved) {
       setSelectedAppointment(moved);
       markFreedSlot(appointment);
+      setActionMessage("Cita movida. El paciente recibira el aviso por email.");
       addEmailLog(await sendEmail("modification", moved, pin));
     }
   }
@@ -1447,6 +1474,7 @@ export function DoctorAgenda() {
       ) {
         markFreedSlot(appointment);
       }
+      setActionMessage("Cambios guardados y email preparado para el paciente.");
       addEmailLog(await sendEmail("modification", moved, pin));
     }
   }
@@ -1467,6 +1495,7 @@ export function DoctorAgenda() {
     if (created) {
       setSelectedSlot(null);
       setSelectedAppointment(created);
+      setActionMessage("Cita creada manualmente y confirmacion enviada.");
       addEmailLog(await sendEmail("confirmation", created, pin));
     }
   }
@@ -1489,7 +1518,28 @@ export function DoctorAgenda() {
     if (block) {
       setSelectedSlot(null);
       setSelectedAppointment(block);
+      setActionMessage("Hueco bloqueado. Ya no aparece como disponible.");
     }
+  }
+
+  function getStatusMessage(status: AppointmentStatus) {
+    if (status === "awaiting_response") {
+      return "Marcada como respuesta pendiente.";
+    }
+
+    if (status === "payment_pending") {
+      return "Marcada como pago pendiente.";
+    }
+
+    if (status === "completed") {
+      return "Cita finalizada.";
+    }
+
+    if (status === "no_show") {
+      return "Marcada como no presentado.";
+    }
+
+    return `Estado actualizado: ${formatStatus(status)}.`;
   }
 
   async function handleStatusChange(
@@ -1505,12 +1555,16 @@ export function DoctorAgenda() {
 
     if (changed) {
       setSelectedAppointment(changed);
+      setActionMessage(getStatusMessage(status));
     }
   }
 
   async function handleSendReminder(appointment: Appointment) {
     await handleStatusChange(appointment, "awaiting_response");
     addEmailLog(await sendEmail("reminder", appointment, pin));
+    setActionMessage(
+      "Recordatorio enviado. La cita queda en respuesta pendiente.",
+    );
   }
 
   async function handleMoveCandidateToFreedSlot(
@@ -1535,6 +1589,7 @@ export function DoctorAgenda() {
     if (moved) {
       setFreedSlot(null);
       setSelectedAppointment(moved);
+      setActionMessage("Paciente recolocado y aviso de cambio enviado.");
       addEmailLog(await sendEmail("modification", moved, pin));
     }
   }
@@ -1872,11 +1927,13 @@ export function DoctorAgenda() {
               onSelectAppointment={(appointment) => {
                 setSelectedSlot(null);
                 setEditingAppointment(null);
+                setActionMessage("");
                 setSelectedAppointment(appointment);
               }}
               onSelectSlot={(slot) => {
                 setSelectedAppointment(null);
                 setEditingAppointment(null);
+                setActionMessage("");
                 setSelectedSlot(slot);
               }}
             />
@@ -1897,6 +1954,7 @@ export function DoctorAgenda() {
                 onMove={handleMove}
                 onSendReminder={handleSendReminder}
                 onStatusChange={handleStatusChange}
+                statusMessage={actionMessage}
               />
             ) : null}
 
