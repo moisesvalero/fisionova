@@ -68,6 +68,11 @@ type FreedSlot = Pick<AppointmentSlot, "date" | "time" | "therapistId"> & {
   sourcePatient: string;
 };
 type AppointmentFormValues = Omit<Appointment, "id" | "status">;
+type AppointmentEditPreset = Partial<
+  Pick<Appointment, "date" | "time" | "therapistId" | "notes" | "wantsEarlier">
+> & {
+  reason?: string;
+};
 
 const statusOptions: Array<{ label: string; value: StatusFilter }> = [
   { label: "Todas", value: "all" },
@@ -531,11 +536,13 @@ function AppointmentDetailModal({
 
 function AppointmentEditModal({
   appointment,
+  preset,
   loading,
   onClose,
   onSave,
 }: {
   appointment: Appointment;
+  preset?: AppointmentEditPreset | null;
   loading: boolean;
   onClose: () => void;
   onSave: (
@@ -546,13 +553,15 @@ function AppointmentEditModal({
     >,
   ) => void;
 }) {
-  const [date, setDate] = useState(appointment.date);
-  const [time, setTime] = useState(appointment.time);
-  const [therapistId, setTherapistId] = useState(appointment.therapistId);
+  const [date, setDate] = useState(preset?.date ?? appointment.date);
+  const [time, setTime] = useState(preset?.time ?? appointment.time);
+  const [therapistId, setTherapistId] = useState(
+    preset?.therapistId ?? appointment.therapistId,
+  );
   const [treatmentId, setTreatmentId] = useState(appointment.treatmentId);
-  const [notes, setNotes] = useState(appointment.notes ?? "");
+  const [notes, setNotes] = useState(preset?.notes ?? appointment.notes ?? "");
   const [wantsEarlier, setWantsEarlier] = useState(
-    appointment.wantsEarlier ?? false,
+    preset?.wantsEarlier ?? appointment.wantsEarlier ?? false,
   );
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -597,6 +606,11 @@ function AppointmentEditModal({
           <p className="text-muted-foreground mt-2 text-sm">
             Al guardar, se envia un email al paciente con el nuevo horario.
           </p>
+          {preset?.reason ? (
+            <p className="border-sage/25 bg-sage/10 text-sage mt-3 rounded-lg border px-3 py-2 text-sm font-medium">
+              {preset.reason}
+            </p>
+          ) : null}
         </header>
 
         <form className="grid gap-4 px-5 py-5 sm:px-7" onSubmit={handleSubmit}>
@@ -1429,13 +1443,13 @@ function FreedSlotPanel({
   loading,
   slot,
   onDismiss,
-  onMoveCandidate,
+  onPrepareMove,
 }: {
   candidates: Appointment[];
   loading: boolean;
   slot: FreedSlot;
   onDismiss: () => void;
-  onMoveCandidate: (appointment: Appointment, slot: FreedSlot) => void;
+  onPrepareMove: (appointment: Appointment, slot: FreedSlot) => void;
 }) {
   return (
     <section className="glass shadow-elegant border-sage/25 bg-sage/10 overflow-hidden rounded-xl border">
@@ -1450,6 +1464,8 @@ function FreedSlotPanel({
           </h2>
           <p className="text-muted-foreground mt-2 text-sm">
             Se ha liberado al mover o cancelar la cita de {slot.sourcePatient}.
+            Elige manualmente a quién adelantar y confirma el nuevo hueco antes
+            de enviar el aviso.
           </p>
         </div>
         <Button type="button" variant="ghost" onClick={onDismiss}>
@@ -1478,9 +1494,9 @@ function FreedSlotPanel({
                   type="button"
                   className="mt-4 w-full"
                   disabled={loading}
-                  onClick={() => onMoveCandidate(candidate, slot)}
+                  onClick={() => onPrepareMove(candidate, slot)}
                 >
-                  Recolocar y avisar
+                  Elegir hueco
                 </Button>
               </article>
             ))}
@@ -1538,6 +1554,8 @@ export function DoctorAgenda() {
     useState<Appointment | null>(null);
   const [editingAppointment, setEditingAppointment] =
     useState<Appointment | null>(null);
+  const [editingPreset, setEditingPreset] =
+    useState<AppointmentEditPreset | null>(null);
   const [emails, setEmails] = useState<EmailLogItem[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<FreeSlot | null>(null);
   const [freedSlot, setFreedSlot] = useState<FreedSlot | null>(null);
@@ -1792,6 +1810,7 @@ export function DoctorAgenda() {
     const moved = updated?.find((item) => item.id === appointment.id);
 
     if (moved) {
+      setEditingPreset(null);
       setEditingAppointment(null);
       if (didAppointmentFreeSlot(appointment, moved)) {
         setSelectedAppointment(null);
@@ -1888,31 +1907,23 @@ export function DoctorAgenda() {
     );
   }
 
-  async function handleMoveCandidateToFreedSlot(
+  function handlePrepareCandidateMove(
     appointment: Appointment,
     slot: FreedSlot,
   ) {
-    const updated = await patchAgenda({
-      action: "move",
-      appointmentId: appointment.id,
-      slot: {
-        date: slot.date,
-        time: slot.time,
-        therapistId: slot.therapistId,
-        treatmentId: appointment.treatmentId,
-        notes:
-          `Adelantada desde lista de espera. ${appointment.notes ?? ""}`.trim(),
-        wantsEarlier: false,
-      },
+    setSelectedAppointment(null);
+    setSelectedSlot(null);
+    setEditingAppointment(appointment);
+    setEditingPreset({
+      date: slot.date,
+      time: slot.time,
+      therapistId: slot.therapistId,
+      notes:
+        `Adelantar desde lista de espera. ${appointment.notes ?? ""}`.trim(),
+      wantsEarlier: false,
+      reason:
+        "Hueco sugerido por cancelacion. Revisa dia, hora y profesional antes de guardar.",
     });
-    const moved = updated?.find((item) => item.id === appointment.id);
-
-    if (moved) {
-      setFreedSlot(null);
-      setSelectedAppointment(moved);
-      setActionMessage("Paciente recolocado y aviso de cambio enviado.");
-      addEmailLog(await sendEmail("modification", moved, pin));
-    }
   }
 
   return (
@@ -2277,7 +2288,7 @@ export function DoctorAgenda() {
                   loading={loading}
                   slot={freedSlot}
                   onDismiss={() => setFreedSlot(null)}
-                  onMoveCandidate={handleMoveCandidateToFreedSlot}
+                  onPrepareMove={handlePrepareCandidateMove}
                 />
               ) : null}
 
@@ -2399,12 +2410,14 @@ export function DoctorAgenda() {
                   onMoveToSlot={handleMoveToSlot}
                   onSelectAppointment={(appointment) => {
                     setSelectedSlot(null);
+                    setEditingPreset(null);
                     setEditingAppointment(null);
                     setActionMessage("");
                     setSelectedAppointment(appointment);
                   }}
                   onSelectSlot={(slot) => {
                     setSelectedAppointment(null);
+                    setEditingPreset(null);
                     setEditingAppointment(null);
                     setActionMessage("");
                     setSelectedSlot(slot);
@@ -2422,6 +2435,7 @@ export function DoctorAgenda() {
                 onCancel={handleCancel}
                 onEdit={(appointment) => {
                   setSelectedAppointment(null);
+                  setEditingPreset(null);
                   setEditingAppointment(appointment);
                 }}
                 onSendReminder={handleSendReminder}
@@ -2432,9 +2446,14 @@ export function DoctorAgenda() {
 
             {editingAppointment ? (
               <AppointmentEditModal
+                key={`${editingAppointment.id}-${editingPreset?.date ?? "manual"}-${editingPreset?.time ?? ""}`}
                 appointment={editingAppointment}
+                preset={editingPreset}
                 loading={loading}
-                onClose={() => setEditingAppointment(null)}
+                onClose={() => {
+                  setEditingPreset(null);
+                  setEditingAppointment(null);
+                }}
                 onSave={handleEditAppointment}
               />
             ) : null}
