@@ -2,6 +2,10 @@ import { findAvailableSlots } from "./agenda";
 import { clinicProfile, treatments } from "./demo-data";
 import type { Appointment, ReceptionAction } from "./types";
 
+type FallbackContext = {
+  pendingAppointmentTriage?: boolean;
+};
+
 function normalize(input: string) {
   return input
     .toLowerCase()
@@ -63,6 +67,7 @@ function isSeriousMedicalMessage(text: string) {
 export function getFallbackReceptionAction(
   message: string,
   appointments: Appointment[],
+  context: FallbackContext = {},
 ): ReceptionAction {
   const text = normalize(message);
 
@@ -71,6 +76,18 @@ export function getFallbackReceptionAction(
       type: "reply",
       message:
         "Esto es una demo ficticia de portfolio y no puede valorar urgencias ni dar diagnóstico. Si tienes síntomas fuertes, dificultad para respirar, dolor en el pecho o algo que te preocupe, llama a urgencias o acude a un centro sanitario real.",
+    };
+  }
+
+  if (context.pendingAppointmentTriage) {
+    const treatmentId = inferTreatmentId(text) ?? "general";
+    const slots = findAvailableSlots(appointments, { treatmentId });
+
+    return {
+      type: "propose_slots",
+      message:
+        "Vale, con eso ya te enseño huecos que pueden encajar. Elige el que mejor te venga y lo dejamos apuntado.",
+      slots,
     };
   }
 

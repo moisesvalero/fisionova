@@ -70,6 +70,8 @@ export function ReceptionistExperience() {
   const [pending, setPending] = useState(false);
   const [bookingPending, setBookingPending] = useState(false);
   const [isChatModalOpen, setIsChatModalOpen] = useState(false);
+  const [pendingAppointmentTriage, setPendingAppointmentTriage] =
+    useState(false);
 
   useEffect(() => {
     const page = pageRef.current;
@@ -188,7 +190,10 @@ export function ReceptionistExperience() {
       const response = await fetch("/api/receptionist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message }),
+        body: JSON.stringify({
+          message,
+          context: { pendingAppointmentTriage },
+        }),
       });
       const payload = (await response.json()) as { action: ReceptionAction };
 
@@ -196,6 +201,10 @@ export function ReceptionistExperience() {
       setSelectedSlot(null);
       setProposedSlots(
         payload.action.type === "propose_slots" ? payload.action.slots : [],
+      );
+      setPendingAppointmentTriage(
+        payload.action.type === "reply" &&
+          payload.action.message.includes("Antes de mirar hora"),
       );
     } catch {
       addAssistantMessage(
@@ -207,6 +216,7 @@ export function ReceptionistExperience() {
   }
 
   function handleSelectSlot(slot: AppointmentSlot) {
+    setPendingAppointmentTriage(false);
     setSelectedSlot(slot);
     setProposedSlots([]);
     addAssistantMessage(
@@ -234,6 +244,7 @@ export function ReceptionistExperience() {
 
       setSelectedSlot(null);
       setProposedSlots([]);
+      setPendingAppointmentTriage(false);
       addAssistantMessage(
         `Listo, ${details.patientName}. Te dejo apuntado para el ${payload.appointment.date} a las ${payload.appointment.time}. Recibirás la confirmación por email.`,
       );

@@ -61,6 +61,30 @@ describe("/api/receptionist", () => {
     expect(action.message).toContain("molesta");
   });
 
+  it("uses the local appointment context to propose slots after one follow-up", async () => {
+    resetDemoAppointmentStore();
+
+    const response = await POST(
+      new Request("http://localhost/api/receptionist", {
+        method: "POST",
+        body: JSON.stringify({
+          message: "rodilla",
+          context: { pendingAppointmentTriage: true },
+        }),
+      }),
+    );
+    const payload = (await response.json()) as {
+      provider: string;
+      action: { type: string; slots?: Array<{ treatmentId: string }> };
+    };
+
+    expect(payload.provider).toBe("fallback");
+    expect(payload.action.type).toBe("propose_slots");
+    expect(
+      payload.action.slots?.every((slot) => slot.treatmentId === "sports"),
+    ).toBe(true);
+  });
+
   it("keeps serious medical advice inside a demo safety boundary", () => {
     const action = createReceptionActionFromOpenAIIntent(
       {

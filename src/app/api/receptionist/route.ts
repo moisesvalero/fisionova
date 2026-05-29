@@ -11,6 +11,11 @@ import type { Appointment, ReceptionAction } from "@/lib/receptionist/types";
 
 const receptionRequestSchema = z.object({
   message: z.string().trim().min(1).max(700),
+  context: z
+    .object({
+      pendingAppointmentTriage: z.boolean().optional(),
+    })
+    .optional(),
 });
 
 const openAIIntentSchema = z.object({
@@ -160,7 +165,11 @@ export async function POST(request: Request) {
 
   const body = receptionRequestSchema.parse(await request.json());
   const appointments = getDemoAppointments();
-  const fallback = getFallbackReceptionAction(body.message, appointments);
+  const fallback = getFallbackReceptionAction(
+    body.message,
+    appointments,
+    body.context,
+  );
 
   if (!env.OPENAI_API_KEY) {
     return NextResponse.json({
@@ -189,7 +198,14 @@ export async function POST(request: Request) {
         input: [
           {
             role: "system",
-            content: buildReceptionSystemPrompt(),
+            content: [
+              buildReceptionSystemPrompt(),
+              body.context?.pendingAppointmentTriage
+                ? "Contexto: el paciente ya pidió cita y Clara ya le preguntó una vez qué le molesta. Interpreta este mensaje como respuesta corta a esa pregunta y, si hay cualquier pista mínima, usa request_appointment. No hagas otra pregunta de triaje."
+                : "",
+            ]
+              .filter(Boolean)
+              .join("\n"),
           },
           {
             role: "user",

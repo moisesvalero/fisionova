@@ -40,6 +40,19 @@ describe("fallback receptionist", () => {
     }
   });
 
+  it("uses a short follow-up answer as appointment context", () => {
+    const action = getFallbackReceptionAction("rodilla", seedAppointments, {
+      pendingAppointmentTriage: true,
+    });
+
+    expect(action.type).toBe("propose_slots");
+    if (action.type === "propose_slots") {
+      expect(action.slots.every((slot) => slot.treatmentId === "sports")).toBe(
+        true,
+      );
+    }
+  });
+
   it("discloses the portfolio demo and redirects urgent medical questions", () => {
     const action = getFallbackReceptionAction(
       "tengo dolor fuerte en el pecho y me cuesta respirar, que hago?",
