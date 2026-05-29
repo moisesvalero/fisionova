@@ -289,6 +289,7 @@ export function ReceptionistExperience() {
           alt="Sala de tratamiento de fisioterapia moderna y luminosa"
           fill
           priority
+          quality={90}
           sizes="100vw"
           className="hero-media parallax-layer object-cover"
           data-parallax="34"
@@ -296,7 +297,7 @@ export function ReceptionistExperience() {
         <div className="hero-overlay from-charcoal/70 via-charcoal/40 to-charcoal/80 absolute inset-0 bg-gradient-to-b" />
         <div className="hero-overlay from-charcoal/60 absolute inset-0 bg-gradient-to-r via-transparent to-transparent" />
 
-        <nav className="hero-nav border-cream/10 bg-charcoal/55 fixed inset-x-0 top-0 z-40 flex items-center justify-between border-b px-4 py-3 backdrop-blur-xl sm:px-6 sm:py-4 lg:px-12">
+        <nav className="hero-nav border-cream/10 bg-charcoal/65 fixed inset-x-0 top-0 z-40 flex items-center justify-between border-b px-4 py-3 backdrop-blur-sm sm:px-6 sm:py-4 lg:px-12">
           <a href="#" className="text-cream flex items-center gap-2">
             <div className="bg-sage flex h-7 w-7 items-center justify-center rounded-md">
               <Sparkles
@@ -338,10 +339,7 @@ export function ReceptionistExperience() {
         </nav>
 
         <div className="relative z-10 mx-auto grid min-h-[100svh] max-w-7xl items-center gap-5 px-4 pt-24 pb-6 sm:gap-10 sm:px-6 sm:pt-32 sm:pb-20 lg:grid-cols-12 lg:gap-8 lg:px-12 lg:pt-40 lg:pb-28">
-          <div
-            className="hero-copy parallax-layer text-cream lg:col-span-6"
-            data-parallax="-12"
-          >
+          <div className="hero-copy text-cream lg:col-span-6">
             <div className="hero-kicker text-cream/70 mb-3 inline-flex items-center gap-2 text-[10px] tracking-[0.18em] uppercase sm:mb-6 sm:text-xs">
               <span className="animate-pulse-dot bg-sage h-1.5 w-1.5 rounded-full" />
               Fisioterapia en Madrid · cita online
@@ -376,8 +374,7 @@ export function ReceptionistExperience() {
 
           <div
             id="chat"
-            className="hero-chat parallax-layer flex flex-col items-center gap-4 pb-2 lg:col-span-6 lg:items-end lg:pb-0"
-            data-parallax="18"
+            className="hero-chat flex flex-col items-center gap-4 pb-2 lg:col-span-6 lg:items-end lg:pb-0"
           >
             <ChatPanel
               inputId="receptionist-message-inline"
