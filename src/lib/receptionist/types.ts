@@ -48,8 +48,13 @@ export type ChatMessage = {
 };
 
 export type ReceptionAction =
-  | { type: "reply"; message: string }
-  | { type: "propose_slots"; message: string; slots: AppointmentSlot[] }
+  | { type: "reply"; message: string; requestedDate?: string | null }
+  | {
+      type: "propose_slots";
+      message: string;
+      slots: AppointmentSlot[];
+      requestedDate?: string | null;
+    }
   | { type: "confirm_booking"; message: string; appointment: Appointment }
   | { type: "cancel_booking"; message: string; appointmentId: string }
   | { type: "modify_booking"; message: string; appointment: Appointment };

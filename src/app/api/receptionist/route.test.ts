@@ -33,6 +33,7 @@ describe("/api/receptionist", () => {
         intent: "request_appointment",
         message: "Claro, te busco huecos para fisioterapia deportiva.",
         treatmentId: "sports",
+        requestedDate: null,
       },
       seedAppointments,
     );
@@ -53,6 +54,7 @@ describe("/api/receptionist", () => {
         intent: "request_appointment",
         message: "Claro, te ayudo con la cita.",
         treatmentId: null,
+        requestedDate: null,
       },
       seedAppointments,
     );
@@ -85,6 +87,58 @@ describe("/api/receptionist", () => {
     ).toBe(true);
   });
 
+  it("keeps the requested weekday after the treatment follow-up", async () => {
+    resetDemoAppointmentStore();
+
+    const response = await POST(
+      new Request("http://localhost/api/receptionist", {
+        method: "POST",
+        body: JSON.stringify({
+          message: "rodilla",
+          context: {
+            pendingAppointmentTriage: true,
+            requestedDate: "2026-06-04",
+          },
+        }),
+      }),
+    );
+    const payload = (await response.json()) as {
+      provider: string;
+      action: {
+        type: string;
+        requestedDate?: string | null;
+        slots?: Array<{ date: string; treatmentId: string }>;
+      };
+    };
+
+    expect(payload.provider).toBe("fallback");
+    expect(payload.action.type).toBe("propose_slots");
+    expect(payload.action.requestedDate).toBe("2026-06-04");
+    expect(
+      payload.action.slots?.every((slot) => slot.date === "2026-06-04"),
+    ).toBe(true);
+  });
+
+  it("turns an OpenAI weekday intent into slots for that day", () => {
+    const action = createReceptionActionFromOpenAIIntent(
+      {
+        intent: "request_appointment",
+        message: "Claro, te busco huecos para el jueves.",
+        treatmentId: "sports",
+        requestedDate: "2026-06-04",
+      },
+      seedAppointments,
+    );
+
+    expect(action.type).toBe("propose_slots");
+    if (action.type === "propose_slots") {
+      expect(action.requestedDate).toBe("2026-06-04");
+      expect(action.slots.every((slot) => slot.date === "2026-06-04")).toBe(
+        true,
+      );
+    }
+  });
+
   it("keeps serious medical advice inside a demo safety boundary", () => {
     const action = createReceptionActionFromOpenAIIntent(
       {
@@ -92,6 +146,7 @@ describe("/api/receptionist", () => {
         message:
           "Esto es una demo ficticia de portfolio. Si tienes dolor fuerte en el pecho o te cuesta respirar, llama a urgencias o acude a un centro sanitario real.",
         treatmentId: null,
+        requestedDate: null,
       },
       seedAppointments,
     );

@@ -40,6 +40,22 @@ describe("fallback receptionist", () => {
     }
   });
 
+  it("respects the weekday requested in the appointment request", () => {
+    const action = getFallbackReceptionAction(
+      "quiero cita el proximo jueves porque me duele la rodilla",
+      seedAppointments,
+    );
+
+    expect(action.type).toBe("propose_slots");
+    if (action.type === "propose_slots") {
+      expect(action.requestedDate).toBe("2026-06-04");
+      expect(action.slots.length).toBeGreaterThan(0);
+      expect(action.slots.every((slot) => slot.date === "2026-06-04")).toBe(
+        true,
+      );
+    }
+  });
+
   it("uses a short follow-up answer as appointment context", () => {
     const action = getFallbackReceptionAction("rodilla", seedAppointments, {
       pendingAppointmentTriage: true,
@@ -48,6 +64,21 @@ describe("fallback receptionist", () => {
     expect(action.type).toBe("propose_slots");
     if (action.type === "propose_slots") {
       expect(action.slots.every((slot) => slot.treatmentId === "sports")).toBe(
+        true,
+      );
+    }
+  });
+
+  it("keeps the requested weekday after asking one treatment question", () => {
+    const action = getFallbackReceptionAction("rodilla", seedAppointments, {
+      pendingAppointmentTriage: true,
+      requestedDate: "2026-06-04",
+    });
+
+    expect(action.type).toBe("propose_slots");
+    if (action.type === "propose_slots") {
+      expect(action.requestedDate).toBe("2026-06-04");
+      expect(action.slots.every((slot) => slot.date === "2026-06-04")).toBe(
         true,
       );
     }

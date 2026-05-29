@@ -6,7 +6,10 @@ import { checkRateLimit, getClientKey } from "@/lib/rate-limit";
 import { getDemoAppointments } from "@/lib/receptionist/appointment-store";
 import { findAvailableSlots } from "@/lib/receptionist/agenda";
 import { clinicProfile, treatments } from "@/lib/receptionist/demo-data";
-import { getFallbackReceptionAction } from "@/lib/receptionist/fallback";
+import {
+  getFallbackReceptionAction,
+  inferRequestedDate,
+} from "@/lib/receptionist/fallback";
 import type { Appointment, ReceptionAction } from "@/lib/receptionist/types";
 
 const receptionRequestSchema = z.object({
@@ -15,6 +18,7 @@ const receptionRequestSchema = z.object({
     .object({
       completedBooking: z.boolean().optional(),
       pendingAppointmentTriage: z.boolean().optional(),
+      requestedDate: z.string().nullable().optional(),
     })
     .optional(),
 });
@@ -23,6 +27,7 @@ const openAIIntentSchema = z.object({
   intent: z.enum(["reply", "request_appointment"]),
   message: z.string().min(1),
   treatmentId: z.enum(["general", "sports", "postural"]).nullable(),
+  requestedDate: z.string().nullable(),
 });
 
 export type OpenAIReceptionIntent = z.infer<typeof openAIIntentSchema>;
@@ -58,8 +63,21 @@ const openAIReceptionIntentJsonSchema = {
       description:
         "Best matching treatment. Use sports for deportiva/deporte/lesiones deportivas/rodilla/tobillo/correr, postural for postura/espalda/cuello/higiene postural, general for pain, massage or physiotherapy needs that do not fit those two. Use null when the patient asks for an appointment but has not explained what hurts or what they want to treat.",
     },
+    requestedDate: {
+      type: ["string", "null"],
+      enum: [
+        "2026-06-01",
+        "2026-06-02",
+        "2026-06-03",
+        "2026-06-04",
+        "2026-06-05",
+        null,
+      ],
+      description:
+        "Requested appointment date in YYYY-MM-DD when the patient says lunes, martes, miércoles, jueves, viernes, a concrete date, or próximo + weekday. Use null when no day is requested.",
+    },
   },
-  required: ["intent", "message", "treatmentId"],
+  required: ["intent", "message", "treatmentId", "requestedDate"],
 };
 
 function getOpenAIText(data: OpenAIResponse) {
@@ -100,19 +118,40 @@ function buildReceptionSystemPrompt() {
     "No confirmes una cita directamente. Si el paciente quiere reservar, marca request_appointment. Si no ha contado qué le duele o qué quiere tratar, deja treatmentId en null para preguntarlo antes de mostrar huecos.",
     "Si el paciente pide cita para hoy, no preguntes 'quÃ© dÃ­a de hoy'. Pide sÃ³lo la franja si falta, o deja que el backend proponga huecos.",
     "No muestres la agenda interna ni datos de otros pacientes.",
+    "Calendario demo disponible para reservar: lunes 2026-06-01, martes 2026-06-02, miércoles 2026-06-03, jueves 2026-06-04 y viernes 2026-06-05. Si el paciente dice 'próximo jueves', requestedDate debe ser 2026-06-04.",
     `Dirección: ${clinicProfile.address}. Teléfono: ${clinicProfile.phone}. Horario: ${clinicProfile.openingHours}.`,
     `Tratamientos:\n${treatmentSummary}`,
   ].join("\n");
+}
+
+function formatRequestedDate(date?: string | null) {
+  switch (date) {
+    case "2026-06-01":
+      return "lunes";
+    case "2026-06-02":
+      return "martes";
+    case "2026-06-03":
+      return "miércoles";
+    case "2026-06-04":
+      return "jueves";
+    case "2026-06-05":
+      return "viernes";
+    default:
+      return null;
+  }
 }
 
 export function createReceptionActionFromOpenAIIntent(
   intent: OpenAIReceptionIntent,
   appointments: Appointment[],
 ): ReceptionAction {
+  const requestedDate = intent.requestedDate ?? null;
+
   if (intent.intent === "reply") {
     return {
       type: "reply",
       message: intent.message,
+      requestedDate,
     };
   }
 
@@ -121,11 +160,13 @@ export function createReceptionActionFromOpenAIIntent(
       type: "reply",
       message:
         "Claro, te ayudo. Antes de mirar hora, cuéntame qué te molesta o qué quieres tratar.",
+      requestedDate,
     };
   }
 
   const slots = findAvailableSlots(appointments, {
     treatmentId: intent.treatmentId,
+    date: requestedDate ?? undefined,
   });
 
   if (slots.length === 0) {
@@ -138,13 +179,19 @@ export function createReceptionActionFromOpenAIIntent(
 
   return {
     type: "propose_slots",
-    message:
+    message: [
       intent.treatmentId === "sports"
-        ? "Claro. Para fisioterapia deportiva, estos huecos nos encajan bien. Elige el que mejor te venga y lo dejamos apuntado para confirmártelo por email."
+        ? "Claro. Para fisioterapia deportiva"
         : intent.treatmentId === "postural"
-          ? "Claro. Para reeducación postural, estos huecos nos encajan bien. Elige el que mejor te venga y lo dejamos apuntado para confirmártelo por email."
-          : "Claro. Estos huecos nos encajan bien. Elige el que mejor te venga y lo dejamos apuntado para confirmártelo por email.",
+          ? "Claro. Para reeducación postural"
+          : "Claro",
+      formatRequestedDate(requestedDate)
+        ? `tengo estos huecos para el ${formatRequestedDate(requestedDate)}.`
+        : "estos huecos nos encajan bien.",
+      "Elige el que mejor te venga y lo dejamos apuntado para confirmártelo por email.",
+    ].join(" "),
     slots,
+    requestedDate,
   };
 }
 
@@ -166,11 +213,12 @@ export async function POST(request: Request) {
 
   const body = receptionRequestSchema.parse(await request.json());
   const appointments = getDemoAppointments();
-  const fallback = getFallbackReceptionAction(
-    body.message,
-    appointments,
-    body.context,
-  );
+  const requestedDate =
+    inferRequestedDate(body.message) ?? body.context?.requestedDate ?? null;
+  const fallback = getFallbackReceptionAction(body.message, appointments, {
+    ...body.context,
+    requestedDate,
+  });
 
   if (!env.OPENAI_API_KEY) {
     return NextResponse.json({
@@ -204,6 +252,9 @@ export async function POST(request: Request) {
               body.context?.pendingAppointmentTriage
                 ? "Contexto: el paciente ya pidió cita y Clara ya le preguntó una vez qué le molesta. Interpreta este mensaje como respuesta corta a esa pregunta y, si hay cualquier pista mínima, usa request_appointment. No hagas otra pregunta de triaje."
                 : "",
+              requestedDate
+                ? `Contexto: el paciente pidió la cita para ${requestedDate}. Mantén esa fecha aunque ahora solo responda qué le duele.`
+                : "",
               body.context?.completedBooking
                 ? "Contexto: el paciente acaba de dejar una cita apuntada. Si da las gracias o cierra la conversación, responde con una despedida breve y natural. No reinicies la conversación."
                 : "",
@@ -225,8 +276,11 @@ export async function POST(request: Request) {
 
     const data = (await response.json()) as OpenAIResponse;
     const intent = parseOpenAIIntent(data);
-    const action = intent
-      ? createReceptionActionFromOpenAIIntent(intent, appointments)
+    const datedIntent = intent
+      ? { ...intent, requestedDate: requestedDate ?? intent.requestedDate }
+      : null;
+    const action = datedIntent
+      ? createReceptionActionFromOpenAIIntent(datedIntent, appointments)
       : fallback;
 
     return NextResponse.json({

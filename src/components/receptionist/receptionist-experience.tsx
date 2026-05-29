@@ -75,6 +75,9 @@ export function ReceptionistExperience() {
   const [completedBooking, setCompletedBooking] = useState(false);
   const [pendingAppointmentTriage, setPendingAppointmentTriage] =
     useState(false);
+  const [pendingRequestedDate, setPendingRequestedDate] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
     const page = pageRef.current;
@@ -195,7 +198,11 @@ export function ReceptionistExperience() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message,
-          context: { completedBooking, pendingAppointmentTriage },
+          context: {
+            completedBooking,
+            pendingAppointmentTriage,
+            requestedDate: pendingRequestedDate,
+          },
         }),
       });
       const payload = (await response.json()) as { action: ReceptionAction };
@@ -209,8 +216,15 @@ export function ReceptionistExperience() {
         payload.action.type === "reply" &&
           payload.action.message.includes("Antes de mirar hora"),
       );
+      if (
+        payload.action.type === "reply" ||
+        payload.action.type === "propose_slots"
+      ) {
+        setPendingRequestedDate(payload.action.requestedDate ?? null);
+      }
       if (payload.action.type === "propose_slots") {
         setCompletedBooking(false);
+        setPendingRequestedDate(null);
       }
     } catch {
       addAssistantMessage(
@@ -223,6 +237,7 @@ export function ReceptionistExperience() {
 
   function handleSelectSlot(slot: AppointmentSlot) {
     setPendingAppointmentTriage(false);
+    setPendingRequestedDate(null);
     setCompletedBooking(false);
     setSelectedSlot(slot);
     setProposedSlots([]);
@@ -252,6 +267,7 @@ export function ReceptionistExperience() {
       setSelectedSlot(null);
       setProposedSlots([]);
       setPendingAppointmentTriage(false);
+      setPendingRequestedDate(null);
       setCompletedBooking(true);
       addAssistantMessage(
         `Listo, ${details.patientName}. Te dejo apuntado para el ${payload.appointment.date} a las ${payload.appointment.time}. Recibirás la confirmación por email.`,

@@ -1,10 +1,11 @@
 import { findAvailableSlots } from "./agenda";
-import { clinicProfile, treatments } from "./demo-data";
+import { clinicProfile, demoDates, treatments } from "./demo-data";
 import type { Appointment, ReceptionAction } from "./types";
 
 type FallbackContext = {
   completedBooking?: boolean;
   pendingAppointmentTriage?: boolean;
+  requestedDate?: string | null;
 };
 
 function normalize(input: string) {
@@ -48,6 +49,54 @@ function inferTreatmentId(text: string) {
   return null;
 }
 
+const weekdayDates: Record<string, string> = {
+  lunes: "2026-06-01",
+  martes: "2026-06-02",
+  miercoles: "2026-06-03",
+  jueves: "2026-06-04",
+  viernes: "2026-06-05",
+};
+
+export function inferRequestedDate(message: string) {
+  const text = normalize(message);
+  const isoDate = text.match(/\b2026-06-0[1-5]\b/)?.[0] ?? null;
+
+  if (isoDate && demoDates.includes(isoDate)) {
+    return isoDate;
+  }
+
+  const shortDate = text.match(/\b0?([1-5])\/0?6(?:\/2026)?\b/);
+
+  if (shortDate) {
+    return `2026-06-0${shortDate[1]}`;
+  }
+
+  for (const [weekday, date] of Object.entries(weekdayDates)) {
+    if (text.includes(weekday)) {
+      return date;
+    }
+  }
+
+  return null;
+}
+
+function formatRequestedDate(date?: string | null) {
+  switch (date) {
+    case "2026-06-01":
+      return "lunes";
+    case "2026-06-02":
+      return "martes";
+    case "2026-06-03":
+      return "miércoles";
+    case "2026-06-04":
+      return "jueves";
+    case "2026-06-05":
+      return "viernes";
+    default:
+      return date ?? null;
+  }
+}
+
 function isSeriousMedicalMessage(text: string) {
   return (
     text.includes("pecho") ||
@@ -81,6 +130,8 @@ export function getFallbackReceptionAction(
   context: FallbackContext = {},
 ): ReceptionAction {
   const text = normalize(message);
+  const requestedDate =
+    inferRequestedDate(message) ?? context.requestedDate ?? null;
 
   if (isSeriousMedicalMessage(text)) {
     return {
@@ -99,13 +150,19 @@ export function getFallbackReceptionAction(
 
   if (context.pendingAppointmentTriage) {
     const treatmentId = inferTreatmentId(text) ?? "general";
-    const slots = findAvailableSlots(appointments, { treatmentId });
+    const slots = findAvailableSlots(appointments, {
+      treatmentId,
+      date: requestedDate ?? undefined,
+    });
+    const requestedDateLabel = formatRequestedDate(requestedDate);
 
     return {
       type: "propose_slots",
-      message:
-        "Vale, con eso ya te enseño huecos que pueden encajar. Elige el que mejor te venga y lo dejamos apuntado.",
+      message: requestedDateLabel
+        ? `Vale, con eso ya te enseño huecos para el ${requestedDateLabel}. Elige el que mejor te venga y lo dejamos apuntado.`
+        : "Vale, con eso ya te enseño huecos que pueden encajar. Elige el que mejor te venga y lo dejamos apuntado.",
       slots,
+      requestedDate,
     };
   }
 
@@ -120,7 +177,7 @@ export function getFallbackReceptionAction(
 
     return {
       type: "reply",
-      message: `Claro, te cuento. Las sesiones van as?: ${prices}. Si me dices qu? te pasa, te oriento mejor.`,
+      message: `Claro, te cuento. Las sesiones van así: ${prices}. Si me dices qué te pasa, te oriento mejor.`,
     };
   }
 
@@ -149,7 +206,7 @@ export function getFallbackReceptionAction(
 
     return {
       type: "reply",
-      message: `Trabajamos sobre todo esto: ${serviceList} Si me cuentas qu? notas, te digo cu?l encaja mejor.`,
+      message: `Trabajamos sobre todo esto: ${serviceList} Si me cuentas qué notas, te digo cuál encaja mejor.`,
     };
   }
 
@@ -173,16 +230,23 @@ export function getFallbackReceptionAction(
         type: "reply",
         message:
           "Claro, te ayudo. Antes de mirar hora, cuéntame qué te molesta o qué quieres tratar.",
+        requestedDate,
       };
     }
 
-    const slots = findAvailableSlots(appointments, { treatmentId });
+    const slots = findAvailableSlots(appointments, {
+      treatmentId,
+      date: requestedDate ?? undefined,
+    });
+    const requestedDateLabel = formatRequestedDate(requestedDate);
 
     return {
       type: "propose_slots",
-      message:
-        "Perfecto, con lo que me cuentas estos huecos pueden encajar bien. Elige el que mejor te venga y lo dejamos apuntado.",
+      message: requestedDateLabel
+        ? `Perfecto, para el ${requestedDateLabel} tengo estos huecos. Elige el que mejor te venga y lo dejamos apuntado.`
+        : "Perfecto, con lo que me cuentas estos huecos pueden encajar bien. Elige el que mejor te venga y lo dejamos apuntado.",
       slots,
+      requestedDate,
     };
   }
 
