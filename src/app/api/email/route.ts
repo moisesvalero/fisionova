@@ -37,11 +37,16 @@ export async function POST(request: Request) {
 
   const body = emailRequestSchema.parse(await request.json());
   const email = buildAppointmentEmail(body.type, body.appointment);
+  const recipient = env.RESEND_TEST_RECIPIENT ?? body.appointment.patientEmail;
+  const emailBody = env.RESEND_TEST_RECIPIENT
+    ? `${email.body}\n\n[Demo] Destinatario original: ${body.appointment.patientEmail}`
+    : email.body;
 
   if (!env.RESEND_API_KEY || !env.RESEND_FROM_EMAIL) {
     return NextResponse.json({
       status: "simulated",
       email,
+      recipient: body.appointment.patientEmail,
     });
   }
 
@@ -53,15 +58,27 @@ export async function POST(request: Request) {
     },
     body: JSON.stringify({
       from: env.RESEND_FROM_EMAIL,
-      to: body.appointment.patientEmail,
+      to: recipient,
       subject: email.subject,
-      text: email.body,
+      text: emailBody,
     }),
   });
 
   if (!response.ok) {
-    return NextResponse.json({ status: "failed", email }, { status: 200 });
+    const error = (await response.json().catch(() => null)) as {
+      message?: string;
+    } | null;
+
+    return NextResponse.json(
+      {
+        status: "failed",
+        email,
+        recipient,
+        error: error?.message ?? "Resend rejected the email request.",
+      },
+      { status: 200 },
+    );
   }
 
-  return NextResponse.json({ status: "sent", email });
+  return NextResponse.json({ status: "sent", email, recipient });
 }

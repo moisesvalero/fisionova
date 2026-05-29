@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+import { EmailLog } from "@/components/receptionist/email-log";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { findAvailableSlots } from "@/lib/receptionist/agenda";
@@ -30,10 +31,21 @@ import type {
   Appointment,
   AppointmentSlot,
   EmailEventType,
+  EmailLogItem,
 } from "@/lib/receptionist/types";
 
 type AppointmentsPayload = {
   appointments: Appointment[];
+};
+
+type EmailPayload = {
+  status: EmailLogItem["status"];
+  recipient?: string;
+  email?: {
+    subject: string;
+    body: string;
+  };
+  error?: string;
 };
 
 type StatusFilter = Appointment["status"] | "all";
@@ -456,11 +468,24 @@ async function sendEmail(
   appointment: Appointment,
   pin: string,
 ) {
-  await fetch("/api/email", {
+  const response = await fetch("/api/email", {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-doctor-pin": pin },
     body: JSON.stringify({ type, appointment }),
   });
+  const payload = (await response
+    .json()
+    .catch(() => null)) as EmailPayload | null;
+
+  return {
+    id: `${type}-${appointment.id}-${Date.now()}`,
+    type,
+    recipient: payload?.recipient ?? appointment.patientEmail,
+    subject: payload?.email?.subject ?? "Email de cita",
+    body: payload?.email?.body ?? payload?.error ?? "",
+    status: payload?.status ?? "failed",
+    createdAt: new Date().toISOString(),
+  } satisfies EmailLogItem;
 }
 
 export function DoctorAgenda() {
@@ -473,10 +498,21 @@ export function DoctorAgenda() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [selectedAppointment, setSelectedAppointment] =
     useState<Appointment | null>(null);
+  const [emails, setEmails] = useState<EmailLogItem[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<Pick<
     AppointmentSlot,
     "date" | "time"
   > | null>(null);
+
+  function addEmailLog(email: EmailLogItem) {
+    setEmails((current) => [email, ...current].slice(0, 8));
+
+    if (email.status === "failed") {
+      setError(
+        "La cita se actualizó, pero Resend no ha enviado el email. Revisa el remitente o el dominio.",
+      );
+    }
+  }
 
   const confirmedCount = useMemo(
     () => countByStatus(appointments, "confirmed"),
@@ -584,10 +620,12 @@ export function DoctorAgenda() {
       setSelectedAppointment(cancelled);
     }
 
-    await sendEmail(
-      "cancellation",
-      { ...appointment, status: "cancelled" },
-      pin,
+    addEmailLog(
+      await sendEmail(
+        "cancellation",
+        { ...appointment, status: "cancelled" },
+        pin,
+      ),
     );
   }
 
@@ -600,7 +638,7 @@ export function DoctorAgenda() {
 
     if (confirmed) {
       setSelectedAppointment(confirmed);
-      await sendEmail("confirmation", confirmed, pin);
+      addEmailLog(await sendEmail("confirmation", confirmed, pin));
     }
   }
 
@@ -623,7 +661,7 @@ export function DoctorAgenda() {
 
     if (moved) {
       setSelectedAppointment(moved);
-      await sendEmail("modification", moved, pin);
+      addEmailLog(await sendEmail("modification", moved, pin));
     }
   }
 
@@ -649,7 +687,7 @@ export function DoctorAgenda() {
 
     if (moved) {
       setSelectedAppointment(moved);
-      await sendEmail("modification", moved, pin);
+      addEmailLog(await sendEmail("modification", moved, pin));
     }
   }
 
@@ -881,6 +919,8 @@ export function DoctorAgenda() {
                 setSelectedSlot(slot);
               }}
             />
+
+            <EmailLog emails={emails} />
 
             {selectedAppointment ? (
               <AppointmentDetailModal
