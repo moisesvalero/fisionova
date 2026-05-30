@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { env } from "@/lib/env";
 import { checkRateLimit, getClientKey } from "@/lib/rate-limit";
-import { getDemoAppointments } from "@/lib/receptionist/appointment-store";
+import { listAppointments } from "@/lib/receptionist/appointment-repository";
 import { findAvailableSlots } from "@/lib/receptionist/agenda";
 import { clinicProfile, treatments } from "@/lib/receptionist/demo-data";
 import {
@@ -246,7 +246,7 @@ export async function POST(request: Request) {
   }
 
   const body = receptionRequestSchema.parse(await request.json());
-  const appointments = getDemoAppointments();
+  const appointments = await listAppointments();
   const requestedDate =
     inferRequestedDate(body.message) ?? body.context?.requestedDate ?? null;
   const fallback = getFallbackReceptionAction(body.message, appointments, {

@@ -1,5 +1,6 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
+import { isSlotAvailable } from "./agenda";
 import {
   blockDemoSlot,
   bookDemoAppointment,
@@ -64,6 +65,7 @@ function toRow(appointment: Appointment): AppointmentRow {
     date: appointment.date,
     time: appointment.time,
     status: appointment.status,
+    source: appointment.source ?? null,
     notes: appointment.notes ?? null,
     wants_earlier: appointment.wantsEarlier ?? false,
   };
@@ -89,6 +91,27 @@ async function listSupabaseAppointments() {
   return (data as AppointmentRow[]).map(toAppointment);
 }
 
+async function ensureSupabaseSlotAvailable(
+  input: Pick<Appointment, "date" | "time" | "therapistId">,
+  options: { ignoreAppointmentId?: string } = {},
+) {
+  const appointments = await listSupabaseAppointments();
+
+  if (!appointments) {
+    return;
+  }
+
+  const candidates = options.ignoreAppointmentId
+    ? appointments.filter(
+        (appointment) => appointment.id !== options.ignoreAppointmentId,
+      )
+    : appointments;
+
+  if (!isSlotAvailable(candidates, input)) {
+    throw new Error("Slot is not available");
+  }
+}
+
 export async function listAppointments() {
   return (await listSupabaseAppointments()) ?? getDemoAppointments();
 }
@@ -105,6 +128,9 @@ export async function createAppointmentRequest(input: AppointmentInput) {
     ...input,
     status: "pending",
   };
+
+  await ensureSupabaseSlotAvailable(appointment);
+
   const { data, error } = await supabase
     .from("appointments")
     .insert(toRow(appointment))
@@ -132,6 +158,9 @@ export async function createConfirmedAppointmentRequest(
     ...input,
     status: "confirmed",
   };
+
+  await ensureSupabaseSlotAvailable(appointment);
+
   const { data, error } = await supabase
     .from("appointments")
     .insert(toRow(appointment))
@@ -166,6 +195,9 @@ export async function createBlockedSlotRequest(input: BlockInput) {
     notes: input.notes || "Bloqueo manual de recepcion.",
     wantsEarlier: false,
   };
+
+  await ensureSupabaseSlotAvailable(appointment);
+
   const { data, error } = await supabase
     .from("appointments")
     .insert(toRow(appointment))
@@ -188,18 +220,33 @@ export async function confirmAppointmentRequest(appointmentId: string) {
 
   const { data, error } = await supabase
     .from("appointments")
-    .update({ status: "confirmed" })
-    .eq("id", appointmentId)
-    .neq("status", "cancelled")
     .select("*")
+    .eq("id", appointmentId)
     .single();
 
   if (error) {
     throw new Error(error.message);
   }
 
+  const appointment = toAppointment(data as AppointmentRow);
+  await ensureSupabaseSlotAvailable(appointment, {
+    ignoreAppointmentId: appointmentId,
+  });
+
+  const { data: updated, error: updateError } = await supabase
+    .from("appointments")
+    .update({ status: "confirmed" })
+    .eq("id", appointmentId)
+    .neq("status", "cancelled")
+    .select("*")
+    .single();
+
+  if (updateError) {
+    throw new Error(updateError.message);
+  }
+
   return {
-    appointment: toAppointment(data as AppointmentRow),
+    appointment: toAppointment(updated as AppointmentRow),
     appointments: await listAppointments(),
   };
 }
@@ -259,6 +306,20 @@ export async function moveAppointmentRequest(
 
   if (!supabase) {
     return moveDemoAppointment(appointmentId, changes);
+  }
+
+  const appointments = await listSupabaseAppointments();
+  const current = appointments?.find(
+    (appointment) => appointment.id === appointmentId,
+  );
+  const next = current
+    ? { ...current, ...changes, status: "confirmed" as const }
+    : null;
+
+  if (next) {
+    await ensureSupabaseSlotAvailable(next, {
+      ignoreAppointmentId: appointmentId,
+    });
   }
 
   const { error } = await supabase

@@ -50,11 +50,16 @@
   --font-display: var(--font-lora);
 }
 
+html {
+  overflow-x: clip;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-inter), Arial, Helvetica, sans-serif;
   font-feature-settings: "ss01", "cv11";
+  overflow-x: clip;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -355,6 +360,22 @@ h3 {
     mask-image: linear-gradient(90deg, transparent, black 18% 82%, transparent);
     opacity: 0.65;
     transform: rotate(-4deg);
+  }
+
+  @media (max-width: 1023px) {
+    .cta-orbit {
+      right: 0;
+      left: 0;
+      width: 100%;
+    }
+
+    .reveal-left {
+      transform: translateX(-12px);
+    }
+
+    .reveal-right {
+      transform: translateX(12px);
+    }
   }
 }
 

@@ -187,7 +187,7 @@ export function ChatPanel({
               <button
                 key={slot.id}
                 type="button"
-                className="magic-button bg-sage text-sage-foreground hover:bg-sage/90 inline-flex w-full items-center justify-center gap-1.5 rounded-md px-3 py-2 text-xs font-medium transition-colors"
+                className="magic-button bg-sage text-sage-foreground hover:bg-sage/90 inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-md px-3 py-2.5 text-sm font-medium transition-colors sm:min-h-0 sm:py-2 sm:text-xs"
                 onClick={() => onSelectSlot(slot)}
               >
                 <Check className="h-3.5 w-3.5" strokeWidth={2.5} />
@@ -334,7 +334,7 @@ export function ChatPanel({
           <Button
             type="submit"
             size="icon"
-            className="magic-button bg-primary text-primary-foreground h-8 w-8 hover:opacity-90 sm:h-9 sm:w-9"
+            className="magic-button bg-primary text-primary-foreground h-10 w-10 shrink-0 hover:opacity-90 sm:h-9 sm:w-9"
             disabled={pending}
           >
             <Send className="size-4" aria-hidden="true" />

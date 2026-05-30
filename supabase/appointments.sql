@@ -8,6 +8,7 @@ create table if not exists public.appointments (
   date date not null,
   time text not null,
   status text not null check (status in ('pending', 'awaiting_response', 'confirmed', 'patient_confirmed', 'reschedule_proposed', 'cancelled', 'no_show', 'blocked')),
+  source text check (source in ('ai', 'manual', 'system')),
   notes text,
   wants_earlier boolean not null default false,
   created_at timestamptz not null default now(),
@@ -16,6 +17,16 @@ create table if not exists public.appointments (
 
 alter table public.appointments
   add column if not exists wants_earlier boolean not null default false;
+
+alter table public.appointments
+  add column if not exists source text;
+
+alter table public.appointments
+  drop constraint if exists appointments_source_check;
+
+alter table public.appointments
+  add constraint appointments_source_check
+  check (source in ('ai', 'manual', 'system'));
 
 alter table public.appointments
   drop constraint if exists appointments_status_check;

@@ -101,33 +101,33 @@ export function CookieBanner() {
   }
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-[70] px-4 pb-4 sm:px-6 sm:pb-6">
+    <div className="fixed inset-x-0 bottom-0 z-[45] px-3 pb-3 sm:px-6 sm:pb-6">
       <section
-        className="shadow-elegant border-border bg-card mx-auto max-w-4xl rounded-xl border p-5"
+        className="shadow-elegant border-border bg-card mx-auto max-h-[min(72svh,520px)] max-w-4xl overflow-y-auto rounded-xl border p-4 sm:p-5"
         aria-label="Preferencias de cookies"
       >
-        <div className="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-start">
+        <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-start">
           <div>
             <p className="text-sage text-xs font-medium tracking-[0.16em] uppercase">
               Privacidad
             </p>
-            <h2 className="font-display mt-2 text-2xl">
+            <h2 className="font-display mt-1 text-xl sm:mt-2 sm:text-2xl">
               Configuración de cookies
             </h2>
-            <p className="text-muted-foreground mt-2 max-w-2xl text-sm leading-relaxed">
+            <p className="text-muted-foreground mt-2 max-w-2xl text-sm leading-relaxed sm:text-sm">
               Usamos cookies técnicas necesarias para que la web funcione. Las
               analíticas o de marketing solo se activarían si las aceptas.
               Puedes aceptar, rechazar o configurar tus preferencias.
             </p>
             <Link
               href="/politica-cookies"
-              className="text-foreground mt-3 inline-flex text-sm font-medium underline underline-offset-4"
+              className="text-foreground mt-2 inline-flex text-sm font-medium underline underline-offset-4 sm:mt-3"
             >
               Leer política de cookies
             </Link>
           </div>
 
-          <div className="flex flex-col gap-2 sm:flex-row lg:flex-col">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-row lg:flex-col">
             <Button type="button" onClick={acceptAll}>
               Aceptar
             </Button>
@@ -137,6 +137,7 @@ export function CookieBanner() {
             <Button
               type="button"
               variant="ghost"
+              className="col-span-2"
               onClick={() => setShowSettings((current) => !current)}
             >
               Configurar

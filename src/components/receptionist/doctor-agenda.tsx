@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   BadgeCheck,
@@ -27,6 +27,7 @@ import Link from "next/link";
 
 import { EmailLog } from "@/components/receptionist/email-log";
 import { Button } from "@/components/ui/button";
+import { isBlockingAppointment } from "@/lib/receptionist/agenda";
 import { cn } from "@/lib/utils";
 import {
   availableTimes,
@@ -56,7 +57,7 @@ type EmailPayload = {
   error?: string;
 };
 
-type StatusFilter = AppointmentStatus | "all";
+type StatusFilter = AppointmentStatus | "all" | "waitlist";
 type TherapistFilter = "all" | string;
 type CalendarView = "day" | "week" | "month";
 type MobileWorkspacePanel = "agenda" | "filters" | "inbox";
@@ -79,6 +80,7 @@ const statusOptions: Array<{ label: string; value: StatusFilter }> = [
   { label: "Pendientes", value: "pending" },
   { label: "Respuesta pendiente", value: "awaiting_response" },
   { label: "Confirmadas", value: "confirmed" },
+  { label: "Lista de espera", value: "waitlist" },
   { label: "Paciente OK", value: "patient_confirmed" },
   { label: "Cambio propuesto", value: "reschedule_proposed" },
   { label: "No vino", value: "no_show" },
@@ -1057,6 +1059,26 @@ function AppointmentCalendar({
   const selectedMonthAppointments = selectedMonthDate
     ? sortAppointments(appointmentsByDate.get(selectedMonthDate) ?? [])
     : [];
+  const getAvailableTherapistsForSlot = (
+    day: string,
+    time: string,
+    slotAppointments: Appointment[],
+  ) => {
+    if (selectedTherapist !== "all") {
+      return [];
+    }
+
+    return therapists.filter(
+      (therapist) =>
+        !slotAppointments.some(
+          (appointment) =>
+            isBlockingAppointment(appointment) &&
+            appointment.date === day &&
+            appointment.time === time &&
+            appointment.therapistId === therapist.id,
+        ),
+    );
+  };
 
   return (
     <>
@@ -1149,6 +1171,11 @@ function AppointmentCalendar({
                 {availableTimes.map((time) => {
                   const slotAppointments =
                     appointmentsBySlot.get(`${day}-${time}`) ?? [];
+                  const availableSlotTherapists = getAvailableTherapistsForSlot(
+                    day,
+                    time,
+                    slotAppointments,
+                  );
 
                   return (
                     <div
@@ -1194,6 +1221,21 @@ function AppointmentCalendar({
                               <AppointmentBadges appointment={appointment} />
                             </button>
                           ))}
+                          {availableSlotTherapists.length > 0 ? (
+                            <button
+                              type="button"
+                              className="border-sage/30 bg-sage/10 text-sage hover:bg-sage/15 min-h-11 w-full rounded-lg border px-3 py-2 text-left text-sm font-medium transition-colors"
+                              onClick={() =>
+                                onSelectSlot({
+                                  date: day,
+                                  time,
+                                  therapistId: availableSlotTherapists[0]?.id,
+                                })
+                              }
+                            >
+                              Libre con {availableSlotTherapists[0]?.name}
+                            </button>
+                          ) : null}
                         </div>
                       ) : (
                         <button
@@ -1304,11 +1346,11 @@ function AppointmentCalendar({
             </div>
           </div>
         ) : (
-          <div className="hidden min-h-0 flex-1 lg:block">
+          <div className="hidden min-h-0 flex-1 overflow-y-auto lg:block">
             <div
-              className="grid h-full min-h-0 min-w-0 overflow-hidden"
+              className="grid min-h-full min-w-0"
               style={{
-                gridTemplateRows: `auto repeat(${availableTimes.length}, minmax(0, 1fr))`,
+                gridTemplateRows: `auto repeat(${availableTimes.length}, minmax(58px, 1fr))`,
               }}
             >
               <div
@@ -1349,6 +1391,12 @@ function AppointmentCalendar({
                   {days.map((day) => {
                     const slotAppointments =
                       appointmentsBySlot.get(`${day}-${time}`) ?? [];
+                    const availableSlotTherapists =
+                      getAvailableTherapistsForSlot(
+                        day,
+                        time,
+                        slotAppointments,
+                      );
 
                     return (
                       <div
@@ -1439,6 +1487,21 @@ function AppointmentCalendar({
                                 }
                               >
                                 +{slotAppointments.length - 1} mas
+                              </button>
+                            ) : null}
+                            {availableSlotTherapists.length > 0 ? (
+                              <button
+                                type="button"
+                                className="border-sage/30 bg-sage/10 text-sage hover:bg-sage/15 mt-0.5 inline-flex h-5 max-w-full items-center truncate rounded-full border px-1.5 text-[9px] font-semibold transition-colors"
+                                onClick={() =>
+                                  onSelectSlot({
+                                    date: day,
+                                    time,
+                                    therapistId: availableSlotTherapists[0]?.id,
+                                  })
+                                }
+                              >
+                                Libre con {availableSlotTherapists[0]?.name}
                               </button>
                             ) : null}
                           </div>
@@ -1758,6 +1821,27 @@ export function DoctorAgenda() {
     useState<AppointmentEditPreset | null>(null);
   const [emails, setEmails] = useState<EmailLogItem[]>([]);
   const [showEmailLog, setShowEmailLog] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(min-width: 1024px)");
+    const previousBodyOverflow = document.body.style.overflowY;
+    const previousHtmlOverflow = document.documentElement.style.overflowY;
+
+    function syncOverflow() {
+      const value = mediaQuery.matches ? "hidden" : "";
+      document.body.style.overflowY = value;
+      document.documentElement.style.overflowY = value;
+    }
+
+    syncOverflow();
+    mediaQuery.addEventListener("change", syncOverflow);
+
+    return () => {
+      mediaQuery.removeEventListener("change", syncOverflow);
+      document.body.style.overflowY = previousBodyOverflow;
+      document.documentElement.style.overflowY = previousHtmlOverflow;
+    };
+  }, []);
   const [selectedSlot, setSelectedSlot] = useState<FreeSlot | null>(null);
   const [freedSlot, setFreedSlot] = useState<FreedSlot | null>(null);
   const [actionMessage, setActionMessage] = useState("");
@@ -1815,7 +1899,10 @@ export function DoctorAgenda() {
     return appointments.filter((appointment) => {
       const matchesDay = dayFilter === "all" || appointment.date === dayFilter;
       const matchesStatus =
-        statusFilter === "all" || appointment.status === statusFilter;
+        statusFilter === "all" ||
+        (statusFilter === "waitlist"
+          ? appointment.wantsEarlier && appointment.status !== "cancelled"
+          : appointment.status === statusFilter);
       const matchesTherapist =
         therapistFilter === "all" ||
         appointment.therapistId === therapistFilter;
@@ -2196,7 +2283,7 @@ export function DoctorAgenda() {
             </form>
           </section>
         ) : (
-          <section className="reception-workspace grid flex-1 content-start items-start gap-4 lg:min-h-0 lg:grid-cols-[300px_minmax(0,1fr)] lg:items-stretch xl:grid-cols-[320px_minmax(0,1fr)]">
+          <section className="reception-workspace grid flex-1 content-start items-start gap-4 lg:h-full lg:min-h-0 lg:grid-cols-[300px_minmax(0,1fr)] lg:content-stretch lg:items-stretch xl:grid-cols-[320px_minmax(0,1fr)]">
             {error ? (
               <p className="text-clay text-sm lg:col-span-2" role="alert">
                 {error}
@@ -2436,7 +2523,7 @@ export function DoctorAgenda() {
                         type="button"
                         className="hover:bg-sage/10 grid w-full grid-cols-[1fr_auto] items-center gap-3 px-3 py-2 text-left transition-colors"
                         onClick={() => {
-                          setStatusFilter("all");
+                          setStatusFilter("waitlist");
                           setMobilePanel("agenda");
                         }}
                       >
@@ -2520,7 +2607,7 @@ export function DoctorAgenda() {
 
             <div
               className={cn(
-                "flex min-h-0 min-w-0 flex-col gap-4",
+                "flex min-h-0 min-w-0 flex-col gap-4 lg:h-full",
                 mobilePanel === "inbox" && "hidden lg:flex",
               )}
             >
@@ -2540,7 +2627,7 @@ export function DoctorAgenda() {
                   mobilePanel !== "filters" && "hidden lg:block",
                 )}
               >
-                <div className="grid gap-3 lg:grid-cols-[minmax(220px,1fr)_150px_190px_150px_auto] lg:items-end lg:gap-2 2xl:grid-cols-[minmax(260px,1.1fr)_180px_220px_180px_auto]">
+                <div className="grid gap-3 lg:grid-cols-[minmax(180px,1fr)_repeat(3,minmax(120px,0.6fr))] lg:items-end lg:gap-2 xl:grid-cols-[minmax(220px,1fr)_150px_190px_150px_auto] 2xl:grid-cols-[minmax(260px,1.1fr)_180px_220px_180px_auto]">
                   <label className="flex flex-col gap-1.5 text-xs font-medium lg:gap-1 lg:text-[11px]">
                     Buscar
                     <div className="border-input bg-background focus-within:ring-ring/40 flex h-9 items-center gap-2 rounded-md border px-3 text-sm transition-shadow focus-within:ring-2 lg:h-8 lg:px-2 lg:text-xs">
@@ -2618,7 +2705,7 @@ export function DoctorAgenda() {
                     </select>
                   </label>
 
-                  <div className="border-border/60 bg-background/55 rounded-md border px-3 py-2 text-sm lg:px-2 lg:py-1 lg:text-right lg:text-xs">
+                  <div className="border-border/60 bg-background/55 rounded-md border px-3 py-2 text-sm lg:hidden lg:px-2 lg:py-1 lg:text-right lg:text-xs xl:block">
                     <span className="text-muted-foreground block text-[11px] tracking-[0.12em] uppercase">
                       Mostrando
                     </span>
