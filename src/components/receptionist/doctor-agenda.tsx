@@ -970,6 +970,7 @@ function AppointmentCalendar({
   view,
   selectedDay,
   selectedTherapist,
+  onSelectedDayChange,
   onViewChange,
   onMoveToSlot,
   onSelectAppointment,
@@ -979,6 +980,7 @@ function AppointmentCalendar({
   view: CalendarView;
   selectedDay: string;
   selectedTherapist: TherapistFilter;
+  onSelectedDayChange: (day: string) => void;
   onViewChange: (view: CalendarView) => void;
   onMoveToSlot: (appointment: Appointment, slot: FreeSlot) => void;
   onSelectAppointment: (appointment: Appointment) => void;
@@ -1063,17 +1065,23 @@ function AppointmentCalendar({
           <div>
             <div className="text-muted-foreground inline-flex items-center gap-2 text-xs font-medium tracking-[0.16em] uppercase">
               <CalendarCheck2 className="size-4" aria-hidden="true" />
-              Calendario semanal
+              <span className="lg:hidden">Agenda diaria</span>
+              <span className="hidden lg:inline">Calendario semanal</span>
             </div>
             <h2 className="font-display mt-1 text-xl leading-tight lg:text-lg">
-              {view === "month"
-                ? formatMonthLabel(selectedDateForView)
-                : view === "day"
-                  ? formatAppointmentDate(selectedDateForView)
-                  : "Agenda semanal"}
+              <span className="lg:hidden">
+                {formatAppointmentDate(selectedDateForView)}
+              </span>
+              <span className="hidden lg:inline">
+                {view === "month"
+                  ? formatMonthLabel(selectedDateForView)
+                  : view === "day"
+                    ? formatAppointmentDate(selectedDateForView)
+                    : "Agenda semanal"}
+              </span>
             </h2>
           </div>
-          <div className="border-border/70 bg-background/70 grid grid-cols-3 rounded-md border p-1">
+          <div className="border-border/70 bg-background/70 hidden grid-cols-3 rounded-md border p-1 lg:grid">
             {viewOptions.map((option) => (
               <button
                 key={option.value}
@@ -1093,7 +1101,37 @@ function AppointmentCalendar({
           </div>
         </header>
 
-        <div className="grid gap-3 px-3 py-3 md:hidden">
+        <div className="border-border/60 flex gap-2 overflow-x-auto border-b px-3 py-2 lg:hidden">
+          {demoDates.map((day) => {
+            const dayAppointments = appointmentsByDate.get(day) ?? [];
+            const isSelected = day === selectedDateForView;
+
+            return (
+              <button
+                key={day}
+                type="button"
+                aria-pressed={isSelected}
+                className={cn(
+                  "min-w-20 rounded-lg border px-3 py-2 text-left text-xs transition-colors",
+                  isSelected
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border/70 bg-background/65 text-muted-foreground",
+                )}
+                onClick={() => onSelectedDayChange(day)}
+              >
+                <span className="block font-semibold capitalize">
+                  {formatAppointmentDate(day).split(" ")[0]}
+                </span>
+                <span className="mt-0.5 block tabular-nums">
+                  {new Date(`${day}T00:00:00`).getDate()} /{" "}
+                  {dayAppointments.length}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="grid gap-3 px-3 py-3 lg:hidden">
           {mobileDays.map((day) => (
             <article
               key={day}
@@ -1184,7 +1222,7 @@ function AppointmentCalendar({
         </div>
 
         {view === "month" ? (
-          <div className="hidden min-h-0 flex-1 grid-rows-[auto_1fr] md:grid">
+          <div className="hidden min-h-0 flex-1 grid-rows-[auto_1fr] lg:grid">
             <div className="border-border/60 grid grid-cols-7 border-b">
               {["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"].map((day) => (
                 <div
@@ -1266,7 +1304,7 @@ function AppointmentCalendar({
             </div>
           </div>
         ) : (
-          <div className="hidden min-h-0 flex-1 md:block">
+          <div className="hidden min-h-0 flex-1 lg:block">
             <div
               className="grid h-full min-h-0 min-w-0 overflow-hidden"
               style={{
@@ -2105,7 +2143,7 @@ export function DoctorAgenda() {
             <span className="text-sage text-xs tracking-[0.18em] uppercase lg:hidden">
               Recepcion privada
             </span>
-            <h1 className="font-display mt-1 text-2xl leading-tight sm:mt-2 sm:text-4xl lg:m-0 lg:text-2xl">
+            <h1 className="font-display mt-1 text-2xl leading-tight sm:mt-2 sm:text-3xl lg:m-0 lg:text-2xl">
               Panel de recepcion
             </h1>
           </div>
@@ -2158,14 +2196,14 @@ export function DoctorAgenda() {
             </form>
           </section>
         ) : (
-          <section className="reception-workspace grid flex-1 gap-4 xl:min-h-0 xl:grid-cols-[320px_minmax(0,1fr)]">
+          <section className="reception-workspace grid flex-1 content-start items-start gap-4 lg:min-h-0 lg:grid-cols-[300px_minmax(0,1fr)] lg:items-stretch xl:grid-cols-[320px_minmax(0,1fr)]">
             {error ? (
-              <p className="text-clay text-sm xl:col-span-2" role="alert">
+              <p className="text-clay text-sm lg:col-span-2" role="alert">
                 {error}
               </p>
             ) : null}
             <nav
-              className="glass shadow-elegant border-border/60 sticky top-2 z-20 grid grid-cols-3 rounded-xl border p-1 xl:hidden"
+              className="glass shadow-elegant border-border/60 sticky top-2 z-20 grid h-12 grid-cols-3 items-center rounded-xl border p-1 lg:hidden"
               aria-label="Vista del panel de recepcion"
             >
               {[
@@ -2174,19 +2212,19 @@ export function DoctorAgenda() {
                   value: "agenda",
                   count: filteredAppointments.length,
                 },
-                { label: "Filtros", value: "filters", count: null },
                 {
-                  label: "Bandeja",
+                  label: "Pendientes",
                   value: "inbox",
                   count: pendingCount + waitingCount,
                 },
+                { label: "Filtros", value: "filters", count: null },
               ].map((item) => (
                 <button
                   key={item.value}
                   type="button"
                   aria-pressed={mobilePanel === item.value}
                   className={cn(
-                    "min-h-11 rounded-lg px-2 py-2 text-center text-xs font-semibold transition-colors",
+                    "flex h-10 flex-col items-center justify-center rounded-lg px-2 text-center text-xs font-semibold transition-colors",
                     mobilePanel === item.value
                       ? "bg-primary text-primary-foreground shadow-sm"
                       : "text-muted-foreground hover:bg-background/70 hover:text-foreground",
@@ -2206,8 +2244,8 @@ export function DoctorAgenda() {
             </nav>
             <aside
               className={cn(
-                "glass shadow-elegant border-border/60 rounded-xl border xl:min-h-0 xl:overflow-hidden",
-                mobilePanel !== "inbox" && "hidden xl:block",
+                "glass shadow-elegant border-border/60 rounded-xl border lg:min-h-0 lg:overflow-hidden",
+                mobilePanel !== "inbox" && "hidden lg:block",
               )}
             >
               <div className="flex h-full flex-col">
@@ -2279,7 +2317,7 @@ export function DoctorAgenda() {
                   <div className="border-border/60 bg-background/50 overflow-hidden rounded-lg border">
                     <div className="border-border/60 flex items-center justify-between border-b px-3 py-2">
                       <span className="text-muted-foreground text-xs font-medium tracking-[0.14em] uppercase">
-                        Bandeja
+                        Tareas
                       </span>
                       <span className="text-muted-foreground text-xs tabular-nums">
                         {filteredAppointments.length}/{appointments.length}
@@ -2476,14 +2514,14 @@ export function DoctorAgenda() {
                   </div>
                 </div>
 
-                <div className="hidden flex-1 xl:block" />
+                <div className="hidden flex-1 lg:block" />
               </div>
             </aside>
 
             <div
               className={cn(
                 "flex min-h-0 min-w-0 flex-col gap-4",
-                mobilePanel === "inbox" && "hidden xl:flex",
+                mobilePanel === "inbox" && "hidden lg:flex",
               )}
             >
               {freedSlot ? (
@@ -2499,7 +2537,7 @@ export function DoctorAgenda() {
               <section
                 className={cn(
                   "glass shadow-elegant border-border/60 shrink-0 rounded-xl border p-3 lg:p-2",
-                  mobilePanel !== "filters" && "hidden xl:block",
+                  mobilePanel !== "filters" && "hidden lg:block",
                 )}
               >
                 <div className="grid gap-3 lg:grid-cols-[minmax(220px,1fr)_150px_190px_150px_auto] lg:items-end lg:gap-2 2xl:grid-cols-[minmax(260px,1.1fr)_180px_220px_180px_auto]">
@@ -2591,7 +2629,7 @@ export function DoctorAgenda() {
                   </div>
                   <Button
                     type="button"
-                    className="h-10 justify-center xl:hidden"
+                    className="h-10 justify-center lg:hidden"
                     onClick={() => setMobilePanel("agenda")}
                   >
                     Ver agenda
@@ -2602,7 +2640,7 @@ export function DoctorAgenda() {
               <div
                 className={cn(
                   "flex min-h-0 flex-1",
-                  mobilePanel !== "agenda" && "hidden xl:flex",
+                  mobilePanel !== "agenda" && "hidden lg:flex",
                 )}
               >
                 <AppointmentCalendar
@@ -2610,6 +2648,7 @@ export function DoctorAgenda() {
                   view={calendarView}
                   selectedDay={dayFilter}
                   selectedTherapist={therapistFilter}
+                  onSelectedDayChange={setDayFilter}
                   onViewChange={setCalendarView}
                   onMoveToSlot={handleMoveToSlot}
                   onSelectAppointment={(appointment) => {
