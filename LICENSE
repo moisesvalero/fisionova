@@ -1,26 +1,31 @@
-Creative Commons Attribution-NonCommercial 4.0 International
+FisioNova AI Receptionist License
 
 Copyright (c) 2026 Moises Valero
 
-This work is licensed under the Creative Commons Attribution-NonCommercial
-4.0 International License.
+Required Notice: Copyright 2026 Moises Valero. This project is source-available
+for portfolio review, learning, evaluation, and noncommercial experimentation.
+Commercial use requires prior written permission from the copyright holder.
 
-You are free to:
+This software is licensed under the PolyForm Noncommercial License 1.0.0:
+https://polyformproject.org/licenses/noncommercial/1.0.0
 
-- Share: copy and redistribute the material in any medium or format.
-- Adapt: remix, transform, and build upon the material.
+You may view, study, fork, modify, and share this project only for
+noncommercial purposes.
 
-Under the following terms:
+You may not, without prior written permission from Moises Valero:
 
-- Attribution: You must give appropriate credit, provide a link to the
-  license, and indicate if changes were made.
-- NonCommercial: You may not use the material for commercial purposes.
-- No additional restrictions: You may not apply legal terms or technological
-  measures that legally restrict others from doing anything the license permits.
+- Sell this project or modified versions of it.
+- Use it to deliver paid work for a client.
+- Deploy it as a paid product, SaaS, template, starter kit, or white-label app.
+- Integrate it into a commercial product or service.
+- Present it as your own original commercial product.
 
-Commercial use, resale, SaaS use, client delivery, white-label reuse, paid
-deployment, or use as part of a paid product/service requires prior written
-permission from the copyright holder.
+This project is not open source under the Open Source Definition because
+commercial use is restricted. It is source-available for transparency,
+portfolio review, and learning.
 
-Full license text:
-https://creativecommons.org/licenses/by-nc/4.0/legalcode
+For commercial licensing, collaboration, hiring, or permission requests,
+contact the author through:
+
+- Portfolio: https://moisesvalero.es/
+- GitHub: https://github.com/moisesvalero

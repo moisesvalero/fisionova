@@ -4,7 +4,7 @@
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=nextdotjs)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=111)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
-![License](https://img.shields.io/badge/license-CC--BY--NC--4.0-lightgrey)
+![License](https://img.shields.io/badge/license-Source--Available%20Noncommercial-lightgrey)
 
 Demo publica para portfolio tecnico: una web app de una clinica de fisioterapia ficticia con recepcionista IA, solicitud de citas, agenda privada para el medico y confirmaciones por email.
 
@@ -200,8 +200,20 @@ supabase/
 
 ## Licencia
 
-Este proyecto esta publicado bajo Creative Commons Attribution-NonCommercial 4.0 International (`CC-BY-NC-4.0`).
+Este proyecto es **source-available no comercial**. El codigo se puede ver,
+estudiar, bifurcar y adaptar para aprendizaje, evaluacion tecnica y portfolio,
+pero no se puede usar para ganar dinero sin permiso escrito del autor.
 
-Puedes estudiar, compartir y adaptar el codigo con atribucion, pero no puedes usarlo con fines comerciales, revenderlo, desplegarlo para un cliente, ofrecerlo como SaaS, white-label o integrarlo en un producto/servicio de pago sin permiso escrito del autor.
+Licencia base: PolyForm Noncommercial License 1.0.0.
+
+No esta permitido, sin permiso escrito de Moises Valero:
+
+- Revender este proyecto o versiones modificadas.
+- Usarlo para entregar un trabajo pagado a un cliente.
+- Desplegarlo como producto de pago, SaaS, plantilla, starter kit o white-label.
+- Integrarlo en un producto o servicio comercial.
+- Presentarlo como producto comercial propio.
+
+Para licencia comercial, contratacion o colaboracion: [https://moisesvalero.es/](https://moisesvalero.es/).
 
 Ver [LICENSE](LICENSE).
