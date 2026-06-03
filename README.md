@@ -83,9 +83,9 @@ Pendiente para produccion real:
 ## Arranque local
 
 ```bash
-npm install
+pnpm install
 cp .env.example .env.local
-npm run dev
+pnpm run dev
 ```
 
 Abre `http://localhost:3000`.
@@ -157,23 +157,23 @@ Para reducir la probabilidad de spam en Resend:
 6. Ejecuta antes:
 
 ```bash
-npm run verify
+pnpm run verify
 ```
 
 ## Scripts
 
 ```bash
-npm run dev              # servidor local
-npm run build            # build de produccion
-npm run start            # servir build
-npm run lint             # ESLint
-npm run check            # TypeScript sin emitir
-npm run format           # formatear con Prettier
-npm run format:check     # comprobar formato
-npm test                 # tests unitarios
-npm run audit            # npm audit high+
-npm run verify           # formato, lint, tipos, tests, build y audit
-npm run design:audit     # auditoria visual con Impeccable
+pnpm run dev              # servidor local
+pnpm run build            # build de produccion
+pnpm run start            # servir build
+pnpm run lint             # ESLint
+pnpm run check            # TypeScript sin emitir
+pnpm run format           # formatear con Prettier
+pnpm run format:check     # comprobar formato
+pnpm test                 # tests unitarios
+pnpm run audit            # pnpm audit high+
+pnpm run verify           # formato, lint, tipos, tests, build y audit
+pnpm run design:audit     # auditoria visual con Impeccable
 ```
 
 ## Estructura principal

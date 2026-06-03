@@ -226,7 +226,7 @@ export const quickPrompts = [
 
 - [ ] **Step 3: Type-check the new files**
 
-Run: `npm run check`
+Run: `pnpm run check`
 
 Expected: TypeScript may fail if dependencies are not installed; if dependencies are installed, the new files compile with no errors.
 
@@ -329,7 +329,7 @@ describe("agenda", () => {
 
 - [ ] **Step 2: Run tests and verify failure**
 
-Run: `npm test -- src/lib/receptionist/agenda.test.ts`
+Run: `pnpm test -- src/lib/receptionist/agenda.test.ts`
 
 Expected: FAIL because `src/lib/receptionist/agenda.ts` does not exist yet.
 
@@ -444,7 +444,7 @@ export function updateAppointment(
 
 - [ ] **Step 4: Run agenda tests**
 
-Run: `npm test -- src/lib/receptionist/agenda.test.ts`
+Run: `pnpm test -- src/lib/receptionist/agenda.test.ts`
 
 Expected: PASS.
 
@@ -510,7 +510,7 @@ describe("fallback receptionist", () => {
 
 - [ ] **Step 2: Run fallback tests and verify failure**
 
-Run: `npm test -- src/lib/receptionist/fallback.test.ts`
+Run: `pnpm test -- src/lib/receptionist/fallback.test.ts`
 
 Expected: FAIL because `fallback.ts` and `email.ts` do not exist.
 
@@ -643,7 +643,7 @@ export function getFallbackReceptionAction(
 
 - [ ] **Step 5: Run fallback tests**
 
-Run: `npm test -- src/lib/receptionist/fallback.test.ts`
+Run: `pnpm test -- src/lib/receptionist/fallback.test.ts`
 
 Expected: PASS.
 
@@ -811,7 +811,7 @@ export async function POST(request: Request) {
 
 - [ ] **Step 5: Run type-check**
 
-Run: `npm run check`
+Run: `pnpm run check`
 
 Expected: PASS after dependencies are installed; otherwise document missing dependencies.
 
@@ -865,7 +865,7 @@ Create `src/components/receptionist/receptionist-experience.tsx` as a `"use clie
 
 - [ ] **Step 6: Run type-check**
 
-Run: `npm run check`
+Run: `pnpm run check`
 
 Expected: PASS.
 
@@ -917,7 +917,7 @@ export const siteConfig = {
 
 - [ ] **Step 3: Check visual constraints**
 
-Run: `npm run lint`
+Run: `pnpm run lint`
 
 Expected: PASS. Fix any JSX accessibility or lint issue before continuing.
 
@@ -938,13 +938,13 @@ git commit -m "feat: build physiotherapy AI receptionist homepage"
 
 - [ ] **Step 1: Install dependencies if needed**
 
-Run: `npm install`
+Run: `pnpm install`
 
-Expected: `node_modules` exists and project scripts can resolve local dependencies. Commit `package-lock.json` only if it changes for a real dependency reason.
+Expected: `node_modules` exists and project scripts can resolve local dependencies. Commit `pnpm-lock.yaml` only if it changes for a real dependency reason.
 
 - [ ] **Step 2: Run focused tests**
 
-Run: `npm test -- src/lib/receptionist/agenda.test.ts src/lib/receptionist/fallback.test.ts`
+Run: `pnpm test -- src/lib/receptionist/agenda.test.ts src/lib/receptionist/fallback.test.ts`
 
 Expected: PASS.
 
@@ -953,18 +953,18 @@ Expected: PASS.
 Run:
 
 ```bash
-npm run format:check
-npm run lint
-npm run check
-npm test
-npm run build
+pnpm run format:check
+pnpm run lint
+pnpm run check
+pnpm test
+pnpm run build
 ```
 
 Expected: all PASS. If any command fails due to external config or missing credentials, document the exact failure and whether it affects runtime.
 
 - [ ] **Step 4: Run local app**
 
-Run: `npm run dev`
+Run: `pnpm run dev`
 
 Expected: Next dev server starts at `http://localhost:3000` or another printed port.
 

@@ -144,13 +144,13 @@ Se anadiran tests para la logica de agenda y, si encaja con la estructura final,
 
 Antes de cerrar la implementacion se ejecutaran las comprobaciones disponibles del proyecto:
 
-- `npm run format:check`
-- `npm run lint`
-- `npm run check`
-- `npm test`
-- `npm run build`
+- `pnpm run format:check`
+- `pnpm run lint`
+- `pnpm run check`
+- `pnpm test`
+- `pnpm run build`
 
-`npm run design:audit` se ejecutara si el cambio visual final lo justifica y la herramienta esta disponible.
+`pnpm run design:audit` se ejecutara si el cambio visual final lo justifica y la herramienta esta disponible.
 
 ## Criterios de aceptacion
 
