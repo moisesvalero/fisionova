@@ -9,29 +9,31 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
+    "lint": "oxlint && eslint .",
+    "lint:fix": "oxlint && eslint . --fix",
     "ui:add": "pnpm dlx shadcn@latest add",
     "check": "tsc --noEmit",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
+    "knip": "knip",
     "test": "vitest run",
     "test:watch": "vitest",
     "audit": "pnpm audit --audit-level=high",
     "agent:skills": "pnpm dlx autoskills",
     "agent:impeccable": "pnpm dlx skills add pbakaus/impeccable",
     "design:audit": "pnpm dlx impeccable detect src/ --fast",
-    "verify": "pnpm run format:check && pnpm run lint && pnpm run check && pnpm test && pnpm run build && pnpm run audit"
+    "verify": "pnpm run format:check && pnpm run lint && pnpm run check && pnpm test && pnpm run build && pnpm run audit",
+    "prepare": "husky"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.4",
     "@sanity/client": "^7.22.1",
     "@supabase/ssr": "^0.10.3",
-    "@supabase/supabase-js": "^2.106.2",
+    "@supabase/supabase-js": "^2.107.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "groq": "^5.27.0",
-    "lucide-react": "^1.16.0",
+    "groq": "^5.30.0",
+    "lucide-react": "^1.17.0",
     "next": "16.2.6",
     "react": "19.2.4",
     "react-dom": "19.2.4",
@@ -39,29 +41,34 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
+    "@tailwindcss/postcss": "^4.3.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
+    "@types/node": "^20.19.41",
+    "@types/react": "^19.2.16",
+    "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.2",
-    "eslint": "^9",
+    "eslint": "^9.39.4",
     "eslint-config-next": "16.2.6",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-security": "^4.0.0",
+    "husky": "^9.1.7",
     "jsdom": "^29.1.1",
+    "knip": "^6.23.0",
+    "lint-staged": "^17.0.8",
+    "oxlint": "^1.71.0",
     "playwright": "^1.60.0",
     "prettier": "^3.8.3",
     "prettier-plugin-tailwindcss": "^0.8.0",
-    "tailwindcss": "^4",
-    "typescript": "^5",
-    "vitest": "^4.1.7"
+    "tailwindcss": "^4.3.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.8"
   },
-  "pnpm": {
-    "overrides": {
-      "postcss": "^8.5.15"
-    }
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,svelte,astro}": [
+      "oxlint",
+      "prettier --write"
+    ]
   }
 }

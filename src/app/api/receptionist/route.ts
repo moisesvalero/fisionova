@@ -42,14 +42,28 @@ const openAIIntentSchema = z.object({
 
 export type OpenAIReceptionIntent = z.infer<typeof openAIIntentSchema>;
 
-type OpenAIResponse = {
-  output_text?: string;
-  output?: Array<{
-    content?: Array<{
-      text?: string;
-      type?: string;
-    }>;
+type OpenRouterResponse = {
+  choices?: Array<{
+    message?: {
+      content?: string;
+    };
   }>;
+  error?: {
+    message?: string;
+  };
+};
+
+type GeminiResponse = {
+  candidates?: Array<{
+    content?: {
+      parts?: Array<{
+        text?: string;
+      }>;
+    };
+  }>;
+  error?: {
+    message?: string;
+  };
 };
 
 const openAIReceptionIntentJsonSchema = {
@@ -95,26 +109,48 @@ const openAIReceptionIntentJsonSchema = {
   required: ["intent", "message", "treatmentId", "requestedDate"],
 };
 
-function getOpenAIText(data: OpenAIResponse) {
-  if (data.output_text) {
-    return data.output_text;
-  }
-
-  return data.output
-    ?.flatMap((item) => item.content ?? [])
-    .map((content) => content.text)
-    .find(Boolean);
-}
-
-function parseOpenAIIntent(data: OpenAIResponse) {
-  const text = getOpenAIText(data);
-
-  if (!text) {
-    return null;
-  }
-
-  return openAIIntentSchema.parse(JSON.parse(text) as unknown);
-}
+const geminiReceptionIntentSchema = {
+  type: "OBJECT",
+  properties: {
+    intent: {
+      type: "STRING",
+      enum: [
+        "reply",
+        "request_appointment",
+        "cancel_appointment",
+        "modify_appointment",
+      ],
+      description:
+        "Use request_appointment when the patient wants to book or find an appointment slot. Use cancel_appointment when they want to cancel/anular a booked appointment. Use modify_appointment when they want to change/move/reprogramar a booked appointment. Use reply for prices, address, opening hours, treatment questions, cancellation explanations, or general help.",
+    },
+    message: {
+      type: "STRING",
+      description:
+        "Short, warm Spanish message for the patient. Do not invent booked appointments. If intent is request_appointment, do not ask for another day unless the user did not mention any scheduling preference.",
+    },
+    treatmentId: {
+      type: "STRING",
+      enum: ["general", "sports", "postural"],
+      nullable: true,
+      description:
+        "Best matching treatment. Use sports for deportiva/deporte/lesiones deportivas/rodilla/tobillo/correr, postural for postura/espalda/cuello/higiene postural, general for pain, massage or physiotherapy needs that do not fit those two. Use null when the patient asks for an appointment but has not explained what hurts or what they want to treat.",
+    },
+    requestedDate: {
+      type: "STRING",
+      enum: [
+        "2026-06-01",
+        "2026-06-02",
+        "2026-06-03",
+        "2026-06-04",
+        "2026-06-05",
+      ],
+      nullable: true,
+      description:
+        "Requested appointment date in YYYY-MM-DD when the patient says lunes, martes, miércoles, jueves, viernes, a concrete date, or próximo + weekday. Use null when no day is requested.",
+    },
+  },
+  required: ["intent", "message", "treatmentId", "requestedDate"],
+};
 
 function buildReceptionSystemPrompt() {
   const treatmentSummary = treatments
@@ -254,97 +290,189 @@ export async function POST(request: Request) {
     requestedDate,
   });
 
-  if (!env.OPENAI_API_KEY) {
+  if (!env.OPENROUTER_API_KEY && !env.GEMINI_API_KEY) {
     return NextResponse.json({
       provider: "fallback",
       action: fallback,
     });
   }
 
-  try {
-    const response = await fetch("https://api.openai.com/v1/responses", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${env.OPENAI_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: env.OPENAI_MODEL,
-        text: {
-          format: {
-            type: "json_schema",
-            name: "reception_intent",
-            strict: true,
-            schema: openAIReceptionIntentJsonSchema,
+  const systemPrompt = [
+    buildReceptionSystemPrompt(),
+    body.context?.pendingAppointmentTriage
+      ? "Contexto: el paciente ya pidió cita y Virgi ya le preguntó una vez qué le molesta. Interpreta este mensaje como respuesta corta a esa pregunta y, si hay cualquier pista mínima, usa request_appointment. No hagas otra pregunta de triaje."
+      : "",
+    body.context?.hasPendingSlotProposal && body.context?.pendingTreatmentId
+      ? `Contexto: Virgi ya propuso huecos para el tratamiento ${body.context.pendingTreatmentId}. Si el paciente pide cambiar esa propuesta, otra hora u otro día, usa request_appointment con ese mismo treatmentId. No vuelvas a preguntar qué le pasa.`
+      : "",
+    requestedDate
+      ? `Contexto: el paciente pidió la cita para ${requestedDate}. Mantén esa fecha aunque ahora solo responda qué le duele.`
+      : "",
+    body.context?.completedBooking
+      ? "Contexto: el paciente acaba de dejar una cita apuntada. Si da las gracias o cierra la conversación, responde con una despedida breve y natural. No reinicies la conversación."
+      : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  // 1. Intentar llamar a OpenRouter
+  if (env.OPENROUTER_API_KEY) {
+    try {
+      const response = await fetch(
+        "https://openrouter.ai/api/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${env.OPENROUTER_API_KEY}`,
+            "Content-Type": "application/json",
+            "HTTP-Referer": env.NEXT_PUBLIC_APP_URL,
+            "X-Title": "FisioNova Recepcionista",
           },
+          body: JSON.stringify({
+            model: env.OPENROUTER_MODEL,
+            messages: [
+              {
+                role: "system",
+                content: systemPrompt,
+              },
+              {
+                role: "user",
+                content: body.message,
+              },
+            ],
+            response_format: {
+              type: "json_schema",
+              json_schema: {
+                name: "reception_intent",
+                strict: true,
+                schema: openAIReceptionIntentJsonSchema,
+              },
+            },
+          }),
         },
-        input: [
-          {
-            role: "system",
-            content: [
-              buildReceptionSystemPrompt(),
-              body.context?.pendingAppointmentTriage
-                ? "Contexto: el paciente ya pidió cita y Virgi ya le preguntó una vez qué le molesta. Interpreta este mensaje como respuesta corta a esa pregunta y, si hay cualquier pista mínima, usa request_appointment. No hagas otra pregunta de triaje."
-                : "",
-              body.context?.hasPendingSlotProposal &&
-              body.context?.pendingTreatmentId
-                ? `Contexto: Virgi ya propuso huecos para el tratamiento ${body.context.pendingTreatmentId}. Si el paciente pide cambiar esa propuesta, otra hora u otro día, usa request_appointment con ese mismo treatmentId. No vuelvas a preguntar qué le pasa.`
-                : "",
-              requestedDate
-                ? `Contexto: el paciente pidió la cita para ${requestedDate}. Mantén esa fecha aunque ahora solo responda qué le duele.`
-                : "",
-              body.context?.completedBooking
-                ? "Contexto: el paciente acaba de dejar una cita apuntada. Si da las gracias o cierra la conversación, responde con una despedida breve y natural. No reinicies la conversación."
-                : "",
-            ]
-              .filter(Boolean)
-              .join("\n"),
-          },
-          {
-            role: "user",
-            content: body.message,
-          },
-        ],
-      }),
-    });
+      );
 
-    if (!response.ok) {
-      throw new Error(`OpenAI request failed: ${response.status}`);
-    }
+      if (response.ok) {
+        const data = (await response.json()) as OpenRouterResponse;
+        const text = data.choices?.[0]?.message?.content;
+        if (text) {
+          const intent = openAIIntentSchema.parse(JSON.parse(text) as unknown);
+          const pendingTreatmentId = body.context?.pendingTreatmentId ?? null;
+          const shouldReuseProposedTreatment = Boolean(
+            body.context?.hasPendingSlotProposal &&
+            pendingTreatmentId &&
+            (intent.intent === "modify_appointment" ||
+              (intent.intent === "request_appointment" && !intent.treatmentId)),
+          );
+          const datedIntent = {
+            ...intent,
+            intent: shouldReuseProposedTreatment
+              ? ("request_appointment" as const)
+              : intent.intent,
+            treatmentId:
+              intent.treatmentId ??
+              (shouldReuseProposedTreatment ? pendingTreatmentId : null),
+            requestedDate: requestedDate ?? intent.requestedDate,
+          };
+          const action = createReceptionActionFromOpenAIIntent(
+            datedIntent,
+            appointments,
+          );
 
-    const data = (await response.json()) as OpenAIResponse;
-    const intent = parseOpenAIIntent(data);
-    const pendingTreatmentId = body.context?.pendingTreatmentId ?? null;
-    const shouldReuseProposedTreatment = Boolean(
-      body.context?.hasPendingSlotProposal &&
-      pendingTreatmentId &&
-      (intent?.intent === "modify_appointment" ||
-        (intent?.intent === "request_appointment" && !intent.treatmentId)),
-    );
-    const datedIntent = intent
-      ? {
-          ...intent,
-          intent: shouldReuseProposedTreatment
-            ? ("request_appointment" as const)
-            : intent.intent,
-          treatmentId:
-            intent.treatmentId ??
-            (shouldReuseProposedTreatment ? pendingTreatmentId : null),
-          requestedDate: requestedDate ?? intent.requestedDate,
+          return NextResponse.json({
+            provider: "openrouter",
+            action,
+          });
         }
-      : null;
-    const action = datedIntent
-      ? createReceptionActionFromOpenAIIntent(datedIntent, appointments)
-      : fallback;
-
-    return NextResponse.json({
-      provider: "openai",
-      action,
-    });
-  } catch {
-    return NextResponse.json({
-      provider: "fallback",
-      action: fallback,
-    });
+      }
+      console.warn(
+        `OpenRouter API failed with status ${response.status}. Falling back to Gemini...`,
+      );
+    } catch (err) {
+      console.warn("OpenRouter API error, falling back to Gemini...", err);
+    }
   }
+
+  // 2. Fallback a Gemini API
+  if (env.GEMINI_API_KEY) {
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${env.GEMINI_MODEL}:generateContent?key=${env.GEMINI_API_KEY}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            contents: [
+              {
+                role: "user",
+                parts: [
+                  {
+                    text: body.message,
+                  },
+                ],
+              },
+            ],
+            systemInstruction: {
+              parts: [
+                {
+                  text: systemPrompt,
+                },
+              ],
+            },
+            generationConfig: {
+              responseMimeType: "application/json",
+              responseSchema: geminiReceptionIntentSchema,
+            },
+          }),
+        },
+      );
+
+      if (response.ok) {
+        const data = (await response.json()) as GeminiResponse;
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) {
+          const intent = openAIIntentSchema.parse(JSON.parse(text) as unknown);
+          const pendingTreatmentId = body.context?.pendingTreatmentId ?? null;
+          const shouldReuseProposedTreatment = Boolean(
+            body.context?.hasPendingSlotProposal &&
+            pendingTreatmentId &&
+            (intent.intent === "modify_appointment" ||
+              (intent.intent === "request_appointment" && !intent.treatmentId)),
+          );
+          const datedIntent = {
+            ...intent,
+            intent: shouldReuseProposedTreatment
+              ? ("request_appointment" as const)
+              : intent.intent,
+            treatmentId:
+              intent.treatmentId ??
+              (shouldReuseProposedTreatment ? pendingTreatmentId : null),
+            requestedDate: requestedDate ?? intent.requestedDate,
+          };
+          const action = createReceptionActionFromOpenAIIntent(
+            datedIntent,
+            appointments,
+          );
+
+          return NextResponse.json({
+            provider: "gemini",
+            action,
+          });
+        }
+      }
+      console.warn(
+        `Gemini API failed with status ${response.status}. Falling back to local rules...`,
+      );
+    } catch (err) {
+      console.warn("Gemini API error, falling back to local rules...", err);
+    }
+  }
+
+  // 3. Fallback a reglas locales
+  return NextResponse.json({
+    provider: "fallback",
+    action: fallback,
+  });
 }

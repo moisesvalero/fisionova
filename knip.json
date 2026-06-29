@@ -1,0 +1,8 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "src/app/**/{page,layout,route,robots,sitemap,manifest,icon,apple-icon,opengraph-image}.{ts,tsx}",
+    "src/test/setup.ts"
+  ],
+  "project": ["src/**/*.{ts,tsx}"]
+}
