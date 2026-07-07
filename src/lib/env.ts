@@ -25,7 +25,10 @@ const envSchema = z.object({
   NEXT_PUBLIC_SANITY_DATASET: z.string().min(1).optional(),
   SANITY_API_READ_TOKEN: z.string().min(1).optional(),
   OPENROUTER_API_KEY: z.string().min(1).optional(),
-  OPENROUTER_MODEL: z.string().min(1).default("openrouter/free"),
+  OPENROUTER_MODEL: z
+    .string()
+    .min(1)
+    .default("qwen/qwen-2.5-coder-32b-instruct:free"),
   GEMINI_API_KEY: z.string().min(1).optional(),
   GEMINI_MODEL: z.string().min(1).default("gemini-2.5-flash"),
   RESEND_API_KEY: z.string().min(1).optional(),

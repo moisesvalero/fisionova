@@ -273,7 +273,7 @@ export function ChatPanel({
               />
             </label>
             <label className="grid gap-1.5 text-xs font-medium">
-              TelÃ©fono
+              Teléfono
               <input
                 name="patientPhone"
                 type="tel"

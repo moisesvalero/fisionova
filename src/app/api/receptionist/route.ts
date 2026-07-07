@@ -167,7 +167,7 @@ function buildReceptionSystemPrompt() {
     "No digas que eres un modelo de IA. Hablas como Virgi, la recepcionista de la clínica.",
     "Si el paciente pide diagnóstico, medicación, valoración médica, habla de urgencias o cuenta síntomas serios como dolor fuerte en el pecho, dificultad para respirar, fiebre, desmayo, embarazo con dolor, pérdida de fuerza o algo parecido, responde que esto es una demo ficticia de portfolio y que debe contactar con urgencias o un profesional sanitario real. No des consejos médicos.",
     "No confirmes una cita directamente. Si el paciente quiere reservar, marca request_appointment. Es OBLIGATORIO que dejes treatmentId en null si el paciente NO ha explicado específicamente qué le molesta, qué síntoma tiene o qué tratamiento quiere. No asumas ni infieras 'general' a menos que el usuario mencione explícitamente dolores musculares, necesidad de masaje o fisioterapia general. Si solo dice 'quiero cita', 'hola', 'reservar', etc. debes dejar treatmentId en null para preguntárselo primero.",
-    "Si el paciente pide cita para hoy, no preguntes 'quÃ© dÃ­a de hoy'. Pide sÃ³lo la franja si falta, o deja que el backend proponga huecos.",
+    "Si el paciente pide cita para hoy, no preguntes 'qué día de hoy'. Pide sólo la franja si falta, o deja que el backend proponga huecos.",
     "Si el paciente quiere cambiar, modificar, mover, reprogramar, anular o cancelar una cita existente, no le mandes al panel medico. Marca cancel_appointment o modify_appointment para que el sistema verifique email y telefono.",
     "No muestres la agenda interna ni datos de otros pacientes.",
     "Calendario demo disponible para reservar: lunes 2026-06-01, martes 2026-06-02, miércoles 2026-06-03, jueves 2026-06-04 y viernes 2026-06-05. Si el paciente dice 'próximo jueves', requestedDate debe ser 2026-06-04.",
@@ -315,7 +315,84 @@ export async function POST(request: Request) {
     .filter(Boolean)
     .join("\n");
 
-  // 1. Intentar llamar a OpenRouter
+  // 1. Intentar llamar a Gemini API primero (más rápido, nativo, estructurado)
+  if (env.GEMINI_API_KEY) {
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${env.GEMINI_MODEL}:generateContent?key=${env.GEMINI_API_KEY}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            contents: [
+              {
+                role: "user",
+                parts: [
+                  {
+                    text: body.message,
+                  },
+                ],
+              },
+            ],
+            systemInstruction: {
+              parts: [
+                {
+                  text: systemPrompt,
+                },
+              ],
+            },
+            generationConfig: {
+              responseMimeType: "application/json",
+              responseSchema: geminiReceptionIntentSchema,
+            },
+          }),
+        },
+      );
+
+      if (response.ok) {
+        const data = (await response.json()) as GeminiResponse;
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) {
+          const intent = openAIIntentSchema.parse(JSON.parse(text) as unknown);
+          const pendingTreatmentId = body.context?.pendingTreatmentId ?? null;
+          const shouldReuseProposedTreatment = Boolean(
+            body.context?.hasPendingSlotProposal &&
+            pendingTreatmentId &&
+            (intent.intent === "modify_appointment" ||
+              (intent.intent === "request_appointment" && !intent.treatmentId)),
+          );
+          const datedIntent = {
+            ...intent,
+            intent: shouldReuseProposedTreatment
+              ? ("request_appointment" as const)
+              : intent.intent,
+            treatmentId:
+              intent.treatmentId ??
+              (shouldReuseProposedTreatment ? pendingTreatmentId : null),
+            requestedDate: requestedDate ?? intent.requestedDate,
+          };
+          const action = createReceptionActionFromOpenAIIntent(
+            datedIntent,
+            appointments,
+          );
+
+          return NextResponse.json({
+            provider: "gemini",
+            action,
+          });
+        }
+      }
+      console.warn(
+        `Gemini API failed with status ${response.status}. Falling back to OpenRouter...`,
+      );
+    } catch (err) {
+      console.warn("Gemini API error, falling back to OpenRouter...", err);
+    }
+  }
+
+  // 2. Fallback a OpenRouter
   if (env.OPENROUTER_API_KEY) {
     try {
       const response = await fetch(
@@ -386,87 +463,10 @@ export async function POST(request: Request) {
         }
       }
       console.warn(
-        `OpenRouter API failed with status ${response.status}. Falling back to Gemini...`,
+        `OpenRouter API failed with status ${response.status}. Falling back to local rules...`,
       );
     } catch (err) {
-      console.warn("OpenRouter API error, falling back to Gemini...", err);
-    }
-  }
-
-  // 2. Fallback a Gemini API
-  if (env.GEMINI_API_KEY) {
-    try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${env.GEMINI_MODEL}:generateContent?key=${env.GEMINI_API_KEY}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            contents: [
-              {
-                role: "user",
-                parts: [
-                  {
-                    text: body.message,
-                  },
-                ],
-              },
-            ],
-            systemInstruction: {
-              parts: [
-                {
-                  text: systemPrompt,
-                },
-              ],
-            },
-            generationConfig: {
-              responseMimeType: "application/json",
-              responseSchema: geminiReceptionIntentSchema,
-            },
-          }),
-        },
-      );
-
-      if (response.ok) {
-        const data = (await response.json()) as GeminiResponse;
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (text) {
-          const intent = openAIIntentSchema.parse(JSON.parse(text) as unknown);
-          const pendingTreatmentId = body.context?.pendingTreatmentId ?? null;
-          const shouldReuseProposedTreatment = Boolean(
-            body.context?.hasPendingSlotProposal &&
-            pendingTreatmentId &&
-            (intent.intent === "modify_appointment" ||
-              (intent.intent === "request_appointment" && !intent.treatmentId)),
-          );
-          const datedIntent = {
-            ...intent,
-            intent: shouldReuseProposedTreatment
-              ? ("request_appointment" as const)
-              : intent.intent,
-            treatmentId:
-              intent.treatmentId ??
-              (shouldReuseProposedTreatment ? pendingTreatmentId : null),
-            requestedDate: requestedDate ?? intent.requestedDate,
-          };
-          const action = createReceptionActionFromOpenAIIntent(
-            datedIntent,
-            appointments,
-          );
-
-          return NextResponse.json({
-            provider: "gemini",
-            action,
-          });
-        }
-      }
-      console.warn(
-        `Gemini API failed with status ${response.status}. Falling back to local rules...`,
-      );
-    } catch (err) {
-      console.warn("Gemini API error, falling back to local rules...", err);
+      console.warn("OpenRouter API error, falling back to local rules...", err);
     }
   }
 

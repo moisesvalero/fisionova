@@ -18,7 +18,7 @@ Demo publica para portfolio tecnico: una web app de una clinica de fisioterapia 
 
 - Landing completa de una clinica local ficticia, con hero visual, tratamientos, equipo, contacto, FAQ y politica de cookies.
 - Chat con Virgi, recepcionista IA, integrado en la web y ampliable en modal.
-- Integracion opcional con OpenAI para interpretar mensajes y proponer huecos.
+- Integracion opcional con Google Gemini (prioritario) u OpenRouter (modelos Open-Source como Qwen) para interpretar mensajes y proponer huecos de forma estructurada.
 - Flujo seguro de citas: la IA no confirma citas finales, crea una solicitud pendiente.
 - Panel privado `/medico` protegido por PIN.
 - Calendario operativo tipo agenda, con horario fijo 10:00-19:00, filtro por profesional, click en citas, ficha del paciente, acciones y movimiento por drag and drop.
@@ -38,7 +38,7 @@ Demo publica para portfolio tecnico: una web app de una clinica de fisioterapia 
 - Tailwind CSS 4.
 - Componentes estilo shadcn con `Button` y utilidad `cn()`.
 - Zod para validar variables de entorno y payloads.
-- OpenAI Responses API para la recepcionista.
+- Google Gemini API (prioritaria) y OpenRouter (fallback secundario) para la recepcionista.
 - Resend para emails de confirmacion, cancelacion y cambios.
 - Supabase opcional para guardar citas en produccion.
 - Vitest, Testing Library, ESLint y Prettier.
@@ -62,7 +62,7 @@ Incluido:
 
 - `.env*` ignorado por Git, excepto `.env.example`.
 - Validacion centralizada de env vars en `src/lib/env.ts`.
-- OpenAI y Resend solo se usan desde rutas server-side.
+- Gemini, OpenRouter y Resend solo se usan desde rutas server-side.
 - `/api/appointments` protege lectura y cambios con `DOCTOR_DASHBOARD_PIN`.
 - `/api/email` protege el envio con `DOCTOR_DASHBOARD_PIN`.
 - Rate limit ligero en memoria para `/api/receptionist` y POST publico de `/api/appointments`.
@@ -104,9 +104,13 @@ Copia `.env.example` a `.env.local` y rellena solo lo necesario.
 ```env
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 
-# OpenAI opcional
-OPENAI_API_KEY=
-OPENAI_MODEL=gpt-5.4-nano
+# Gemini prioritario
+GEMINI_API_KEY=
+GEMINI_MODEL=gemini-2.5-flash
+
+# OpenRouter opcional (fallback)
+OPENROUTER_API_KEY=
+OPENROUTER_MODEL=qwen/qwen-2.5-coder-32b-instruct:free
 
 # Supabase opcional
 NEXT_PUBLIC_SUPABASE_URL=
@@ -123,7 +127,7 @@ RESEND_FROM_EMAIL=onboarding@resend.dev
 RESEND_REPLY_TO_EMAIL=
 ```
 
-Sin `OPENAI_API_KEY`, se usa fallback local basado en reglas. Sin `SUPABASE_SERVICE_ROLE_KEY`, las citas viven en memoria durante la sesion del servidor. Sin `RESEND_API_KEY`, los emails se simulan.
+Sin `GEMINI_API_KEY` ni `OPENROUTER_API_KEY`, se usa fallback local basado en reglas. Sin `SUPABASE_SERVICE_ROLE_KEY`, las citas viven en memoria durante la sesion del servidor. Sin `RESEND_API_KEY`, los emails se simulan.
 
 ## Despliegue en Vercel
 
@@ -132,8 +136,8 @@ Sin `OPENAI_API_KEY`, se usa fallback local basado en reglas. Sin `SUPABASE_SERV
    - `NEXT_PUBLIC_APP_URL=https://tu-dominio.vercel.app`
    - `DOCTOR_DASHBOARD_PIN=un-pin-largo-no-obvio`
 3. Para IA real:
-   - `OPENAI_API_KEY`
-   - `OPENAI_MODEL=gpt-5.4-nano` o el modelo gratuito/disponible que quieras probar.
+   - `GEMINI_API_KEY` y `GEMINI_MODEL=gemini-2.5-flash` (más rápido y nativo).
+   - O `OPENROUTER_API_KEY` y `OPENROUTER_MODEL=qwen/qwen-2.5-coder-32b-instruct:free` (como fallback).
 4. Para emails reales:
    - `RESEND_API_KEY`
    - `RESEND_FROM_EMAIL`
