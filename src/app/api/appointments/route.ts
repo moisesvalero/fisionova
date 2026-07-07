@@ -239,36 +239,44 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const rateLimit = checkRateLimit(getClientKey(request, "appointments"), {
-    limit: 12,
-    windowMs: 60_000,
-  });
+  try {
+    const rateLimit = checkRateLimit(getClientKey(request, "appointments"), {
+      limit: 12,
+      windowMs: 60_000,
+    });
 
-  if (!rateLimit.allowed) {
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: "Too many requests" },
+        {
+          status: 429,
+          headers: { "Retry-After": String(rateLimit.retryAfter) },
+        },
+      );
+    }
+
+    const body = bookingSchema.parse(await request.json());
+    const appointment = await createAppointmentRequest({
+      patientName: body.patientName,
+      patientEmail: body.patientEmail,
+      patientPhone: body.patientPhone,
+      treatmentId: body.slot.treatmentId,
+      therapistId: body.slot.therapistId,
+      date: body.slot.date,
+      time: body.slot.time,
+      notes: body.notes,
+      wantsEarlier: body.wantsEarlier,
+      source: "ai",
+    });
+
+    return NextResponse.json({ appointment });
+  } catch (error: any) {
+    console.error("Error in appointments POST endpoint:", error);
     return NextResponse.json(
-      { error: "Too many requests" },
-      {
-        status: 429,
-        headers: { "Retry-After": String(rateLimit.retryAfter) },
-      },
+      { error: error.message || "Internal Server Error" },
+      { status: 500 },
     );
   }
-
-  const body = bookingSchema.parse(await request.json());
-  const appointment = await createAppointmentRequest({
-    patientName: body.patientName,
-    patientEmail: body.patientEmail,
-    patientPhone: body.patientPhone,
-    treatmentId: body.slot.treatmentId,
-    therapistId: body.slot.therapistId,
-    date: body.slot.date,
-    time: body.slot.time,
-    notes: body.notes,
-    wantsEarlier: body.wantsEarlier,
-    source: "ai",
-  });
-
-  return NextResponse.json({ appointment });
 }
 
 export async function PATCH(request: Request) {

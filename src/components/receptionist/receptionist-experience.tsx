@@ -381,7 +381,12 @@ export function ReceptionistExperience() {
           ...details,
         }),
       });
-      const payload = (await response.json()) as { appointment: Appointment };
+
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload.error || "Error al dejar apuntada la cita");
+      }
 
       setSelectedSlot(null);
       setProposedSlots([]);
@@ -392,10 +397,22 @@ export function ReceptionistExperience() {
       addAssistantMessage(
         `Listo, ${details.patientName}. Te dejo apuntado para el ${payload.appointment.date} a las ${payload.appointment.time}. Recibirás la confirmación por email.`,
       );
-    } catch {
-      addAssistantMessage(
-        "Ay, no he podido dejarlo apuntado ahora mismo. Prueba otra vez en unos segundos, porfa.",
-      );
+    } catch (err: any) {
+      console.error("Booking verification failed:", err);
+
+      let errMsg =
+        "Ay, no he podido dejarlo apuntado ahora mismo. Prueba otra vez en unos segundos, porfa.";
+      if (err.message && err.message.includes("Too many requests")) {
+        errMsg =
+          "Has realizado demasiadas solicitudes seguidas. Espera un minutito y vuelve a intentarlo, porfa.";
+      } else if (
+        err.message &&
+        err.message !== "Error al dejar apuntada la cita"
+      ) {
+        errMsg = `Uy, ha ocurrido un problema al guardar la cita: "${err.message}". Revisa la configuración de Supabase en producción.`;
+      }
+
+      addAssistantMessage(errMsg);
     } finally {
       setBookingPending(false);
     }
