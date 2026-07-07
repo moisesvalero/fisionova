@@ -270,12 +270,11 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ appointment });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error in appointments POST endpoint:", error);
-    return NextResponse.json(
-      { error: error.message || "Internal Server Error" },
-      { status: 500 },
-    );
+    const message =
+      error instanceof Error ? error.message : "Internal Server Error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 

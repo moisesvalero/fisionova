@@ -397,19 +397,17 @@ export function ReceptionistExperience() {
       addAssistantMessage(
         `Listo, ${details.patientName}. Te dejo apuntado para el ${payload.appointment.date} a las ${payload.appointment.time}. Recibirás la confirmación por email.`,
       );
-    } catch (err: any) {
+    } catch (err) {
       console.error("Booking verification failed:", err);
 
+      const message = err instanceof Error ? err.message : "";
       let errMsg =
         "Ay, no he podido dejarlo apuntado ahora mismo. Prueba otra vez en unos segundos, porfa.";
-      if (err.message && err.message.includes("Too many requests")) {
+      if (message && message.includes("Too many requests")) {
         errMsg =
           "Has realizado demasiadas solicitudes seguidas. Espera un minutito y vuelve a intentarlo, porfa.";
-      } else if (
-        err.message &&
-        err.message !== "Error al dejar apuntada la cita"
-      ) {
-        errMsg = `Uy, ha ocurrido un problema al guardar la cita: "${err.message}". Revisa la configuración de Supabase en producción.`;
+      } else if (message && message !== "Error al dejar apuntada la cita") {
+        errMsg = `Uy, ha ocurrido un problema al guardar la cita: "${message}". Revisa la configuración de Supabase en producción.`;
       }
 
       addAssistantMessage(errMsg);
