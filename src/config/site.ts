@@ -1,6 +1,6 @@
 const defaultAppUrl =
   process.env.NODE_ENV === "production"
-    ? "https://proyecto-ia-recepcionista.vercel.app"
+    ? "https://recepcionista.moisesvalero.es"
     : "http://localhost:3000";
 
 function resolveAppUrl(value: string | undefined) {
