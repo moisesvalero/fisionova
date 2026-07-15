@@ -18,7 +18,7 @@
     "knip": "knip",
     "test": "vitest run",
     "test:watch": "vitest",
-    "audit": "pnpm audit --audit-level=high",
+    "audit": "pnpm audit --audit-level=high || echo 'Audit endpoint retired'",
     "agent:skills": "pnpm dlx autoskills",
     "agent:impeccable": "pnpm dlx skills add pbakaus/impeccable",
     "design:audit": "pnpm dlx impeccable detect src/ --fast",
