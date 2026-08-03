@@ -1,4 +1,5 @@
 #!/bin/sh
-pnpm exec lint-staged
-pnpm run check
-pnpm test
+npx pnpm exec lint-staged
+npx pnpm run check
+npx pnpm test
+
